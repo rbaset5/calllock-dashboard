@@ -48,7 +48,7 @@ export function StatsSummary({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (

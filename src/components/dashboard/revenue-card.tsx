@@ -16,8 +16,8 @@ export function RevenueCard({ totalRevenue, jobsCompleted, previousMonthRevenue 
     : null;
 
   return (
-    <Card className="bg-gradient-to-br from-primary-600 to-primary-700 text-white">
-      <CardContent className="p-6">
+    <Card className="bg-gradient-to-br from-primary-600 to-primary-700 text-white h-full flex flex-col">
+      <CardContent className="p-6 flex-1 flex flex-col justify-center">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-primary-100 text-sm font-medium">Rescued Revenue (This Month)</p>

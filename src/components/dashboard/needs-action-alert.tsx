@@ -19,7 +19,7 @@ export function NeedsActionAlert({ jobs }: NeedsActionAlertProps) {
   const oldestJob = sortedJobs[0];
 
   return (
-    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg h-full">
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">
           <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">

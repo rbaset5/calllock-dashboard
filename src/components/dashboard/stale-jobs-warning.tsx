@@ -12,7 +12,7 @@ export function StaleJobsWarning({ jobs }: StaleJobsWarningProps) {
   if (jobs.length === 0) return null;
 
   return (
-    <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+    <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg h-full">
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">
           <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">

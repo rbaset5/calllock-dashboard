@@ -22,15 +22,15 @@ export function TodayJobs({ jobs, timezone }: TodayJobsProps) {
   });
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
         <CardTitle className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-gray-500" />
           Today&apos;s Jobs
         </CardTitle>
         <span className="text-sm text-gray-500">{jobs.length} scheduled</span>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 flex-1 overflow-auto">
         {sortedJobs.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
             <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />

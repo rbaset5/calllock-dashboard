@@ -83,7 +83,8 @@ export const config = {
      * - public files (public folder)
      * - api/webhook (webhook endpoints - no auth required)
      * - api/twilio (twilio endpoints - no auth required)
+     * - login/signup (auth pages - no auth check needed)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api/webhook|api/twilio).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api/webhook|api/twilio|login|signup).*)',
   ],
 };

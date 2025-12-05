@@ -9,29 +9,43 @@ interface SignUpResponse {
 
 // Raw fetch to Supabase auth - no library
 async function rawSignUp(email: string, password: string, metadata: Record<string, unknown>): Promise<SignUpResponse> {
-  console.log('[Raw Auth] Attempting signup with raw fetch');
-
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({
-      email,
-      password,
-      data: metadata,
-    }),
+  const url = `${SUPABASE_URL}/auth/v1/signup`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  };
+  const body = JSON.stringify({
+    email,
+    password,
+    data: metadata,
   });
 
-  const data = await response.json();
+  // Debug everything
+  console.log('[Raw Auth] URL:', url);
+  console.log('[Raw Auth] URL type:', typeof url);
+  console.log('[Raw Auth] Headers:', JSON.stringify(headers));
+  console.log('[Raw Auth] Body:', body);
+  console.log('[Raw Auth] fetch available:', typeof fetch);
 
-  if (!response.ok) {
-    return { data: null, error: { message: data.error_description || data.msg || 'Signup failed' } };
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: body,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { data: null, error: { message: data.error_description || data.msg || 'Signup failed' } };
+    }
+
+    return { data: { user: data.user, session: data.session }, error: null };
+  } catch (err) {
+    console.error('[Raw Auth] Fetch error:', err);
+    return { data: null, error: { message: String(err) } };
   }
-
-  return { data: { user: data.user, session: data.session }, error: null };
 }
 
 // Fake client interface to match existing code

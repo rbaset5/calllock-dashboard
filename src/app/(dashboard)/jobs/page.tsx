@@ -43,13 +43,13 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
   const { data: jobs } = await query.limit(50);
 
   return (
-    <div className="p-4">
-      <div className="mb-4">
-        <h1 className="text-xl font-bold text-gray-900">Jobs</h1>
+    <div className="p-4 lg:p-6">
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Jobs</h1>
       </div>
 
       {/* Filters */}
-      <div className="mb-4">
+      <div className="mb-4 lg:mb-6">
         <JobFilters />
       </div>
 
@@ -67,7 +67,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4">
           {jobs?.map((job) => (
             <JobCard key={job.id} job={job} timezone={timezone} />
           ))}
