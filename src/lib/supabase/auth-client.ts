@@ -107,6 +107,38 @@ export function createAuthClient() {
         password: string;
       }) => {
         return rawSignIn(email, password);
+      },
+      resetPasswordForEmail: async (email: string, options?: { redirectTo?: string }) => {
+        const url = `${SUPABASE_URL}/auth/v1/recover`;
+        const headers = {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        };
+        const body = JSON.stringify({
+          email,
+          redirect_to: options?.redirectTo
+        });
+
+        console.log('[Raw Auth] Reset password URL:', url);
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: body,
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            return { data: null, error: { message: data.error_description || data.msg || 'Reset failed' } };
+          }
+
+          return { data: {}, error: null };
+        } catch (err) {
+          console.error('[Raw Auth] Reset error:', err);
+          return { data: null, error: { message: String(err) } };
+        }
       }
     }
   };
