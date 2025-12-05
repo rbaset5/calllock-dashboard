@@ -16,12 +16,14 @@ export function createClient() {
     );
   }
 
-  // Explicitly configure to avoid SSR cookie issues
   return createBrowserClient<Database>(url, key, {
     auth: {
       flowType: 'pkce',
       persistSession: true,
       detectSessionInUrl: true,
+    },
+    global: {
+      fetch: (...args) => fetch(...args),
     },
   });
 }
