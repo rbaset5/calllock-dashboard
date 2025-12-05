@@ -167,6 +167,7 @@ export function createAuthClient() {
         const body = JSON.stringify({ password });
 
         console.log('[Raw Auth] Update user URL:', url);
+        console.log('[Raw Auth] Using token (first 20 chars):', token?.substring(0, 20));
 
         try {
           const response = await fetch(url, {
@@ -176,11 +177,16 @@ export function createAuthClient() {
           });
 
           const data = await response.json();
+          console.log('[Raw Auth] Update user response status:', response.status);
+          console.log('[Raw Auth] Update user response:', JSON.stringify(data));
 
           if (!response.ok) {
-            return { data: null, error: { message: data.error_description || data.msg || 'Update failed' } };
+            const errorMsg = data.error_description || data.msg || data.error || data.message || 'Update failed';
+            console.error('[Raw Auth] Update user failed:', errorMsg);
+            return { data: null, error: { message: errorMsg } };
           }
 
+          console.log('[Raw Auth] Password updated successfully');
           return { data: { user: data }, error: null };
         } catch (err) {
           console.error('[Raw Auth] Update error:', err);
