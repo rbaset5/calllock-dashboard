@@ -45,20 +45,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected dashboard routes - require authentication
-  if (
-    !user &&
-    (request.nextUrl.pathname.startsWith('/dashboard') ||
-      request.nextUrl.pathname.startsWith('/jobs') ||
-      request.nextUrl.pathname.startsWith('/reports') ||
-      request.nextUrl.pathname.startsWith('/settings'))
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
+  // NOTE: Protected route checks disabled - using client-side auth instead
+  // The @supabase/ssr library has a bug causing "Invalid fetch" errors
+  // Auth is now handled client-side via localStorage tokens
 
-  // Redirect authenticated users away from auth pages
+  // Only redirect authenticated users away from auth pages if we can detect them
   if (
     user &&
     (request.nextUrl.pathname === '/login' ||

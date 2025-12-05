@@ -69,13 +69,17 @@ async function rawSignIn(email: string, password: string): Promise<AuthResponse>
     });
 
     const data = await response.json();
+    console.log('[Raw Auth] SignIn response status:', response.status);
+    console.log('[Raw Auth] SignIn response data:', JSON.stringify(data).substring(0, 200));
 
     if (!response.ok) {
-      return { data: null, error: { message: data.error_description || data.msg || 'Login failed' } };
+      console.error('[Raw Auth] SignIn failed:', data);
+      return { data: null, error: { message: data.error_description || data.msg || data.error || 'Login failed' } };
     }
 
     // Store session in localStorage for persistence
     if (typeof window !== 'undefined' && data.access_token) {
+      console.log('[Raw Auth] Storing token in localStorage');
       localStorage.setItem('supabase.auth.token', JSON.stringify({
         access_token: data.access_token,
         refresh_token: data.refresh_token,
@@ -84,6 +88,7 @@ async function rawSignIn(email: string, password: string): Promise<AuthResponse>
       }));
     }
 
+    console.log('[Raw Auth] SignIn success, user:', data.user?.email);
     return { data: { user: data.user, session: data }, error: null };
   } catch (err) {
     console.error('[Raw Auth] SignIn error:', err);

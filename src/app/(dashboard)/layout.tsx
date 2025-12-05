@@ -1,51 +1,59 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+'use client';
+
+import { AuthGuard } from '@/components/auth/auth-guard';
 import { Header } from '@/components/layout/header';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { Sidebar } from '@/components/layout/sidebar';
+import { useEffect, useState } from 'react';
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  const [businessName, setBusinessName] = useState<string | null>(null);
 
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  // Get user profile
-  const { data: profile } = await supabase
-    .from('users')
-    .select('business_name')
-    .eq('id', user.id)
-    .single();
+  useEffect(() => {
+    // Get business name from localStorage token
+    const tokenData = localStorage.getItem('supabase.auth.token');
+    if (tokenData) {
+      try {
+        const parsed = JSON.parse(tokenData);
+        // The user metadata should have business_name from signup
+        const name = parsed.user?.user_metadata?.business_name;
+        if (name) {
+          setBusinessName(name);
+        }
+      } catch (e) {
+        console.error('[DashboardLayout] Error getting business name:', e);
+      }
+    }
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Desktop sidebar */}
-      <Sidebar businessName={profile?.business_name} />
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-50">
+        {/* Desktop sidebar */}
+        <Sidebar businessName={businessName} />
 
-      {/* Main content area - offset for sidebar on desktop */}
-      <div className="lg:pl-60">
-        {/* Header - hidden on desktop since sidebar has branding */}
-        <div className="lg:hidden">
-          <Header businessName={profile?.business_name} />
-        </div>
-
-        {/* Main content with max-width on desktop */}
-        <main className="pb-20 lg:pb-8">
-          <div className="max-w-7xl mx-auto">
-            {children}
+        {/* Main content area - offset for sidebar on desktop */}
+        <div className="lg:pl-60">
+          {/* Header - hidden on desktop since sidebar has branding */}
+          <div className="lg:hidden">
+            <Header businessName={businessName} />
           </div>
-        </main>
 
-        {/* Mobile bottom navigation */}
-        <MobileNav />
+          {/* Main content with max-width on desktop */}
+          <main className="pb-20 lg:pb-8">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
+
+          {/* Mobile bottom navigation */}
+          <MobileNav />
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }
