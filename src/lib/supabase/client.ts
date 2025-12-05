@@ -1,4 +1,4 @@
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
 export function createClient() {
@@ -7,9 +7,7 @@ export function createClient() {
 
   // Debug logging - remove after fixing
   console.log('[Supabase Debug] URL:', url);
-  console.log('[Supabase Debug] URL type:', typeof url);
   console.log('[Supabase Debug] Key exists:', !!key);
-  console.log('[Supabase Debug] Key length:', key?.length);
 
   if (!url || !key) {
     throw new Error(
@@ -18,5 +16,5 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient<Database>(url, key);
+  return createSupabaseClient<Database>(url, key);
 }
