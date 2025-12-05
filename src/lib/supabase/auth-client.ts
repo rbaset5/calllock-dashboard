@@ -1,16 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Simple auth client that bypasses @supabase/ssr
-// Used only for signup/login where SSR cookie handling causes issues
+// TEMPORARY: Hardcoded values to debug env var issue
+const SUPABASE_URL = 'https://xboybmqtwsxmdokgzclk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhib3libXF0d3N4bWRva2d6Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2ODc3NDUsImV4cCI6MjA4MDI2Mzc0NX0.wGxgfhegig_QPnKu8cGMpYgiP7LdTMeRl4RF93SPeM0';
+
+// Simple auth client - hardcoded to debug
 export function createAuthClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  console.log('[Auth Debug] Using hardcoded Supabase credentials');
 
-  if (!url || !key) {
-    throw new Error('Missing Supabase environment variables');
-  }
-
-  return createClient(url, key, {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
