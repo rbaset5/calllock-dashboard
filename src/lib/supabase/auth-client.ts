@@ -139,6 +139,48 @@ export function createAuthClient() {
           console.error('[Raw Auth] Reset error:', err);
           return { data: null, error: { message: String(err) } };
         }
+      },
+      updateUser: async ({ password }: { password: string }, accessToken?: string) => {
+        // Get token from URL hash or parameter
+        let token = accessToken;
+        if (!token && typeof window !== 'undefined') {
+          const hash = window.location.hash.substring(1);
+          const params = new URLSearchParams(hash);
+          token = params.get('access_token') || undefined;
+        }
+
+        if (!token) {
+          return { data: null, error: { message: 'No access token found' } };
+        }
+
+        const url = `${SUPABASE_URL}/auth/v1/user`;
+        const headers = {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`,
+        };
+        const body = JSON.stringify({ password });
+
+        console.log('[Raw Auth] Update user URL:', url);
+
+        try {
+          const response = await fetch(url, {
+            method: 'PUT',
+            headers: headers,
+            body: body,
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            return { data: null, error: { message: data.error_description || data.msg || 'Update failed' } };
+          }
+
+          return { data: { user: data }, error: null };
+        } catch (err) {
+          console.error('[Raw Auth] Update error:', err);
+          return { data: null, error: { message: String(err) } };
+        }
       }
     }
   };
