@@ -1,4 +1,4 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/types/database';
 
 export function createClient() {
@@ -16,5 +16,12 @@ export function createClient() {
     );
   }
 
-  return createSupabaseClient<Database>(url, key);
+  // Explicitly configure to avoid SSR cookie issues
+  return createBrowserClient<Database>(url, key, {
+    auth: {
+      flowType: 'pkce',
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  });
 }
