@@ -11,7 +11,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [businessName, setBusinessName] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     // Get business name from localStorage token
