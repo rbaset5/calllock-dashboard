@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createAuthClient } from '@/lib/supabase/auth-client';
+import { createClient } from '@/lib/supabase/client';
 
 const TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time' },
@@ -49,7 +49,7 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    const supabase = createAuthClient();
+    const supabase = createClient();
 
     const { error } = await supabase.auth.signUp({
       email: formData.email,

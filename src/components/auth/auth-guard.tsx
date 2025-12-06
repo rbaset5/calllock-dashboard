@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -12,39 +13,29 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check localStorage for auth token
-    const tokenData = localStorage.getItem('supabase.auth.token');
+    const supabase = createClient();
 
-    if (!tokenData) {
-      console.log('[AuthGuard] No token found, redirecting to login');
-      router.replace('/login');
-      return;
-    }
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        console.log('[AuthGuard] No session found, redirecting to login');
+        router.replace('/login');
+        return;
+      }
+      console.log('[AuthGuard] Valid session found');
+      setIsAuthenticated(true);
+    });
 
-    try {
-      const parsed = JSON.parse(tokenData);
-
-      // Check if token exists and hasn't expired
-      if (parsed.access_token) {
-        // Check expiration if available
-        if (parsed.expires_at && Date.now() / 1000 > parsed.expires_at) {
-          console.log('[AuthGuard] Token expired, redirecting to login');
-          localStorage.removeItem('supabase.auth.token');
-          router.replace('/login');
-          return;
-        }
-
-        console.log('[AuthGuard] Valid token found');
-        setIsAuthenticated(true);
-      } else {
-        console.log('[AuthGuard] Invalid token data, redirecting to login');
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
         router.replace('/login');
       }
-    } catch (e) {
-      console.error('[AuthGuard] Error parsing token:', e);
-      localStorage.removeItem('supabase.auth.token');
-      router.replace('/login');
-    }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   // Show loading state while checking auth
