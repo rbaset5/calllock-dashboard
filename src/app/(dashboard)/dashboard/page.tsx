@@ -1,43 +1,77 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Briefcase, DollarSign, AlertTriangle } from 'lucide-react';
 
-interface UserData {
-  email: string;
-  business_name: string;
-  timezone: string;
+interface DashboardStats {
+  user: {
+    email: string;
+    business_name: string;
+  };
+  stats: {
+    jobsToday: number;
+    weekRevenue: number;
+    needsAction: number;
+  };
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<UserData | null>(null);
+  const [data, setData] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get user from localStorage token
-    const tokenData = localStorage.getItem('supabase.auth.token');
-    if (tokenData) {
+    async function fetchStats() {
       try {
-        const parsed = JSON.parse(tokenData);
-        setUser({
-          email: parsed.user?.email || '',
-          business_name: parsed.user?.user_metadata?.business_name || 'Your Business',
-          timezone: parsed.user?.user_metadata?.timezone || 'America/New_York',
-        });
-      } catch (e) {
-        console.error('Error parsing token:', e);
+        const response = await fetch('/api/dashboard/stats');
+        const result = await response.json();
+
+        if (!response.ok) {
+          setError(result.error || 'Failed to load dashboard');
+          return;
+        }
+
+        setData(result);
+      } catch (err) {
+        setError('Network error. Please try again.');
+      } finally {
+        setLoading(false);
       }
     }
+
+    fetchStats();
   }, []);
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="p-4 lg:p-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-32 bg-gray-200 rounded mb-4"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="h-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-32 bg-gray-200 rounded-lg"></div>
+          </div>
         </div>
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const { user, stats } = data;
 
   return (
     <div className="p-4 lg:p-6">
@@ -47,29 +81,40 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="font-semibold text-gray-900 mb-2">Jobs Today</h3>
-          <p className="text-3xl font-bold text-primary-600">0</p>
-          <p className="text-sm text-gray-500">No jobs scheduled</p>
-        </div>
+        <Link href="/jobs" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
+          <div className="flex items-center gap-3 mb-2">
+            <Briefcase className="w-5 h-5 text-primary-600" />
+            <h3 className="font-semibold text-gray-900">Jobs Today</h3>
+          </div>
+          <p className="text-3xl font-bold text-primary-600">{stats.jobsToday}</p>
+          <p className="text-sm text-gray-500">
+            {stats.jobsToday === 0 ? 'No jobs scheduled' : stats.jobsToday === 1 ? '1 job scheduled' : `${stats.jobsToday} jobs scheduled`}
+          </p>
+        </Link>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="font-semibold text-gray-900 mb-2">This Week</h3>
-          <p className="text-3xl font-bold text-green-600">$0</p>
+        <Link href="/reports" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
+          <div className="flex items-center gap-3 mb-2">
+            <DollarSign className="w-5 h-5 text-green-600" />
+            <h3 className="font-semibold text-gray-900">This Week</h3>
+          </div>
+          <p className="text-3xl font-bold text-green-600">
+            ${stats.weekRevenue.toLocaleString()}
+          </p>
           <p className="text-sm text-gray-500">Revenue</p>
-        </div>
+        </Link>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="font-semibold text-gray-900 mb-2">Needs Action</h3>
-          <p className="text-3xl font-bold text-orange-600">0</p>
-          <p className="text-sm text-gray-500">Jobs requiring attention</p>
-        </div>
-      </div>
-
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-blue-800">
-          <strong>Dashboard is working!</strong> The full dashboard features will load once the database connection is configured.
-        </p>
+        <Link href="/jobs?needs_action=true" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
+          <div className="flex items-center gap-3 mb-2">
+            <AlertTriangle className={`w-5 h-5 ${stats.needsAction > 0 ? 'text-orange-600' : 'text-gray-400'}`} />
+            <h3 className="font-semibold text-gray-900">Needs Action</h3>
+          </div>
+          <p className={`text-3xl font-bold ${stats.needsAction > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+            {stats.needsAction}
+          </p>
+          <p className="text-sm text-gray-500">
+            {stats.needsAction === 0 ? 'All caught up!' : 'Jobs requiring attention'}
+          </p>
+        </Link>
       </div>
     </div>
   );
