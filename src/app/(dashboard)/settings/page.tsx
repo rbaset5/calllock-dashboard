@@ -41,7 +41,7 @@ export default function SettingsPage() {
         .from('users')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .single() as { data: { email: string; phone: string | null; business_name: string; timezone: string } | null };
 
       if (profile) {
         setFormData({
