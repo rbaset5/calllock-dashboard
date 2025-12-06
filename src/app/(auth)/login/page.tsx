@@ -28,21 +28,27 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+      const data = await response.json();
 
-    if (error) {
-      setError(error.message);
+      if (!response.ok) {
+        setError(data.error || 'Login failed');
+        setLoading(false);
+        return;
+      }
+
+      router.push('/jobs');
+      router.refresh();
+    } catch (err) {
+      setError('Network error. Please try again.');
       setLoading(false);
-      return;
     }
-
-    router.push('/dashboard');
-    router.refresh();
   }
 
   return (
