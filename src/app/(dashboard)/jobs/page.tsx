@@ -5,24 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { JobCard } from '@/components/jobs/job-card';
 import { JobFilters } from '@/components/jobs/job-filters';
 import { Briefcase } from 'lucide-react';
-
-interface Job {
-  id: string;
-  user_id: string;
-  customer_name: string;
-  customer_phone: string;
-  service_type: string;
-  service_address: string;
-  scheduled_date: string;
-  scheduled_time: string;
-  status: string;
-  needs_action: boolean;
-  notes?: string;
-  revenue?: number;
-  created_at: string;
-  completed_at?: string;
-  cancelled_at?: string;
-}
+import type { Job } from '@/types/database';
 
 export default function JobsPage() {
   const searchParams = useSearchParams();
