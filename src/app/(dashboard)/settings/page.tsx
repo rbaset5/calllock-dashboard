@@ -37,11 +37,11 @@ export default function SettingsPage() {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('users')
+      const { data: profile } = await (supabase
+        .from('users') as any)
         .select('*')
         .eq('id', user.id)
-        .single() as { data: { email: string; phone: string | null; business_name: string; timezone: string } | null };
+        .single();
 
       if (profile) {
         setFormData({
@@ -75,8 +75,8 @@ export default function SettingsPage() {
 
     if (!user) return;
 
-    const { error } = await supabase
-      .from('users')
+    const { error } = await (supabase
+      .from('users') as any)
       .update({
         phone: formData.phone || null,
         business_name: formData.businessName,
