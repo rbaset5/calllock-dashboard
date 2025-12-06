@@ -14,25 +14,20 @@ export function createClient() {
       get(name: string) {
         if (typeof document === 'undefined') return undefined;
         const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-        const value = match ? decodeURIComponent(match[2]) : undefined;
-        console.log('[Supabase Cookie] GET', name, value ? 'found' : 'not found');
-        return value;
+        return match ? decodeURIComponent(match[2]) : undefined;
       },
       set(name: string, value: string, options?: { path?: string; maxAge?: number; domain?: string; secure?: boolean; sameSite?: string }) {
         if (typeof document === 'undefined') return;
-        console.log('[Supabase Cookie] SET', name, 'options:', options);
         const opts = options || {};
         let cookie = `${name}=${encodeURIComponent(value)}`;
         cookie += `; path=${opts.path || '/'}`;
         cookie += `; max-age=${opts.maxAge || 31536000}`;
         cookie += '; secure';
         cookie += `; samesite=${opts.sameSite || 'lax'}`;
-        console.log('[Supabase Cookie] Setting cookie:', name);
         document.cookie = cookie;
       },
       remove(name: string, options?: { path?: string }) {
         if (typeof document === 'undefined') return;
-        console.log('[Supabase Cookie] REMOVE', name);
         document.cookie = `${name}=; path=${options?.path || '/'}; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=lax`;
       },
     },
