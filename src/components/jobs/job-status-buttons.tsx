@@ -70,8 +70,8 @@ export function JobStatusButtons({ jobId, currentStatus, needsAction }: JobStatu
       updates.cancelled_at = new Date().toISOString();
     }
 
-    const { error } = await supabase
-      .from('jobs')
+    const { error } = await (supabase
+      .from('jobs') as any)
       .update(updates)
       .eq('id', jobId);
 
@@ -90,8 +90,8 @@ export function JobStatusButtons({ jobId, currentStatus, needsAction }: JobStatu
     setLoading('needs_action');
     const supabase = createClient();
 
-    const { error } = await supabase
-      .from('jobs')
+    const { error } = await (supabase
+      .from('jobs') as any)
       .update({ needs_action: !needsAction })
       .eq('id', jobId);
 
