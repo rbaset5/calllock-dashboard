@@ -1,44 +1,91 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Phone, MapPin, Clock, Calendar, DollarSign, FileText } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge, UrgencyBadge, ServiceTypeBadge } from '@/components/ui/badge';
 import { JobStatusButtons } from '@/components/jobs/job-status-buttons';
 import { MapLink } from '@/components/jobs/map-link';
 import { formatDateTime, formatScheduleTime, formatCurrency } from '@/lib/format';
-import { formatPhone, phoneHref, formatServiceType } from '@/lib/utils';
+import { formatPhone, phoneHref } from '@/lib/utils';
+import type { Job } from '@/types/database';
 
-interface JobDetailPageProps {
-  params: Promise<{ id: string }>;
-}
+export default function JobDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
 
-export default async function JobDetailPage({ params }: JobDetailPageProps) {
-  const { id } = await params;
-  const supabase = await createClient();
+  const [job, setJob] = useState<Job | null>(null);
+  const [timezone, setTimezone] = useState('America/New_York');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  useEffect(() => {
+    async function fetchJob() {
+      setLoading(true);
+      setError(null);
 
-  // Get user timezone
-  const { data: profile } = await supabase
-    .from('users')
-    .select('timezone')
-    .eq('id', user.id)
-    .single();
+      try {
+        const response = await fetch(`/api/jobs/${id}`);
+        const data = await response.json();
 
-  const timezone = profile?.timezone || 'America/New_York';
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('not_found');
+          } else {
+            setError(data.error || 'Failed to fetch job');
+          }
+          return;
+        }
 
-  // Get job
-  const { data: job } = await supabase
-    .from('jobs')
-    .select('*')
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .single();
+        setJob(data.job);
+        setTimezone(data.timezone || 'America/New_York');
+      } catch (err) {
+        setError('Network error. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  if (!job) {
+    if (id) {
+      fetchJob();
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="p-4 space-y-4">
+        <div className="animate-pulse">
+          <div className="h-6 w-24 bg-gray-200 rounded mb-4" />
+          <div className="h-8 w-48 bg-gray-200 rounded mb-2" />
+          <div className="h-4 w-32 bg-gray-200 rounded mb-6" />
+          <div className="h-32 bg-gray-200 rounded mb-4" />
+          <div className="h-48 bg-gray-200 rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error === 'not_found' || !job) {
     notFound();
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 space-y-4">
+        <Link
+          href="/jobs"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-5 h-5 mr-1" />
+          Back to Jobs
+        </Link>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      </div>
+    );
   }
 
   return (
