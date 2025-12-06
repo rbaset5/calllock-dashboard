@@ -76,6 +76,6 @@ export const config = {
      * - api/twilio (twilio endpoints - no auth required)
      * - login/signup (auth pages - no auth check needed)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api/webhook|api/twilio|login|signup|forgot-password|reset-password).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api/webhook|api/twilio|login|signup|forgot-password|reset-password|dashboard|jobs|reports|settings).*)',
   ],
 };
