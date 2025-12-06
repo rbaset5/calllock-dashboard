@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Briefcase, DollarSign, AlertTriangle } from 'lucide-react';
+import { Briefcase, DollarSign, AlertTriangle, Calendar } from 'lucide-react';
 
 interface DashboardStats {
   user: {
@@ -13,6 +13,7 @@ interface DashboardStats {
     jobsToday: number;
     weekRevenue: number;
     needsAction: number;
+    upcomingThisWeek: number;
   };
 }
 
@@ -49,7 +50,8 @@ export default function DashboardPage() {
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="h-32 bg-gray-200 rounded-lg"></div>
             <div className="h-32 bg-gray-200 rounded-lg"></div>
             <div className="h-32 bg-gray-200 rounded-lg"></div>
             <div className="h-32 bg-gray-200 rounded-lg"></div>
@@ -80,7 +82,7 @@ export default function DashboardPage() {
         <p className="text-gray-600">Logged in as {user.email}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link href="/jobs" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
           <div className="flex items-center gap-3 mb-2">
             <Briefcase className="w-5 h-5 text-primary-600" />
@@ -89,6 +91,17 @@ export default function DashboardPage() {
           <p className="text-3xl font-bold text-primary-600">{stats.jobsToday}</p>
           <p className="text-sm text-gray-500">
             {stats.jobsToday === 0 ? 'No jobs scheduled' : stats.jobsToday === 1 ? '1 job scheduled' : `${stats.jobsToday} jobs scheduled`}
+          </p>
+        </Link>
+
+        <Link href="/jobs" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
+          <div className="flex items-center gap-3 mb-2">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <h3 className="font-semibold text-gray-900">Upcoming</h3>
+          </div>
+          <p className="text-3xl font-bold text-blue-600">{stats.upcomingThisWeek}</p>
+          <p className="text-sm text-gray-500">
+            {stats.upcomingThisWeek === 0 ? 'No upcoming jobs' : stats.upcomingThisWeek === 1 ? '1 job this week' : `${stats.upcomingThisWeek} jobs this week`}
           </p>
         </Link>
 

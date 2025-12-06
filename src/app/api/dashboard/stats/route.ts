@@ -50,9 +50,12 @@ export async function GET() {
   const todayEnd = new Date(todayStart);
   todayEnd.setHours(23, 59, 59, 999);
 
-  // Get week start (Sunday)
+  // Get week start (Sunday) and end (Saturday)
   const weekStart = new Date(todayStart);
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
 
   // Count jobs scheduled for today
   const { count: jobsToday } = await adminClient
@@ -81,6 +84,15 @@ export async function GET() {
     .eq('needs_action', true)
     .not('status', 'in', '("complete","cancelled")');
 
+  // Count upcoming jobs this week (from now until end of week, not complete/cancelled)
+  const { count: upcomingThisWeek } = await adminClient
+    .from('jobs')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .gte('scheduled_at', now.toISOString())
+    .lte('scheduled_at', weekEnd.toISOString())
+    .not('status', 'in', '("complete","cancelled")');
+
   return NextResponse.json({
     user: {
       email: profile?.email || user.email,
@@ -90,6 +102,7 @@ export async function GET() {
       jobsToday: jobsToday || 0,
       weekRevenue,
       needsAction: needsAction || 0,
+      upcomingThisWeek: upcomingThisWeek || 0,
     },
   });
 }
