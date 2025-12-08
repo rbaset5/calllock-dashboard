@@ -47,17 +47,50 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient();
 
     // Find user by email
-    const { data: user, error: userError } = await supabase
+    let { data: user, error: userError } = await supabase
       .from('users')
       .select('id, phone, timezone')
       .eq('email', body.user_email)
       .single();
 
+    // If user not found, try to find them in Supabase Auth and create a profile
     if (userError || !user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      console.log(`User not found by email: ${body.user_email}, attempting to find in auth...`);
+
+      // Look up user in Supabase Auth by email
+      const { data: authData } = await supabase.auth.admin.listUsers();
+      const authUser = authData?.users?.find(u => u.email === body.user_email);
+
+      if (authUser) {
+        // Create user profile
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: authUser.id,
+            email: body.user_email,
+            business_name: 'My Business',
+            timezone: 'America/New_York',
+          })
+          .select('id, phone, timezone')
+          .single();
+
+        if (createError) {
+          console.error('Error creating user profile:', createError);
+          return NextResponse.json(
+            { error: 'Failed to create user profile' },
+            { status: 500 }
+          );
+        }
+
+        user = newUser;
+        console.log(`Created user profile for: ${body.user_email}`);
+      } else {
+        console.error(`User not found in auth: ${body.user_email}`);
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
     }
 
     // Create the job
