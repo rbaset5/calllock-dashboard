@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, MapPin, Clock } from 'lucide-react';
+import { Calendar, MapPin, Clock, DollarSign } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { StatusBadge, UrgencyBadge, ServiceTypeBadge } from '@/components/ui/badge';
 import { formatTime, formatScheduleTime } from '@/lib/format';
@@ -50,6 +50,12 @@ export function TodayJobs({ jobs, timezone }: TodayJobsProps) {
                         <span className="font-medium text-gray-900 truncate">
                           {job.customer_name}
                         </span>
+                        {job.estimated_value && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <DollarSign className="w-3 h-3" />
+                            {job.estimated_value.toLocaleString()}
+                          </span>
+                        )}
                         <ServiceTypeBadge type={job.service_type} />
                         {job.urgency === 'emergency' && <UrgencyBadge urgency={job.urgency} />}
                       </div>

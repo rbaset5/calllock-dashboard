@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin, Clock, AlertTriangle, Phone } from 'lucide-react';
+import { MapPin, Clock, AlertTriangle, Phone, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge, UrgencyBadge, ServiceTypeBadge } from '@/components/ui/badge';
 import { formatScheduleTime } from '@/lib/format';
@@ -25,6 +25,12 @@ export function JobCard({ job, timezone }: JobCardProps) {
                 <span className="font-semibold text-gray-900 truncate">
                   {job.customer_name}
                 </span>
+                {job.estimated_value && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <DollarSign className="w-3 h-3" />
+                    {job.estimated_value.toLocaleString()}
+                  </span>
+                )}
                 {job.needs_action && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
                     <AlertTriangle className="w-3 h-3" />

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { sendSMS, smsTemplates, formatServiceTypeForSms } from '@/lib/twilio';
-import { formatScheduleTime } from '@/lib/format';
+import { formatServiceTypeForSms } from '@/lib/twilio';
+import {
+  sendOperatorNotification,
+  determineEventType,
+  checkScheduleConflicts,
+  NotificationEventType,
+} from '@/lib/notification-service';
 
 // Request body type
 interface IncomingJob {
@@ -14,6 +19,14 @@ interface IncomingJob {
   scheduled_at?: string; // ISO 8601
   call_transcript?: string;
   user_email: string; // To find the user
+  // Revenue estimation fields (from CallLock server)
+  estimated_value?: number;
+  estimated_revenue_low?: number;
+  estimated_revenue_high?: number;
+  estimated_revenue_display?: string;
+  revenue_confidence?: 'low' | 'medium' | 'high';
+  revenue_factors?: string[];
+  potential_replacement?: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -93,6 +106,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check for schedule conflicts before creating the job
+    let hasConflict = false;
+    let conflictingJob: { customer_name: string; scheduled_at: string } | undefined;
+
+    if (body.scheduled_at) {
+      const conflictCheck = await checkScheduleConflicts(user.id, body.scheduled_at);
+      hasConflict = conflictCheck.hasConflict;
+      conflictingJob = conflictCheck.conflictingJob;
+    }
+
     // Create the job
     const { data: job, error: jobError } = await supabase
       .from('jobs')
@@ -106,8 +129,10 @@ export async function POST(request: NextRequest) {
         ai_summary: body.ai_summary || null,
         scheduled_at: body.scheduled_at || null,
         call_transcript: body.call_transcript || null,
+        estimated_value: body.estimated_value || null,
         status: 'new',
-        needs_action: false,
+        needs_action: hasConflict, // Flag for review if there's a conflict
+        is_ai_booked: true,
       })
       .select()
       .single();
@@ -120,41 +145,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send SMS alert to owner
+    // Send notification using the new notification service
+    let notificationResult = null;
     if (user.phone) {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://your-app.com';
-      const jobUrl = `${appUrl}/jobs/${job.id}`;
-      const scheduledTime = job.scheduled_at
-        ? formatScheduleTime(job.scheduled_at, user.timezone)
-        : 'TBD';
-
-      const smsBody = smsTemplates.newJob(
-        formatServiceTypeForSms(job.service_type),
-        job.customer_name,
-        scheduledTime,
-        jobUrl
+      // Determine the event type based on scheduling
+      const eventType: NotificationEventType = determineEventType(
+        body.scheduled_at,
+        user.timezone,
+        hasConflict
       );
 
-      const smsSid = await sendSMS(user.phone, smsBody);
+      // Build notification data
+      const notificationData = {
+        customerName: job.customer_name,
+        customerPhone: job.customer_phone,
+        scheduledAt: job.scheduled_at,
+        serviceType: formatServiceTypeForSms(job.service_type),
+        address: job.customer_address,
+        conflictingJobName: conflictingJob?.customer_name,
+        conflictingJobTime: conflictingJob?.scheduled_at,
+      };
 
-      // Log the SMS
-      if (smsSid) {
-        await supabase.from('sms_log').insert({
-          job_id: job.id,
-          user_id: user.id,
-          direction: 'outbound',
-          to_phone: user.phone,
-          from_phone: process.env.TWILIO_PHONE_NUMBER!,
-          body: smsBody,
-          twilio_sid: smsSid,
-          status: 'sent',
-        });
-      }
+      // Send or queue notification
+      notificationResult = await sendOperatorNotification(
+        user.id,
+        job.id,
+        eventType,
+        notificationData,
+        user.phone,
+        user.timezone
+      );
+
+      console.log(`Notification result for job ${job.id}:`, notificationResult);
     }
 
     return NextResponse.json({
       success: true,
       job_id: job.id,
+      notification: notificationResult,
+      conflict_detected: hasConflict,
     });
   } catch (error) {
     console.error('Webhook error:', error);
