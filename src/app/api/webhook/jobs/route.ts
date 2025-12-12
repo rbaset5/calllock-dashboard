@@ -7,6 +7,33 @@ import {
   checkScheduleConflicts,
   NotificationEventType,
 } from '@/lib/notification-service';
+import { findOrCreateCustomer } from '@/lib/customers';
+
+// EndCallReason from server - determines if this should be a Lead vs Job
+type EndCallReason =
+  | 'wrong_number'
+  | 'callback_later'
+  | 'safety_emergency'
+  | 'urgent_escalation'
+  | 'out_of_area'
+  | 'waitlist_added'
+  | 'completed'
+  | 'customer_hangup'
+  | 'sales_lead'
+  | 'cancelled'
+  | 'rescheduled';
+
+// Lead status mapping from EndCallReason
+type LeadStatus =
+  | 'callback_requested'
+  | 'thinking'
+  | 'voicemail_left'
+  | 'info_only'
+  | 'deferred'
+  | 'converted'
+  | 'lost'
+  | 'abandoned'
+  | 'sales_opportunity';
 
 // Request body type
 interface IncomingJob {
@@ -27,6 +54,67 @@ interface IncomingJob {
   revenue_confidence?: 'low' | 'medium' | 'high';
   revenue_factors?: string[];
   potential_replacement?: boolean;
+  // Call outcome for Lead creation (when no booking)
+  end_call_reason?: EndCallReason;
+  issue_description?: string;
+  // Sales lead specific fields
+  equipment_type?: string;
+  equipment_age?: string;
+  sales_lead_notes?: string;
+}
+
+/**
+ * Map EndCallReason to LeadStatus
+ * Determines what type of lead to create based on how the call ended
+ */
+function mapEndCallReasonToLeadStatus(reason?: EndCallReason): LeadStatus | null {
+  if (!reason) return null;
+
+  switch (reason) {
+    case 'customer_hangup':
+      return 'abandoned'; // Customer hung up - needs immediate callback
+    case 'callback_later':
+      return 'callback_requested'; // Customer wants callback
+    case 'sales_lead':
+      return 'sales_opportunity'; // Sales/replacement inquiry - high priority
+    case 'out_of_area':
+      return 'lost'; // Out of service area - mark as lost
+    case 'wrong_number':
+      return null; // Don't create a lead for wrong numbers
+    case 'completed':
+      return null; // Completed calls become Jobs, not Leads
+    case 'safety_emergency':
+    case 'urgent_escalation':
+      return null; // These should still be Jobs (even without scheduled_at)
+    case 'waitlist_added':
+      return 'deferred'; // On waitlist - check back later
+    case 'cancelled':
+    case 'rescheduled':
+      return null; // These are appointment changes, not new leads
+    default:
+      return 'info_only'; // Default to info_only for unknown reasons
+  }
+}
+
+/**
+ * Map LeadStatus to LeadPriority
+ */
+function mapLeadStatusToPriority(status: LeadStatus): 'hot' | 'warm' | 'cold' {
+  switch (status) {
+    case 'abandoned':
+    case 'callback_requested':
+    case 'sales_opportunity':
+      return 'hot'; // Needs immediate attention - sales leads are high priority
+    case 'thinking':
+    case 'voicemail_left':
+      return 'warm'; // Follow up soon
+    case 'info_only':
+    case 'deferred':
+    case 'lost':
+    case 'converted':
+    default:
+      return 'cold';
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -106,6 +194,72 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Determine if this should be a Lead instead of a Job
+    // Create Lead if: no scheduled_at AND end_call_reason maps to a lead status
+    const leadStatus = mapEndCallReasonToLeadStatus(body.end_call_reason);
+    const shouldCreateLead = !body.scheduled_at && leadStatus !== null;
+
+    if (shouldCreateLead) {
+      // Create a Lead for non-booking calls
+      const priority = mapLeadStatusToPriority(leadStatus);
+
+      const { data: lead, error: leadError } = await supabase
+        .from('leads')
+        .insert({
+          user_id: user.id,
+          customer_name: body.customer_name,
+          customer_phone: body.customer_phone,
+          customer_address: body.customer_address,
+          status: leadStatus,
+          priority,
+          why_not_booked: body.ai_summary || null,
+          issue_description: body.issue_description || body.ai_summary || null,
+          service_type: body.service_type,
+          urgency: body.urgency,
+          estimated_value: body.estimated_value || null,
+          call_transcript: body.call_transcript || null,
+          ai_summary: body.ai_summary || null,
+        })
+        .select()
+        .single();
+
+      if (leadError || !lead) {
+        console.error('Error creating lead:', leadError);
+        return NextResponse.json(
+          { error: 'Failed to create lead' },
+          { status: 500 }
+        );
+      }
+
+      // Send notification for abandoned calls (hot leads)
+      let notificationResult = null;
+      if (user.phone && leadStatus === 'abandoned') {
+        // Send abandoned_call notification
+        notificationResult = await sendOperatorNotification(
+          user.id,
+          lead.id,
+          'abandoned_call' as NotificationEventType,
+          {
+            customerName: lead.customer_name,
+            customerPhone: lead.customer_phone,
+            address: lead.customer_address,
+          },
+          user.phone,
+          user.timezone
+        );
+        console.log(`Notification result for abandoned lead ${lead.id}:`, notificationResult);
+      }
+
+      return NextResponse.json({
+        success: true,
+        lead_id: lead.id,
+        type: 'lead',
+        status: leadStatus,
+        notification: notificationResult,
+      });
+    }
+
+    // Create a Job for booking calls
     // Check for schedule conflicts before creating the job
     let hasConflict = false;
     let conflictingJob: { customer_name: string; scheduled_at: string } | undefined;
@@ -116,11 +270,19 @@ export async function POST(request: NextRequest) {
       conflictingJob = conflictCheck.conflictingJob;
     }
 
+    // Find or create customer record
+    const customerId = await findOrCreateCustomer(supabase, user.id, {
+      name: body.customer_name,
+      phone: body.customer_phone,
+      address: body.customer_address,
+    });
+
     // Create the job
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .insert({
         user_id: user.id,
+        customer_id: customerId,
         customer_name: body.customer_name,
         customer_phone: body.customer_phone,
         customer_address: body.customer_address,
@@ -182,6 +344,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       job_id: job.id,
+      type: 'job',
       notification: notificationResult,
       conflict_detected: hasConflict,
     });
