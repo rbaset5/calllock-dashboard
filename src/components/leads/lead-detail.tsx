@@ -14,6 +14,7 @@ import {
   getRevenueTierInfo,
 } from '@/components/ui/badge';
 import { DiagnosticContext } from '@/components/ui/diagnostic-context';
+import { OperatorNotes } from '@/components/ui/operator-notes';
 import {
   Collapsible,
   CollapsibleContent,
@@ -258,6 +259,13 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
           </CardContent>
         </Card>
       )}
+
+      {/* Operator Notes */}
+      <OperatorNotes
+        customerPhone={lead.customer_phone}
+        customerName={lead.customer_name}
+        leadId={lead.id}
+      />
 
       {/* Call Transcript (Collapsible) */}
       {lead.call_transcript && (

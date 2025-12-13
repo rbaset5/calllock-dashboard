@@ -211,6 +211,25 @@ export interface SmsLog {
   delivery_status_updated_at: string | null;
 }
 
+// Operator notes about customers (synced from backend or created in dashboard)
+export interface OperatorNote {
+  id: string;
+  user_id: string;
+  customer_phone: string;
+  customer_name: string | null;
+  note_text: string;
+  created_by: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+  job_id: string | null;
+  lead_id: string | null;
+  customer_id: string | null;
+  synced_from_backend: boolean;
+  backend_note_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Database schema type for Supabase client
 export interface Database {
   public: {
@@ -269,6 +288,16 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Omit<AIBookingReview, 'id' | 'user_id' | 'job_id'>>;
+      };
+      operator_notes: {
+        Row: OperatorNote;
+        Insert: Omit<OperatorNote, 'id' | 'created_at' | 'updated_at' | 'synced_from_backend'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          synced_from_backend?: boolean;
+        };
+        Update: Partial<Omit<OperatorNote, 'id' | 'user_id'>>;
       };
     };
     Views: {

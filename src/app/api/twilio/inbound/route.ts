@@ -57,20 +57,23 @@ async function updateAlertContextStatus(
 }
 
 /**
- * Helper to add note to a lead
+ * Helper to add note to a lead (both leads.notes array and operator_notes table)
  */
 async function addNoteToLead(
   supabase: ReturnType<typeof createAdminClient>,
   leadId: string,
   noteText: string,
-  from: string
+  from: string,
+  userId?: string
 ): Promise<void> {
+  // Get lead info for notes and customer phone
   const { data: lead } = await supabase
     .from('leads')
-    .select('notes')
+    .select('notes, customer_phone, customer_name, user_id')
     .eq('id', leadId)
     .single();
 
+  // Add to leads.notes array (legacy behavior)
   const existingNotes = (lead?.notes as Array<{text: string; source: string; created_at: string}>) || [];
   const newNote = {
     text: noteText,
@@ -86,6 +89,22 @@ async function addNoteToLead(
       updated_at: new Date().toISOString()
     })
     .eq('id', leadId);
+
+  // Also add to operator_notes table for unified note display
+  if (lead?.customer_phone && (userId || lead?.user_id)) {
+    await supabase
+      .from('operator_notes')
+      .insert({
+        user_id: userId || lead.user_id,
+        customer_phone: lead.customer_phone,
+        customer_name: lead.customer_name || null,
+        note_text: noteText,
+        created_by: `SMS from ${from}`,
+        is_active: true,
+        lead_id: leadId,
+        synced_from_backend: true,
+      });
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -190,7 +209,7 @@ export async function POST(request: NextRequest) {
           .eq('id', leadContext.leadId);
 
         // Add auto-note
-        await addNoteToLead(supabase, leadContext.leadId, 'Contacted via phone', from);
+        await addNoteToLead(supabase, leadContext.leadId, 'Contacted via phone', from, userId);
 
         // Update alert context status
         await updateAlertContextStatus(supabase, from, '1');
@@ -227,7 +246,7 @@ export async function POST(request: NextRequest) {
           .eq('id', leadContext.leadId);
 
         // Add auto-note
-        await addNoteToLead(supabase, leadContext.leadId, 'Left voicemail', from);
+        await addNoteToLead(supabase, leadContext.leadId, 'Left voicemail', from, userId);
 
         // Update alert context status
         await updateAlertContextStatus(supabase, from, '2');
@@ -266,7 +285,7 @@ export async function POST(request: NextRequest) {
       const leadContext = await getLeadContext(from);
 
       if (leadContext) {
-        await addNoteToLead(supabase, leadContext.leadId, noteText, from);
+        await addNoteToLead(supabase, leadContext.leadId, noteText, from, userId);
 
         // Update alert context status
         await updateAlertContextStatus(supabase, from, '3');
@@ -303,7 +322,7 @@ export async function POST(request: NextRequest) {
           .eq('id', leadContext.leadId);
 
         // Add auto-note
-        await addNoteToLead(supabase, leadContext.leadId, 'Scheduled appointment', from);
+        await addNoteToLead(supabase, leadContext.leadId, 'Scheduled appointment', from, userId);
 
         // Update alert context status
         await updateAlertContextStatus(supabase, from, '4');
@@ -344,7 +363,7 @@ export async function POST(request: NextRequest) {
           .eq('id', leadContext.leadId);
 
         // Add auto-note
-        await addNoteToLead(supabase, leadContext.leadId, 'Customer not interested', from);
+        await addNoteToLead(supabase, leadContext.leadId, 'Customer not interested', from, userId);
 
         // Update alert context status
         await updateAlertContextStatus(supabase, from, '5');
@@ -673,28 +692,8 @@ export async function POST(request: NextRequest) {
       const context = await getAlertContext(from);
 
       if (context?.leadId) {
-        // Get existing notes
-        const { data: lead } = await supabase
-          .from('leads')
-          .select('notes')
-          .eq('id', context.leadId)
-          .single();
-
-        const existingNotes = (lead?.notes as Array<{text: string; source: string; created_at: string}>) || [];
-        const newNote = {
-          text: noteText,
-          source: 'sms',
-          created_by: from,
-          created_at: new Date().toISOString(),
-        };
-
-        await supabase
-          .from('leads')
-          .update({
-            notes: [...existingNotes, newNote],
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', context.leadId);
+        // Use helper to add note to both leads.notes and operator_notes
+        await addNoteToLead(supabase, context.leadId, noteText, from, userId);
 
         const confirmMsg = `✓ Note added to ${context.customerName || 'lead'}`;
         await sendSMS(from, confirmMsg);
@@ -742,29 +741,11 @@ export async function POST(request: NextRequest) {
     // ============================================
     const context = await getAlertContext(from);
     if (context?.leadId && body.length > 3 && !['OK', 'Y', 'YES', 'CONFIRM', 'CALL', 'PHONE', 'NUMBER'].includes(body)) {
-      // Treat as a note
-      const { data: lead } = await supabase
-        .from('leads')
-        .select('notes')
-        .eq('id', context.leadId)
-        .single();
-
-      const existingNotes = (lead?.notes as Array<{text: string; source: string; created_at: string}>) || [];
+      // Treat as a note - use helper to add to both leads.notes and operator_notes
       const originalBodyFull = (await request.clone().formData()).get('Body') as string;
-      const newNote = {
-        text: originalBodyFull?.trim() || body,
-        source: 'sms',
-        created_by: from,
-        created_at: new Date().toISOString(),
-      };
+      const noteText = originalBodyFull?.trim() || body;
 
-      await supabase
-        .from('leads')
-        .update({
-          notes: [...existingNotes, newNote],
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', context.leadId);
+      await addNoteToLead(supabase, context.leadId, noteText, from, userId);
 
       const confirmMsg = `✓ Note added to ${context.customerName || 'lead'}`;
       await sendSMS(from, confirmMsg);

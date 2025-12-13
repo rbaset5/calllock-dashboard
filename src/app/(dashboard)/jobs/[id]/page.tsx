@@ -14,6 +14,7 @@ import { RescheduleModal } from '@/components/jobs/reschedule-modal';
 import { CancelModal } from '@/components/jobs/cancel-modal';
 import { EditJobModal } from '@/components/jobs/edit-job-modal';
 import { SmsHistory } from '@/components/ui/sms-history';
+import { OperatorNotes } from '@/components/ui/operator-notes';
 import { formatDateTime, formatScheduleTime, formatCurrency } from '@/lib/format';
 import { formatPhone, phoneHref } from '@/lib/utils';
 import type { Job } from '@/types/database';
@@ -329,6 +330,13 @@ export default function JobDetailPage() {
 
       {/* SMS Activity */}
       <SmsHistory jobId={job.id} />
+
+      {/* Operator Notes */}
+      <OperatorNotes
+        customerPhone={job.customer_phone}
+        customerName={job.customer_name}
+        jobId={job.id}
+      />
 
       {/* Call Transcript */}
       {job.call_transcript && (
