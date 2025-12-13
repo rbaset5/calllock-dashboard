@@ -3,7 +3,7 @@
 import { Lead } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { RevenueTierBadge } from '@/components/ui/revenue-tier-badge';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LeadCardProps {
@@ -62,11 +62,18 @@ export function LeadCard({ lead, onMenuClick, onClick }: LeadCardProps) {
       onClick={onClick}
     >
       <CardContent className="p-4">
-        {/* Header: Service Type + Menu */}
+        {/* Header: Service Type + Call Indicator + Menu */}
         <div className="flex items-start justify-between mb-1">
-          <h3 className="font-semibold text-gray-900">
-            {formatServiceType(lead.service_type)}
-          </h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="font-semibold text-gray-900">
+              {formatServiceType(lead.service_type)}
+            </h3>
+            {lead.original_call_id && (
+              <span title="From voice call">
+                <Phone className="w-3.5 h-3.5 text-blue-500" />
+              </span>
+            )}
+          </div>
           {onMenuClick && (
             <button
               onClick={(e) => {

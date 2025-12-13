@@ -5,6 +5,7 @@ import { DayScheduleResponse } from '@/app/api/schedule/day/[date]/route';
 import { ScheduleCalendar } from '@/components/ui/schedule-calendar';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { RevenueTierBadge } from '@/components/ui/revenue-tier-badge';
 import { PlusIcon, Phone, MapPin, Clock } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
@@ -170,11 +171,18 @@ export default function SchedulePage() {
                         )}
                       </div>
                     </div>
-                    {job.estimated_value && (
+                    {job.revenue_tier_label ? (
+                      <RevenueTierBadge
+                        tier={job.revenue_tier}
+                        label={job.revenue_tier_label}
+                        signals={job.revenue_tier_signals}
+                        showTooltip
+                      />
+                    ) : job.estimated_value ? (
                       <div className="text-sm font-semibold text-foreground">
                         ${job.estimated_value.toLocaleString()}
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </button>
               ))

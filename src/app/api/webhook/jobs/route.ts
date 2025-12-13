@@ -74,6 +74,8 @@ interface IncomingJob {
   problem_onset?: string;
   problem_pattern?: string;
   customer_attempted_fixes?: string;
+  // Call tracking - links to original call record
+  call_id?: string;
 }
 
 /**
@@ -249,6 +251,8 @@ export async function POST(request: NextRequest) {
           sales_lead_notes: body.sales_lead_notes || null,
           equipment_type: body.equipment_type || null,
           equipment_age: body.equipment_age || null,
+          // Call tracking - links lead to original call record
+          original_call_id: body.call_id || null,
         })
         .select()
         .single();

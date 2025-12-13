@@ -184,6 +184,16 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
               {lead.distance_miles.toFixed(1)} miles away
             </p>
           )}
+
+          {/* Original Call Link */}
+          {lead.original_call_id && (
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+              <Phone className="w-4 h-4 text-blue-500" />
+              <span className="text-sm text-gray-600">
+                From voice call on {new Date(lead.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
