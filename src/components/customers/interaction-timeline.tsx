@@ -77,6 +77,7 @@ function getLeadStatusLabel(status: Lead['status']): string {
     converted: 'Converted to Job',
     lost: 'Lost',
     abandoned: 'Missed Call',
+    sales_opportunity: 'Sales Opportunity',
   };
   return labels[status] || status;
 }

@@ -12,7 +12,7 @@ export type RevenueTierLabel = '$$$$' | '$$$' | '$$' | '$' | '$$?';
 export type RevenueConfidence = 'low' | 'medium' | 'high';
 
 // New types for mobile-first IA
-export type LeadStatus = 'callback_requested' | 'thinking' | 'voicemail_left' | 'info_only' | 'deferred' | 'converted' | 'lost' | 'abandoned';
+export type LeadStatus = 'callback_requested' | 'thinking' | 'voicemail_left' | 'info_only' | 'deferred' | 'converted' | 'lost' | 'abandoned' | 'sales_opportunity';
 export type LeadPriority = 'hot' | 'warm' | 'cold';
 export type BookingReviewStatus = 'pending' | 'confirmed' | 'adjusted' | 'cancelled';
 
@@ -144,6 +144,8 @@ export interface Lead {
   sales_lead_notes: string | null;
   equipment_type: string | null;
   equipment_age: string | null;
+  // Original call outcome (preserves granularity from backend)
+  end_call_reason: EndCallReason | null;
 }
 
 export interface AIBookingReview {
@@ -224,6 +226,9 @@ export type CallOutcome =
   | 'sales_lead'
   | 'cancelled'
   | 'rescheduled';
+
+// Alias for clarity - EndCallReason is the backend term
+export type EndCallReason = CallOutcome;
 
 // Callback status for emergency alerts
 export type CallbackStatus = 'pending' | 'delivered' | 'expired' | 'no_answer';

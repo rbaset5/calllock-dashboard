@@ -253,6 +253,8 @@ export async function POST(request: NextRequest) {
           equipment_age: body.equipment_age || null,
           // Call tracking - links lead to original call record
           original_call_id: body.call_id || null,
+          // Preserve original end call reason for granular status display
+          end_call_reason: body.end_call_reason || null,
         })
         .select()
         .single();

@@ -3,6 +3,7 @@
 import { Lead } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { RevenueTierBadge } from '@/components/ui/revenue-tier-badge';
+import { EndCallReasonBadge } from '@/components/ui/end-call-reason-badge';
 import { MoreHorizontal, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -88,9 +89,20 @@ export function LeadCard({ lead, onMenuClick, onClick }: LeadCardProps) {
         </div>
 
         {/* Address */}
-        <p className="text-sm text-gray-500 mb-3">
+        <p className="text-sm text-gray-500 mb-2">
           {getStreetAddress(lead.customer_address)}
         </p>
+
+        {/* End call reason context (e.g., "Out of Area" for lost leads) */}
+        {lead.end_call_reason && (
+          <div className="mb-2">
+            <EndCallReasonBadge
+              reason={lead.end_call_reason}
+              status={lead.status}
+              size="sm"
+            />
+          </div>
+        )}
 
         {/* Customer Row: Avatar + Name + Value */}
         <div className="flex items-center justify-between">

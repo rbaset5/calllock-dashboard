@@ -13,6 +13,7 @@ import {
   ConfidenceIndicator,
   getRevenueTierInfo,
 } from '@/components/ui/badge';
+import { EndCallReasonBadge, getEndCallReasonInfo } from '@/components/ui/end-call-reason-badge';
 import { DiagnosticContext } from '@/components/ui/diagnostic-context';
 import { OperatorNotes } from '@/components/ui/operator-notes';
 import {
@@ -80,6 +81,7 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
       <div className="flex flex-wrap gap-2">
         <LeadPriorityBadge priority={lead.priority} />
         <LeadStatusBadge status={lead.status} />
+        <EndCallReasonBadge reason={lead.end_call_reason} status={lead.status} />
         <RevenueTierBadge tier={revenueTier} />
       </div>
 
@@ -215,6 +217,20 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
                   <div>
                     <p className="text-sm font-medium text-amber-800">Why not booked</p>
                     <p className="text-sm text-amber-700 mt-0.5">{lead.why_not_booked}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Call Outcome Context - shows original reason if it adds info */}
+            {lead.end_call_reason && getEndCallReasonInfo(lead.end_call_reason) && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Call Outcome</p>
+                    <p className="text-sm text-gray-600 mt-0.5">
+                      {getEndCallReasonInfo(lead.end_call_reason)?.description}
+                    </p>
                   </div>
                 </div>
               </div>
