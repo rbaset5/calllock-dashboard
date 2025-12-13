@@ -211,6 +211,75 @@ export interface SmsLog {
   delivery_status_updated_at: string | null;
 }
 
+// Call outcome types (matches backend EndCallReason)
+export type CallOutcome =
+  | 'completed'
+  | 'wrong_number'
+  | 'callback_later'
+  | 'safety_emergency'
+  | 'urgent_escalation'
+  | 'out_of_area'
+  | 'waitlist_added'
+  | 'customer_hangup'
+  | 'sales_lead'
+  | 'cancelled'
+  | 'rescheduled';
+
+// Callback status for emergency alerts
+export type CallbackStatus = 'pending' | 'delivered' | 'expired' | 'no_answer';
+
+// Call record (synced from backend)
+export interface Call {
+  id: string;
+  user_id: string;
+  call_id: string;
+  retell_call_id: string | null;
+  phone_number: string;
+  customer_name: string | null;
+  started_at: string;
+  ended_at: string | null;
+  duration_seconds: number | null;
+  direction: 'inbound' | 'outbound';
+  outcome: CallOutcome | null;
+  hvac_issue_type: string | null;
+  urgency_tier: UrgencyLevel | null;
+  problem_description: string | null;
+  revenue_tier_label: string | null;
+  revenue_tier_signals: string[] | null;
+  job_id: string | null;
+  lead_id: string | null;
+  synced_from_backend: boolean;
+  backend_call_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Emergency alert record (Tier 2 urgent alerts synced from backend)
+export interface EmergencyAlert {
+  id: string;
+  user_id: string;
+  alert_id: string | null;
+  call_id: string | null;
+  phone_number: string;
+  customer_name: string | null;
+  customer_address: string | null;
+  urgency_tier: string;
+  problem_description: string;
+  sms_sent_at: string;
+  sms_message_sid: string | null;
+  callback_promised_by: string;
+  callback_delivered_at: string | null;
+  callback_status: CallbackStatus;
+  resolved_at: string | null;
+  resolution_notes: string | null;
+  converted_to_job_id: string | null;
+  converted_to_lead_id: string | null;
+  synced_from_backend: boolean;
+  backend_alert_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Operator notes about customers (synced from backend or created in dashboard)
 export interface OperatorNote {
   id: string;
@@ -298,6 +367,27 @@ export interface Database {
           synced_from_backend?: boolean;
         };
         Update: Partial<Omit<OperatorNote, 'id' | 'user_id'>>;
+      };
+      calls: {
+        Row: Call;
+        Insert: Omit<Call, 'id' | 'created_at' | 'updated_at' | 'synced_from_backend'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          synced_from_backend?: boolean;
+        };
+        Update: Partial<Omit<Call, 'id' | 'user_id'>>;
+      };
+      emergency_alerts: {
+        Row: EmergencyAlert;
+        Insert: Omit<EmergencyAlert, 'id' | 'created_at' | 'updated_at' | 'synced_from_backend' | 'callback_status'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          synced_from_backend?: boolean;
+          callback_status?: CallbackStatus;
+        };
+        Update: Partial<Omit<EmergencyAlert, 'id' | 'user_id'>>;
       };
     };
     Views: {

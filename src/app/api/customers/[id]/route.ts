@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { Customer, Job, Lead, SmsLog, CustomerEquipment } from '@/types/database';
+import { Customer, Job, Lead, SmsLog, CustomerEquipment, Call } from '@/types/database';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -14,6 +14,7 @@ export interface CustomerDetailResponse {
   leads: Lead[];           // Calls that didn't become jobs (callbacks, abandoned, etc.)
   upcomingJobs: Job[];     // Scheduled appointments (scheduled_at > now)
   recentSms: SmsLog[];     // Recent SMS messages
+  calls: Call[];           // Call history from backend (voice calls synced via webhook)
 }
 
 interface UpdateCustomerBody {
@@ -116,12 +117,22 @@ export async function GET(
       .order('created_at', { ascending: false })
       .limit(10);
 
+    // Get call history (synced from backend via webhook)
+    const { data: calls } = await adminClient
+      .from('calls')
+      .select('*')
+      .eq('user_id', user.id)
+      .or(`phone_number.ilike.%${normalizedPhone}%,phone_number.ilike.%${customer.phone}%`)
+      .order('started_at', { ascending: false })
+      .limit(20);
+
     const response: CustomerDetailResponse = {
       customer,
       serviceHistory: history,
       leads: leads || [],
       upcomingJobs: upcomingJobs || [],
       recentSms: recentSms || [],
+      calls: calls || [],
     };
 
     return NextResponse.json(response);

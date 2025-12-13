@@ -116,12 +116,13 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         onEdit={() => setShowEditModal(true)}
       />
 
-      {/* Interaction Timeline (jobs + leads + SMS) */}
+      {/* Interaction Timeline (jobs + leads + calls + SMS) */}
       <div className="mt-4">
         <InteractionTimeline
           jobs={data.serviceHistory}
           leads={data.leads || []}
           smsLogs={data.recentSms || []}
+          calls={data.calls || []}
           timezone={timezone}
         />
       </div>

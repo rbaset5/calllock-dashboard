@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { AlertsList } from '@/components/alerts';
+import { AlertsList, EmergencyAlertsTracker } from '@/components/alerts';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Bell, CheckCircle } from 'lucide-react';
+import { RefreshCw, Bell, CheckCircle, AlertTriangle, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AlertsResponse, AlertWithDetails } from '@/app/api/alerts/route';
 import type { AlertStatus, AlertType } from '@/types/database';
@@ -11,6 +11,7 @@ import type { AlertStatus, AlertType } from '@/types/database';
 // Filter type for status
 type StatusFilter = 'all' | AlertStatus;
 type TypeFilter = 'all' | AlertType;
+type TabType = 'sms' | 'emergency';
 
 const statusFilters: { label: string; type: StatusFilter }[] = [
   { label: 'All', type: 'all' },
@@ -32,6 +33,7 @@ export default function AlertsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [activeTab, setActiveTab] = useState<TabType>('sms');
 
   const fetchData = useCallback(async (showRefresh = false) => {
     try {
@@ -56,10 +58,12 @@ export default function AlertsPage() {
   }, [statusFilter, typeFilter]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (activeTab === 'sms') {
+      fetchData();
+    }
+  }, [fetchData, activeTab]);
 
-  if (loading) {
+  if (loading && activeTab === 'sms') {
     return (
       <div className="p-4 lg:p-6">
         <div className="animate-pulse space-y-4">
@@ -72,10 +76,8 @@ export default function AlertsPage() {
     );
   }
 
-  if (!data) return null;
-
-  const hasAlerts = data.alerts.length > 0;
-  const pendingCount = data.counts.pending;
+  const hasAlerts = (data?.alerts?.length ?? 0) > 0;
+  const pendingCount = data?.counts?.pending ?? 0;
 
   return (
     <div className="p-4 lg:p-6 space-y-4 max-w-2xl mx-auto">
@@ -84,102 +86,142 @@ export default function AlertsPage() {
         <div>
           <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
             <Bell className="w-5 h-5" />
-            SMS Alerts
+            Alerts
           </h1>
           <p className="text-sm text-gray-500">
-            {pendingCount > 0
-              ? `${pendingCount} alert${pendingCount !== 1 ? 's' : ''} pending response`
-              : 'All alerts handled'}
+            {activeTab === 'sms'
+              ? pendingCount > 0
+                ? `${pendingCount} alert${pendingCount !== 1 ? 's' : ''} pending response`
+                : 'All SMS alerts handled'
+              : 'Track urgent callback SLA'}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => fetchData(true)}
-          disabled={refreshing}
+        {activeTab === 'sms' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fetchData(true)}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />
+          </Button>
+        )}
+      </div>
+
+      {/* Tab Switcher */}
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('sms')}
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'sms'
+              ? 'border-primary-600 text-primary-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          )}
         >
-          <RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />
-        </Button>
+          <MessageSquare className="w-4 h-4" />
+          SMS Alerts
+        </button>
+        <button
+          onClick={() => setActiveTab('emergency')}
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+            activeTab === 'emergency'
+              ? 'border-red-600 text-red-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          )}
+        >
+          <AlertTriangle className="w-4 h-4" />
+          Callback Tracking
+        </button>
       </div>
 
-      {/* Status Filters */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-        {statusFilters.map((filter) => {
-          const isSelected = statusFilter === filter.type;
-          const count = filter.type === 'all'
-            ? data.counts.total
-            : data.counts[filter.type as keyof typeof data.counts];
+      {/* Tab Content */}
+      {activeTab === 'sms' ? (
+        <>
+          {/* Status Filters */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+            {statusFilters.map((filter) => {
+              const isSelected = statusFilter === filter.type;
+              const count = filter.type === 'all'
+                ? data?.counts?.total ?? 0
+                : data?.counts?.[filter.type as keyof typeof data.counts] ?? 0;
 
-          return (
-            <button
-              key={filter.type}
-              onClick={() => setStatusFilter(filter.type)}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-                isSelected
-                  ? 'bg-primary-100 text-primary-700 border border-primary-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              )}
-            >
-              {filter.label}
-              {count > 0 && (
-                <span className={cn(
-                  'text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
-                  isSelected ? 'bg-primary-200 text-primary-800' : 'bg-gray-200 text-gray-700'
-                )}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+              return (
+                <button
+                  key={filter.type}
+                  onClick={() => setStatusFilter(filter.type)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
+                    isSelected
+                      ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  )}
+                >
+                  {filter.label}
+                  {count > 0 && (
+                    <span className={cn(
+                      'text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
+                      isSelected ? 'bg-primary-200 text-primary-800' : 'bg-gray-200 text-gray-700'
+                    )}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Type Filters */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-        {typeFilters.map((filter) => {
-          const isSelected = typeFilter === filter.type;
+          {/* Type Filters */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+            {typeFilters.map((filter) => {
+              const isSelected = typeFilter === filter.type;
 
-          return (
-            <button
-              key={filter.type}
-              onClick={() => setTypeFilter(filter.type)}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-                isSelected
-                  ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              )}
-            >
-              <span>{filter.emoji}</span>
-              {filter.label}
-            </button>
-          );
-        })}
-      </div>
+              return (
+                <button
+                  key={filter.type}
+                  onClick={() => setTypeFilter(filter.type)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
+                    isSelected
+                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  )}
+                >
+                  <span>{filter.emoji}</span>
+                  {filter.label}
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Alerts List */}
-      {hasAlerts ? (
-        <AlertsList
-          alerts={data.alerts}
-          emptyMessage={
-            statusFilter === 'all' && typeFilter === 'all'
-              ? 'No SMS alerts yet'
-              : 'No alerts match the selected filters'
-          }
-        />
+          {/* Alerts List */}
+          {hasAlerts ? (
+            <AlertsList
+              alerts={data!.alerts}
+              emptyMessage={
+                statusFilter === 'all' && typeFilter === 'all'
+                  ? 'No SMS alerts yet'
+                  : 'No alerts match the selected filters'
+              }
+            />
+          ) : (
+            <div className="bg-white rounded-lg border p-8 text-center">
+              <CheckCircle className="w-12 h-12 text-green-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                All caught up!
+              </h3>
+              <p className="text-gray-500">
+                {statusFilter === 'all' && typeFilter === 'all'
+                  ? 'No SMS alerts have been sent yet'
+                  : 'No alerts match the selected filters'}
+              </p>
+            </div>
+          )}
+        </>
       ) : (
-        <div className="bg-white rounded-lg border p-8 text-center">
-          <CheckCircle className="w-12 h-12 text-green-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            All caught up!
-          </h3>
-          <p className="text-gray-500">
-            {statusFilter === 'all' && typeFilter === 'all'
-              ? 'No SMS alerts have been sent yet'
-              : 'No alerts match the selected filters'}
-          </p>
-        </div>
+        /* Emergency Callback Tracking Tab */
+        <EmergencyAlertsTracker />
       )}
     </div>
   );

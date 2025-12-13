@@ -15,23 +15,24 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { Job, Lead, SmsLog } from '@/types/database';
+import type { Job, Lead, SmsLog, Call } from '@/types/database';
 
 interface InteractionTimelineProps {
   jobs: Job[];
   leads: Lead[];
   smsLogs: SmsLog[];
+  calls?: Call[];
   timezone: string;
 }
 
 // Unified timeline item type
-type TimelineItemType = 'job' | 'lead' | 'sms';
+type TimelineItemType = 'job' | 'lead' | 'sms' | 'call';
 
 interface TimelineItem {
   id: string;
   type: TimelineItemType;
   date: string;
-  data: Job | Lead | SmsLog;
+  data: Job | Lead | SmsLog | Call;
 }
 
 // Get icon and color based on job status
@@ -78,6 +79,48 @@ function getLeadStatusLabel(status: Lead['status']): string {
     abandoned: 'Missed Call',
   };
   return labels[status] || status;
+}
+
+// Get icon and color based on call outcome
+function getCallIcon(outcome: Call['outcome']) {
+  switch (outcome) {
+    case 'completed':
+      return { icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-100' };
+    case 'safety_emergency':
+      return { icon: PhoneMissed, color: 'text-red-600', bg: 'bg-red-100' };
+    case 'urgent_escalation':
+      return { icon: PhoneIncoming, color: 'text-orange-600', bg: 'bg-orange-100' };
+    case 'wrong_number':
+    case 'out_of_area':
+    case 'customer_hangup':
+      return { icon: XCircle, color: 'text-gray-400', bg: 'bg-gray-100' };
+    case 'callback_later':
+    case 'sales_lead':
+      return { icon: PhoneIncoming, color: 'text-yellow-600', bg: 'bg-yellow-100' };
+    case 'cancelled':
+    case 'rescheduled':
+      return { icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-100' };
+    default:
+      return { icon: PhoneIncoming, color: 'text-blue-600', bg: 'bg-blue-100' };
+  }
+}
+
+// Get label for call outcome
+function getCallOutcomeLabel(outcome: Call['outcome']): string {
+  const labels: Record<string, string> = {
+    completed: 'Booked',
+    wrong_number: 'Wrong Number',
+    callback_later: 'Callback Later',
+    safety_emergency: 'Safety Emergency',
+    urgent_escalation: 'Urgent',
+    out_of_area: 'Out of Area',
+    waitlist_added: 'Added to Waitlist',
+    customer_hangup: 'Customer Hung Up',
+    sales_lead: 'Sales Lead',
+    cancelled: 'Cancelled',
+    rescheduled: 'Rescheduled',
+  };
+  return outcome ? labels[outcome] || outcome : 'Call';
 }
 
 function JobTimelineItem({ job }: { job: Job }) {
@@ -192,7 +235,68 @@ function SmsTimelineItem({ sms }: { sms: SmsLog }) {
   );
 }
 
-export function InteractionTimeline({ jobs, leads, smsLogs, timezone }: InteractionTimelineProps) {
+function CallTimelineItem({ call }: { call: Call }) {
+  const { icon: Icon, color, bg } = getCallIcon(call.outcome);
+  const outcomeLabel = getCallOutcomeLabel(call.outcome);
+
+  // Format duration as m:ss
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return null;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="flex gap-3 p-3 rounded-lg hover:bg-gray-50 transition">
+      <div className={cn('w-10 h-10 rounded-full flex items-center justify-center shrink-0', bg)}>
+        <Icon className={cn('w-5 h-5', color)} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-gray-900">
+            Voice Call - {outcomeLabel}
+          </span>
+          {call.duration_seconds && (
+            <span className="text-xs text-gray-500">
+              {formatDuration(call.duration_seconds)}
+            </span>
+          )}
+          {call.revenue_tier_label && (
+            <span className={cn(
+              'text-xs px-1.5 py-0.5 rounded font-medium',
+              call.revenue_tier_label === '$$$$' ? 'bg-red-100 text-red-700' :
+              call.revenue_tier_label === '$$$' ? 'bg-orange-100 text-orange-700' :
+              call.revenue_tier_label === '$$' ? 'bg-blue-100 text-blue-700' :
+              call.revenue_tier_label === '$' ? 'bg-green-100 text-green-700' :
+              'bg-gray-100 text-gray-600'
+            )}>
+              {call.revenue_tier_label}
+            </span>
+          )}
+        </div>
+        {call.hvac_issue_type && (
+          <p className="text-sm text-gray-600 line-clamp-1 mt-0.5">
+            {call.hvac_issue_type}
+          </p>
+        )}
+        {call.revenue_tier_signals && call.revenue_tier_signals.length > 0 && (
+          <p className="text-xs text-gray-500 mt-0.5">
+            Signals: {call.revenue_tier_signals.join(', ')}
+          </p>
+        )}
+        <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+          <Clock className="w-3 h-3" />
+          {call.started_at
+            ? format(new Date(call.started_at), 'MMM d, yyyy h:mm a')
+            : formatDistanceToNow(new Date(call.started_at || call.created_at), { addSuffix: true })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function InteractionTimeline({ jobs, leads, smsLogs, calls = [], timezone }: InteractionTimelineProps) {
   // Combine all items into a single timeline
   const timelineItems: TimelineItem[] = [
     ...jobs.map(job => ({
@@ -212,6 +316,12 @@ export function InteractionTimeline({ jobs, leads, smsLogs, timezone }: Interact
       type: 'sms' as const,
       date: sms.created_at,
       data: sms,
+    })),
+    ...calls.map(call => ({
+      id: `call-${call.id}`,
+      type: 'call' as const,
+      date: call.started_at || call.created_at,
+      data: call,
     })),
   ];
 
@@ -247,6 +357,8 @@ export function InteractionTimeline({ jobs, leads, smsLogs, timezone }: Interact
               return <LeadTimelineItem key={item.id} lead={item.data as Lead} />;
             case 'sms':
               return <SmsTimelineItem key={item.id} sms={item.data as SmsLog} />;
+            case 'call':
+              return <CallTimelineItem key={item.id} call={item.data as Call} />;
             default:
               return null;
           }
