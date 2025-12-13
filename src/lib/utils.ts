@@ -1,8 +1,9 @@
 import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-// Simple classname merge utility (no tailwind-merge to keep it simple)
+// shadcn-compatible classname merge utility
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs);
+  return twMerge(clsx(inputs));
 }
 
 // Format phone number for display

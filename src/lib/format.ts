@@ -34,11 +34,17 @@ export function formatTime(
 // Format for schedule display (Today at 2:00 PM, Tomorrow at 3:00 PM, etc.)
 export function formatScheduleTime(
   date: string | Date,
-  timezone: string = 'America/New_York'
+  timezone: string = 'America/New_York',
+  options?: { timeOnly?: boolean }
 ): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const zonedDate = toZonedTime(d, timezone);
   const time = formatTz(zonedDate, 'h:mm a', { timeZone: timezone });
+
+  // If timeOnly is true, just return the time
+  if (options?.timeOnly) {
+    return time;
+  }
 
   if (isToday(zonedDate)) {
     return `Today at ${time}`;

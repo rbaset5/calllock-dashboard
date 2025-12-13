@@ -1,7 +1,6 @@
 'use client';
 
-import { Briefcase, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Briefcase, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
 
 interface StatsSummaryProps {
   jobsThisWeek: number;
@@ -21,29 +20,25 @@ export function StatsSummary({
       label: 'Jobs This Week',
       value: jobsThisWeek,
       icon: Briefcase,
-      color: 'text-blue-600',
-      bg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
     },
     {
       label: 'Needs Action',
       value: needsActionCount,
       icon: AlertTriangle,
-      color: needsActionCount > 0 ? 'text-red-600' : 'text-gray-600',
-      bg: needsActionCount > 0 ? 'bg-red-100' : 'bg-gray-100',
+      iconColor: needsActionCount > 0 ? 'text-amber-500' : 'text-gray-400',
     },
     {
       label: 'Completed',
       value: completedThisWeek,
       icon: CheckCircle,
-      color: 'text-green-600',
-      bg: 'bg-green-100',
+      iconColor: 'text-green-600',
     },
     {
       label: 'Completion Rate',
       value: `${completionRate}%`,
-      icon: Clock,
-      color: 'text-purple-600',
-      bg: 'bg-purple-100',
+      icon: TrendingUp,
+      iconColor: 'text-purple-600',
     },
   ];
 
@@ -52,19 +47,16 @@ export function StatsSummary({
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <Card key={stat.label}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 ${stat.bg} rounded-lg flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 ${stat.color}`} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-xs text-gray-500">{stat.label}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div
+            key={stat.label}
+            className="bg-white rounded-xl border border-gray-100 shadow-sm p-4"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <Icon className={`w-5 h-5 ${stat.iconColor}`} />
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
+            <p className="text-sm text-gray-500">{stat.label}</p>
+          </div>
         );
       })}
     </div>

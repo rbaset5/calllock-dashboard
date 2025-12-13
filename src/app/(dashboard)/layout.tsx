@@ -4,6 +4,7 @@ import { AuthGuard } from '@/components/auth/auth-guard';
 import { Header } from '@/components/layout/header';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { Sidebar } from '@/components/layout/sidebar';
+import { DemoBanner } from '@/components/ui/demo-banner';
 import { useEffect, useState } from 'react';
 
 export default function DashboardLayout({
@@ -32,7 +33,10 @@ export default function DashboardLayout({
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
+      {/* Demo mode banner */}
+      <DemoBanner />
+
+      <div className="min-h-screen bg-[#F9FAFB]">
         {/* Desktop sidebar */}
         <Sidebar businessName={businessName} />
 

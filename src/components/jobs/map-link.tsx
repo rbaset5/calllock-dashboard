@@ -1,14 +1,18 @@
 'use client';
 
+import { ReactNode } from 'react';
 import { Navigation, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getMapUrl, getWazeUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
-interface MapLinkProps {
+export interface MapLinkProps {
   address: string;
+  children?: ReactNode;
+  className?: string;
 }
 
-export function MapLink({ address }: MapLinkProps) {
+export function MapLink({ address, children, className }: MapLinkProps) {
   function openMaps() {
     window.open(getMapUrl(address), '_blank');
   }
@@ -17,8 +21,18 @@ export function MapLink({ address }: MapLinkProps) {
     window.open(getWazeUrl(address), '_blank');
   }
 
+  // If children provided, wrap in a clickable div
+  if (children) {
+    return (
+      <div onClick={openMaps} className={cn('cursor-pointer', className)}>
+        {children}
+      </div>
+    );
+  }
+
+  // Default two-button layout
   return (
-    <div className="flex gap-2">
+    <div className={cn('flex gap-2', className)}>
       <Button
         variant="primary"
         size="lg"

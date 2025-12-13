@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
         // Send abandoned_call notification
         notificationResult = await sendOperatorNotification(
           user.id,
-          lead.id,
+          null, // No job ID for leads
           'abandoned_call' as NotificationEventType,
           {
             customerName: lead.customer_name,
@@ -245,7 +245,8 @@ export async function POST(request: NextRequest) {
             address: lead.customer_address,
           },
           user.phone,
-          user.timezone
+          user.timezone,
+          { leadId: lead.id } // Pass lead ID for SMS reply tracking
         );
         console.log(`Notification result for abandoned lead ${lead.id}:`, notificationResult);
       }

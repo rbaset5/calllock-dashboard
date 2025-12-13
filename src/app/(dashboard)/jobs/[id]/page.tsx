@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Phone, MapPin, Clock, Calendar, DollarSign, FileText } from 'lucide-react';
+import { ArrowLeft, Phone, MapPin, Clock, Calendar, DollarSign, FileText, CalendarClock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { StatusBadge, UrgencyBadge, ServiceTypeBadge } from '@/components/ui/badge';
 import { JobStatusButtons } from '@/components/jobs/job-status-buttons';
 import { MapLink } from '@/components/jobs/map-link';
+import { RescheduleModal } from '@/components/jobs/reschedule-modal';
 import { formatDateTime, formatScheduleTime, formatCurrency } from '@/lib/format';
 import { formatPhone, phoneHref } from '@/lib/utils';
 import type { Job } from '@/types/database';
@@ -20,6 +22,19 @@ export default function JobDetailPage() {
   const [timezone, setTimezone] = useState('America/New_York');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+
+  // Check if job can be rescheduled
+  const canReschedule = job?.scheduled_at &&
+    job.status !== 'complete' &&
+    job.status !== 'cancelled' &&
+    job.status !== 'en_route' &&
+    job.status !== 'on_site';
+
+  const handleRescheduled = (updatedJob: Job) => {
+    setJob(updatedJob);
+    setShowRescheduleModal(false);
+  };
 
   useEffect(() => {
     async function fetchJob() {
@@ -159,8 +174,18 @@ export default function JobDetailPage() {
 
       {/* Schedule & Revenue */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Details</CardTitle>
+          {canReschedule && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRescheduleModal(true)}
+            >
+              <CalendarClock className="w-4 h-4 mr-1" />
+              Reschedule
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-3">
           {job.scheduled_at && (
@@ -236,6 +261,16 @@ export default function JobDetailPage() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Reschedule Modal */}
+      {showRescheduleModal && job && (
+        <RescheduleModal
+          job={job}
+          timezone={timezone}
+          onClose={() => setShowRescheduleModal(false)}
+          onRescheduled={handleRescheduled}
+        />
       )}
     </div>
   );

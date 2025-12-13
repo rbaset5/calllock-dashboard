@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Briefcase, DollarSign, AlertTriangle, Calendar } from 'lucide-react';
+import { PinContainer } from '@/components/ui/3d-pin';
 
 interface DashboardStats {
   user: {
@@ -11,6 +10,7 @@ interface DashboardStats {
   };
   stats: {
     jobsToday: number;
+    todayRevenue: number;
     weekRevenue: number;
     needsAction: number;
     upcomingThisWeek: number;
@@ -46,16 +46,9 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="p-4 lg:p-6">
+      <div className="h-[calc(100vh-4rem)] w-full flex items-center justify-center bg-slate-950">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="h-32 bg-gray-200 rounded-lg"></div>
-            <div className="h-32 bg-gray-200 rounded-lg"></div>
-            <div className="h-32 bg-gray-200 rounded-lg"></div>
-            <div className="h-32 bg-gray-200 rounded-lg"></div>
-          </div>
+          <div className="w-80 h-80 bg-slate-800 rounded-2xl"></div>
         </div>
       </div>
     );
@@ -63,8 +56,8 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="p-4 lg:p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+      <div className="h-[calc(100vh-4rem)] w-full flex items-center justify-center bg-slate-950">
+        <div className="bg-red-950/50 border border-red-500/50 text-red-400 px-6 py-4 rounded-lg">
           {error}
         </div>
       </div>
@@ -76,59 +69,80 @@ export default function DashboardPage() {
   const { user, stats } = data;
 
   return (
-    <div className="p-4 lg:p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.business_name}!</h1>
-        <p className="text-gray-600">Logged in as {user.email}</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/jobs" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
-          <div className="flex items-center gap-3 mb-2">
-            <Briefcase className="w-5 h-5 text-primary-600" />
-            <h3 className="font-semibold text-gray-900">Jobs Today</h3>
+    <div className="h-[calc(100vh-4rem)] w-full flex items-center justify-center bg-slate-950">
+      <PinContainer title="View Today's Jobs" href="/today">
+        <div className="flex flex-col p-4 tracking-tight text-slate-100/50 w-[20rem] h-[20rem] bg-gradient-to-b from-slate-800/50 to-slate-800/0 backdrop-blur-sm border border-slate-700/50 rounded-2xl">
+          {/* Header */}
+          <div className="flex items-center gap-2">
+            <div className="size-3 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="text-xs text-slate-400">{user.business_name}</div>
           </div>
-          <p className="text-3xl font-bold text-primary-600">{stats.jobsToday}</p>
-          <p className="text-sm text-gray-500">
-            {stats.jobsToday === 0 ? 'No jobs scheduled' : stats.jobsToday === 1 ? '1 job scheduled' : `${stats.jobsToday} jobs scheduled`}
-          </p>
-        </Link>
 
-        <Link href="/jobs" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
-          <div className="flex items-center gap-3 mb-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-gray-900">Upcoming</h3>
-          </div>
-          <p className="text-3xl font-bold text-blue-600">{stats.upcomingThisWeek}</p>
-          <p className="text-sm text-gray-500">
-            {stats.upcomingThisWeek === 0 ? 'No upcoming jobs' : stats.upcomingThisWeek === 1 ? '1 job this week' : `${stats.upcomingThisWeek} jobs this week`}
-          </p>
-        </Link>
+          {/* Content */}
+          <div className="flex-1 mt-4 space-y-4">
+            <div className="text-2xl font-bold text-slate-100">
+              Today&apos;s Overview
+            </div>
 
-        <Link href="/reports" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
-          <div className="flex items-center gap-3 mb-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
-            <h3 className="font-semibold text-gray-900">This Week</h3>
-          </div>
-          <p className="text-3xl font-bold text-green-600">
-            ${stats.weekRevenue.toLocaleString()}
-          </p>
-          <p className="text-sm text-gray-500">Revenue</p>
-        </Link>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="text-3xl font-bold text-sky-400">{stats.jobsToday}</div>
+                <div className="text-xs text-slate-400">Today&apos;s Jobs</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-3xl font-bold text-emerald-400">
+                  ${stats.todayRevenue.toLocaleString()}
+                </div>
+                <div className="text-xs text-slate-400">Est. Revenue</div>
+              </div>
+            </div>
 
-        <Link href="/jobs?needs_action=true" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
-          <div className="flex items-center gap-3 mb-2">
-            <AlertTriangle className={`w-5 h-5 ${stats.needsAction > 0 ? 'text-orange-600' : 'text-gray-400'}`} />
-            <h3 className="font-semibold text-gray-900">Needs Action</h3>
+            {/* Animated Waves */}
+            <div className="relative h-20 overflow-hidden rounded-lg">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="absolute w-full h-20 animate-wave"
+                  style={{
+                    background: `linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.1) 50%, transparent 100%)`,
+                    animationDelay: `${i * 0.5}s`,
+                    opacity: 0.3 / i,
+                    transform: `translateY(${i * 10}px)`,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-between items-end">
+              <div className="text-xs text-slate-400">
+                {stats.needsAction > 0
+                  ? `${stats.needsAction} items need attention`
+                  : 'All caught up!'
+                }
+              </div>
+              <div className="text-sky-400 text-sm font-medium">
+                View Jobs →
+              </div>
+            </div>
           </div>
-          <p className={`text-3xl font-bold ${stats.needsAction > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
-            {stats.needsAction}
-          </p>
-          <p className="text-sm text-gray-500">
-            {stats.needsAction === 0 ? 'All caught up!' : 'Jobs requiring attention'}
-          </p>
-        </Link>
-      </div>
+        </div>
+      </PinContainer>
+
+      <style jsx>{`
+        @keyframes wave {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+        .animate-wave {
+          animation: wave 2s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

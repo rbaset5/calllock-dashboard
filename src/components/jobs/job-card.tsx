@@ -1,79 +1,91 @@
 'use client';
 
-import Link from 'next/link';
-import { MapPin, Clock, AlertTriangle, Phone, DollarSign } from 'lucide-react';
+import * as React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { StatusBadge, UrgencyBadge, ServiceTypeBadge } from '@/components/ui/badge';
-import { formatScheduleTime } from '@/lib/format';
-import { formatPhone } from '@/lib/utils';
+import { MoreHorizontal } from 'lucide-react';
 import type { Job } from '@/types/database';
 
 interface JobCardProps {
   job: Job;
   timezone: string;
+  onMenuClick?: (e: React.MouseEvent) => void;
 }
 
-export function JobCard({ job, timezone }: JobCardProps) {
-  return (
-    <Link href={`/jobs/${job.id}`}>
-      <Card className="hover:shadow-md transition-shadow">
+/** Format service type for display as headline */
+function formatServiceType(type: string): string {
+  const labels: Record<string, string> = {
+    hvac: 'HVAC Services',
+    plumbing: 'Plumbing Services',
+    electrical: 'Electrical Services',
+    general: 'General Services',
+  };
+  return labels[type] || type.charAt(0).toUpperCase() + type.slice(1) + ' Services';
+}
+
+/** Get first initial for avatar */
+function getInitial(name: string): string {
+  return name.trim().charAt(0).toUpperCase();
+}
+
+/** Get street address (first part before comma) */
+function getStreetAddress(address: string | null): string {
+  if (!address) return 'Address pending';
+  const parts = address.split(',');
+  return parts[0].trim();
+}
+
+export const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
+  ({ job, onMenuClick }, ref) => {
+    return (
+      <Card
+        ref={ref}
+        className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+      >
         <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              {/* Header row */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-gray-900 truncate">
-                  {job.customer_name}
-                </span>
-                {job.estimated_value && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    <DollarSign className="w-3 h-3" />
-                    {job.estimated_value.toLocaleString()}
-                  </span>
-                )}
-                {job.needs_action && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                    <AlertTriangle className="w-3 h-3" />
-                    Needs Action
-                  </span>
-                )}
-              </div>
+          {/* Header: Service Type + Menu */}
+          <div className="flex items-start justify-between mb-1">
+            <h3 className="font-semibold text-gray-900">
+              {formatServiceType(job.service_type)}
+            </h3>
+            {onMenuClick && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMenuClick(e);
+                }}
+                className="p-1 -mr-1 -mt-1 text-gray-400 hover:text-gray-600 rounded"
+              >
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
+            )}
+          </div>
 
-              {/* Badges row */}
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <ServiceTypeBadge type={job.service_type} />
-                <UrgencyBadge urgency={job.urgency} />
-                <StatusBadge status={job.status} />
-              </div>
+          {/* Address */}
+          <p className="text-sm text-gray-500 mb-3">
+            {getStreetAddress(job.customer_address)}
+          </p>
 
-              {/* Details */}
-              <div className="mt-3 space-y-1 text-sm text-gray-500">
-                {job.scheduled_at && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 flex-shrink-0" />
-                    <span>{formatScheduleTime(job.scheduled_at, timezone)}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 flex-shrink-0" />
-                  <span className="truncate">{job.customer_address}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 flex-shrink-0" />
-                  <span>{formatPhone(job.customer_phone)}</span>
-                </div>
+          {/* Customer Row: Avatar + Name + Value */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {/* Initial Avatar */}
+              <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
+                {getInitial(job.customer_name)}
               </div>
-
-              {/* AI Summary preview */}
-              {job.ai_summary && (
-                <p className="mt-3 text-sm text-gray-600 line-clamp-2">
-                  {job.ai_summary}
-                </p>
-              )}
+              <span className="text-sm text-gray-700">{job.customer_name}</span>
             </div>
+
+            {/* Estimated Value */}
+            {job.estimated_value && (
+              <span className="text-sm font-medium text-gray-900">
+                ${job.estimated_value.toLocaleString()}
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
-    </Link>
-  );
-}
+    );
+  }
+);
+
+JobCard.displayName = 'JobCard';

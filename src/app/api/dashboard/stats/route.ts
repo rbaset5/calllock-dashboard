@@ -66,6 +66,17 @@ export async function GET() {
     .lte('scheduled_at', todayEnd.toISOString())
     .not('status', 'eq', 'cancelled');
 
+  // Get today's jobs with estimated_value for revenue calculation
+  const { data: todayJobs } = await adminClient
+    .from('jobs')
+    .select('estimated_value')
+    .eq('user_id', user.id)
+    .gte('scheduled_at', todayStart.toISOString())
+    .lte('scheduled_at', todayEnd.toISOString())
+    .not('status', 'eq', 'cancelled');
+
+  const todayRevenue = todayJobs?.reduce((sum, job) => sum + (job.estimated_value || 0), 0) || 0;
+
   // Sum revenue from completed jobs this week
   const { data: weekJobs } = await adminClient
     .from('jobs')
@@ -100,6 +111,7 @@ export async function GET() {
     },
     stats: {
       jobsToday: jobsToday || 0,
+      todayRevenue,
       weekRevenue,
       needsAction: needsAction || 0,
       upcomingThisWeek: upcomingThisWeek || 0,

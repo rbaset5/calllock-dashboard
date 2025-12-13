@@ -1,7 +1,22 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// Route redirects for mobile-first IA
+const redirects: Record<string, string> = {
+  '/dashboard': '/today',
+  '/jobs': '/schedule',
+};
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Handle redirects from old routes to new routes
+  if (redirects[pathname]) {
+    const url = request.nextUrl.clone();
+    url.pathname = redirects[pathname];
+    return NextResponse.redirect(url);
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });

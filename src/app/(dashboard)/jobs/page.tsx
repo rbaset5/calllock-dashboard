@@ -2,20 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { JobCard } from '@/components/jobs/job-card';
+import { useRouter } from 'next/navigation';
+import { JobCardWithActions } from '@/components/jobs/job-card-with-actions';
 import { JobFilters } from '@/components/jobs/job-filters';
-import { Briefcase } from 'lucide-react';
+import { CreateJobModal } from '@/components/jobs/create-job-modal';
+import { Button } from '@/components/ui/button';
+import { Briefcase, Plus } from 'lucide-react';
 import type { Job } from '@/types/database';
 
 export default function JobsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [timezone, setTimezone] = useState('America/New_York');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const status = searchParams.get('status');
   const needsAction = searchParams.get('needs_action');
+
+  const handleJobCreated = (job: Job) => {
+    setShowCreateModal(false);
+    // Navigate to the new job detail page
+    router.push(`/jobs/${job.id}`);
+  };
 
   useEffect(() => {
     async function fetchJobs() {
@@ -79,8 +90,12 @@ export default function JobsPage() {
 
   return (
     <div className="p-4 lg:p-6">
-      <div className="mb-4 lg:mb-6">
+      <div className="flex items-center justify-between mb-4 lg:mb-6">
         <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Jobs</h1>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="w-4 h-4 mr-1" />
+          New Job
+        </Button>
       </div>
 
       {/* Filters */}
@@ -104,9 +119,17 @@ export default function JobsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4">
           {jobs.map((job) => (
-            <JobCard key={job.id} job={job} timezone={timezone} />
+            <JobCardWithActions key={job.id} job={job} timezone={timezone} />
           ))}
         </div>
+      )}
+
+      {/* Create Job Modal */}
+      {showCreateModal && (
+        <CreateJobModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={handleJobCreated}
+        />
       )}
     </div>
   );
