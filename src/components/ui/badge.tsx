@@ -148,6 +148,93 @@ function getRevenueTierInfo(tier: RevenueTier | string | null | undefined): Reve
   return REVENUE_TIER_CONFIG[tier as RevenueTier] || REVENUE_TIER_CONFIG['$$?'];
 }
 
+// Alert status badge for SMS alerts
+type AlertStatus = 'pending' | 'replied' | 'resolved' | 'expired';
+
+function AlertStatusBadge({ status }: { status: AlertStatus | string }) {
+  const statusConfig: Record<string, { label: string; variant: BadgeProps['variant'] }> = {
+    pending: { label: 'Pending', variant: 'warning' },
+    replied: { label: 'Replied', variant: 'info' },
+    resolved: { label: 'Resolved', variant: 'success' },
+    expired: { label: 'Expired', variant: 'secondary' },
+  };
+
+  const config = statusConfig[status] || { label: status, variant: 'secondary' as const };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+}
+
+// Alert type badge (emergency vs sales lead)
+type AlertType = 'emergency' | 'sales_lead' | 'abandoned_call';
+
+function AlertTypeBadge({ type }: { type: AlertType | string }) {
+  const typeConfig: Record<string, { label: string; emoji: string; variant: BadgeProps['variant'] }> = {
+    emergency: { label: 'Emergency', emoji: '🚨', variant: 'error' },
+    sales_lead: { label: 'Sales Lead', emoji: '💰', variant: 'warning' },
+    abandoned_call: { label: 'Missed Call', emoji: '📵', variant: 'secondary' },
+  };
+
+  const config = typeConfig[type] || { label: type, emoji: '📋', variant: 'secondary' as const };
+  return (
+    <Badge variant={config.variant} className="gap-1">
+      <span>{config.emoji}</span>
+      <span>{config.label}</span>
+    </Badge>
+  );
+}
+
+// Reply code badge showing dispatcher action
+type AlertReplyCode = '1' | '2' | '3' | '4' | '5';
+
+function AlertReplyBadge({ code, label }: { code: AlertReplyCode | string | null; label: string | null }) {
+  if (!code || !label) return null;
+
+  const codeConfig: Record<string, { variant: BadgeProps['variant'] }> = {
+    '1': { variant: 'info' }, // Called
+    '2': { variant: 'secondary' }, // Left VM
+    '3': { variant: 'secondary' }, // Note
+    '4': { variant: 'success' }, // Booked
+    '5': { variant: 'error' }, // Lost
+  };
+
+  const config = codeConfig[code] || { variant: 'secondary' as const };
+  return <Badge variant={config.variant}>✓ {label}</Badge>;
+}
+
+// Revenue confidence indicator - visual dots showing AI confidence level
+type RevenueConfidence = 'low' | 'medium' | 'high';
+
+interface ConfidenceIndicatorConfig {
+  icon: string;
+  label: string;
+  className: string;
+}
+
+const CONFIDENCE_CONFIG: Record<RevenueConfidence, ConfidenceIndicatorConfig> = {
+  high: { icon: '●●●', label: 'High confidence', className: 'bg-green-100 text-green-700' },
+  medium: { icon: '●●○', label: 'Medium confidence', className: 'bg-yellow-100 text-yellow-700' },
+  low: { icon: '●○○', label: 'Low confidence', className: 'bg-gray-100 text-gray-500' },
+};
+
+function ConfidenceIndicator({ confidence, showLabel = false }: { confidence: RevenueConfidence | string | null | undefined; showLabel?: boolean }) {
+  if (!confidence) return null;
+
+  const config = CONFIDENCE_CONFIG[confidence as RevenueConfidence];
+  if (!config) return null;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded",
+        config.className
+      )}
+      title={config.label}
+    >
+      <span className="font-mono text-[10px] tracking-tight">{config.icon}</span>
+      {showLabel && <span className="text-[10px]">{confidence}</span>}
+    </span>
+  );
+}
+
 export {
   Badge,
   badgeVariants,
@@ -158,9 +245,18 @@ export {
   LeadPriorityBadge,
   RevenueTierBadge,
   getRevenueTierInfo,
+  AlertStatusBadge,
+  AlertTypeBadge,
+  AlertReplyBadge,
+  ConfidenceIndicator,
   REVENUE_TIER_CONFIG,
+  CONFIDENCE_CONFIG,
   type RevenueTier,
   type RevenueTierConfig,
   type LeadStatus,
   type LeadPriority,
+  type AlertStatus,
+  type AlertType,
+  type AlertReplyCode,
+  type RevenueConfidence,
 }

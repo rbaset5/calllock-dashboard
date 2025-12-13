@@ -10,8 +10,10 @@ import {
   RevenueTierBadge,
   ServiceTypeBadge,
   UrgencyBadge,
+  ConfidenceIndicator,
   getRevenueTierInfo,
 } from '@/components/ui/badge';
+import { DiagnosticContext } from '@/components/ui/diagnostic-context';
 import {
   Collapsible,
   CollapsibleContent,
@@ -28,6 +30,8 @@ import {
   Clock,
   XCircle,
   AlertTriangle,
+  Wrench,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -61,9 +65,10 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [showLostConfirm, setShowLostConfirm] = useState(false);
 
-  // Get revenue tier info (derive from estimated_value or use a default)
-  const revenueTier = deriveRevenueTier(lead.estimated_value);
+  // Use stored revenue tier if available, otherwise derive from estimated_value
+  const revenueTier = lead.revenue_tier_label || deriveRevenueTier(lead.estimated_value);
   const tierInfo = getRevenueTierInfo(revenueTier);
+  const tierSignals = lead.revenue_tier_signals || [];
 
   // Determine issue description (prefer ai_summary, fallback to issue_description)
   const issueDescription = lead.ai_summary || lead.issue_description || null;
@@ -142,9 +147,26 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
           )} style={{ backgroundColor: getBackgroundColor(revenueTier) }}>
             <div className="flex items-center gap-2">
               <RevenueTierBadge tier={revenueTier} />
-              <span className="text-sm font-medium text-gray-900">{tierInfo.label}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {lead.revenue_tier_description || tierInfo.label}
+              </span>
+              {lead.revenue_confidence && (
+                <ConfidenceIndicator confidence={lead.revenue_confidence} />
+              )}
             </div>
-            <p className="text-xs text-gray-600 mt-1">Est. {tierInfo.range}</p>
+            <p className="text-xs text-gray-600 mt-1">
+              Est. {lead.revenue_tier_range || tierInfo.range}
+            </p>
+            {/* Show AI-detected signals if available */}
+            {tierSignals.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {tierSignals.map((signal, i) => (
+                  <span key={i} className="text-xs bg-white/60 rounded px-1.5 py-0.5 text-gray-700">
+                    {signal}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Issue Description */}
@@ -184,6 +206,53 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
                     <p className="text-sm text-amber-700 mt-0.5">{lead.why_not_booked}</p>
                   </div>
                 </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Diagnostic Context */}
+      <DiagnosticContext
+        problemDuration={lead.problem_duration}
+        problemOnset={lead.problem_onset}
+        problemPattern={lead.problem_pattern}
+        customerAttemptedFixes={lead.customer_attempted_fixes}
+      />
+
+      {/* Sales Lead Notes & Equipment Info (for sales_opportunity leads) */}
+      {(lead.sales_lead_notes || lead.equipment_type || lead.equipment_age) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-blue-500" />
+              Sales Lead Info
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Equipment Info */}
+            {(lead.equipment_type || lead.equipment_age) && (
+              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  {lead.equipment_type && (
+                    <p className="text-sm text-gray-900">
+                      <span className="font-medium">Equipment:</span> {lead.equipment_type}
+                    </p>
+                  )}
+                  {lead.equipment_age && (
+                    <p className="text-sm text-gray-900">
+                      <span className="font-medium">Age:</span> {lead.equipment_age}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            {/* Sales Notes */}
+            {lead.sales_lead_notes && (
+              <div className="text-sm text-gray-700">
+                <span className="font-medium text-gray-900">Notes: </span>
+                {lead.sales_lead_notes}
               </div>
             )}
           </CardContent>

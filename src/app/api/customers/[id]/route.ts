@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { Customer, Job, CustomerEquipment } from '@/types/database';
+import { Customer, Job, Lead, SmsLog, CustomerEquipment } from '@/types/database';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -10,6 +10,10 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export interface CustomerDetailResponse {
   customer: Customer;
   serviceHistory: Job[];
+  // Extended customer history data
+  leads: Lead[];           // Calls that didn't become jobs (callbacks, abandoned, etc.)
+  upcomingJobs: Job[];     // Scheduled appointments (scheduled_at > now)
+  recentSms: SmsLog[];     // Recent SMS messages
 }
 
 interface UpdateCustomerBody {
@@ -81,9 +85,43 @@ export async function GET(
       history = jobsByPhone || [];
     }
 
+    // Get leads (calls that didn't become jobs) by phone
+    const { data: leads } = await adminClient
+      .from('leads')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('customer_phone', customer.phone)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Get upcoming jobs (scheduled in the future, not complete/cancelled)
+    const now = new Date().toISOString();
+    const { data: upcomingJobs } = await adminClient
+      .from('jobs')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('customer_phone', customer.phone)
+      .gt('scheduled_at', now)
+      .not('status', 'in', '("complete","cancelled")')
+      .order('scheduled_at', { ascending: true })
+      .limit(5);
+
+    // Get recent SMS messages by phone (normalize phone for matching)
+    const normalizedPhone = customer.phone.replace(/\D/g, '');
+    const { data: recentSms } = await adminClient
+      .from('sms_log')
+      .select('*')
+      .eq('user_id', user.id)
+      .or(`to_phone.ilike.%${normalizedPhone},from_phone.ilike.%${normalizedPhone}`)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
     const response: CustomerDetailResponse = {
       customer,
       serviceHistory: history,
+      leads: leads || [],
+      upcomingJobs: upcomingJobs || [],
+      recentSms: recentSms || [],
     };
 
     return NextResponse.json(response);
@@ -142,7 +180,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Failed to update customer' }, { status: 500 });
     }
 
-    return NextResponse.json(customer);
+    return NextResponse.json({ customer });
   } catch (error) {
     console.error('Update customer error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

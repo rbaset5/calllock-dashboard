@@ -32,6 +32,31 @@ async function getLeadContext(operatorPhone: string): Promise<{
 }
 
 /**
+ * Helper to update alert context status when dispatcher replies
+ */
+async function updateAlertContextStatus(
+  supabase: ReturnType<typeof createAdminClient>,
+  operatorPhone: string,
+  replyCode: string
+): Promise<void> {
+  const phoneWithPlus = operatorPhone.startsWith('+') ? operatorPhone : `+${operatorPhone}`;
+
+  // Find the most recent alert context for this operator (within last hour)
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+  await supabase
+    .from('sms_alert_context')
+    .update({
+      status: 'replied',
+      replied_at: new Date().toISOString(),
+      reply_code: replyCode,
+    })
+    .eq('operator_phone', phoneWithPlus)
+    .gt('created_at', oneHourAgo)
+    .is('replied_at', null); // Only update if not already replied
+}
+
+/**
  * Helper to add note to a lead
  */
 async function addNoteToLead(
@@ -167,6 +192,9 @@ export async function POST(request: NextRequest) {
         // Add auto-note
         await addNoteToLead(supabase, leadContext.leadId, 'Contacted via phone', from);
 
+        // Update alert context status
+        await updateAlertContextStatus(supabase, from, '1');
+
         const confirmMsg = `✓ ${leadContext.customerName} marked CONTACTED`;
         await sendSMS(from, confirmMsg);
 
@@ -200,6 +228,9 @@ export async function POST(request: NextRequest) {
 
         // Add auto-note
         await addNoteToLead(supabase, leadContext.leadId, 'Left voicemail', from);
+
+        // Update alert context status
+        await updateAlertContextStatus(supabase, from, '2');
 
         const confirmMsg = `✓ ${leadContext.customerName} marked VOICEMAIL`;
         await sendSMS(from, confirmMsg);
@@ -237,6 +268,9 @@ export async function POST(request: NextRequest) {
       if (leadContext) {
         await addNoteToLead(supabase, leadContext.leadId, noteText, from);
 
+        // Update alert context status
+        await updateAlertContextStatus(supabase, from, '3');
+
         const confirmMsg = `✓ Note added to ${leadContext.customerName}`;
         await sendSMS(from, confirmMsg);
 
@@ -270,6 +304,9 @@ export async function POST(request: NextRequest) {
 
         // Add auto-note
         await addNoteToLead(supabase, leadContext.leadId, 'Scheduled appointment', from);
+
+        // Update alert context status
+        await updateAlertContextStatus(supabase, from, '4');
 
         const confirmMsg = `✓ ${leadContext.customerName} marked SCHEDULED`;
         await sendSMS(from, confirmMsg);
@@ -308,6 +345,9 @@ export async function POST(request: NextRequest) {
 
         // Add auto-note
         await addNoteToLead(supabase, leadContext.leadId, 'Customer not interested', from);
+
+        // Update alert context status
+        await updateAlertContextStatus(supabase, from, '5');
 
         const confirmMsg = `✓ ${leadContext.customerName} marked LOST`;
         await sendSMS(from, confirmMsg);

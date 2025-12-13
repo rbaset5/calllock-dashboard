@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lead } from '@/types/database';
 import { LeadDetail, BookJobModal, RemindMeModal } from '@/components/leads';
 import { Button } from '@/components/ui/button';
+import { SmsHistory } from '@/components/ui/sms-history';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 interface LeadDetailPageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 export default function LeadDetailPage({ params }: LeadDetailPageProps) {
-  const { id } = use(params);
+  const { id } = params;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [lead, setLead] = useState<Lead | null>(null);
@@ -157,6 +158,11 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
         onSnooze={handleSnooze}
         onMarkLost={handleMarkLost}
       />
+
+      {/* SMS Activity */}
+      <div className="mt-4">
+        <SmsHistory leadId={lead.id} />
+      </div>
 
       {/* Book Job Modal */}
       {showBookModal && (

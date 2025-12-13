@@ -8,6 +8,7 @@ import {
   NotificationEventType,
 } from '@/lib/notification-service';
 import { findOrCreateCustomer } from '@/lib/customers';
+import { formatScheduleTime } from '@/lib/format';
 
 // EndCallReason from server - determines if this should be a Lead vs Job
 type EndCallReason =
@@ -61,6 +62,18 @@ interface IncomingJob {
   equipment_type?: string;
   equipment_age?: string;
   sales_lead_notes?: string;
+  // Revenue tier classification (from CallLock server)
+  revenue_tier?: 'replacement' | 'major_repair' | 'standard_repair' | 'minor' | 'diagnostic';
+  revenue_tier_label?: '$$$$' | '$$$' | '$$' | '$' | '$$?';
+  revenue_tier_signals?: string[];
+  // Extended revenue tier fields
+  revenue_tier_description?: string;
+  revenue_tier_range?: string;
+  // Diagnostic context fields
+  problem_duration?: string;
+  problem_onset?: string;
+  problem_pattern?: string;
+  customer_attempted_fixes?: string;
 }
 
 /**
@@ -219,6 +232,23 @@ export async function POST(request: NextRequest) {
           estimated_value: body.estimated_value || null,
           call_transcript: body.call_transcript || null,
           ai_summary: body.ai_summary || null,
+          // Revenue tier fields
+          revenue_tier: body.revenue_tier || null,
+          revenue_tier_label: body.revenue_tier_label || null,
+          revenue_tier_signals: body.revenue_tier_signals || null,
+          // Extended revenue tier fields
+          revenue_confidence: body.revenue_confidence || null,
+          revenue_tier_description: body.revenue_tier_description || null,
+          revenue_tier_range: body.revenue_tier_range || null,
+          // Diagnostic context fields
+          problem_duration: body.problem_duration || null,
+          problem_onset: body.problem_onset || null,
+          problem_pattern: body.problem_pattern || null,
+          customer_attempted_fixes: body.customer_attempted_fixes || null,
+          // Sales lead info
+          sales_lead_notes: body.sales_lead_notes || null,
+          equipment_type: body.equipment_type || null,
+          equipment_age: body.equipment_age || null,
         })
         .select()
         .single();
@@ -278,6 +308,13 @@ export async function POST(request: NextRequest) {
       address: body.customer_address,
     });
 
+    // Build needs_action_note if there's a schedule conflict
+    let needsActionNote: string | null = null;
+    if (hasConflict && conflictingJob) {
+      const conflictTime = formatScheduleTime(conflictingJob.scheduled_at, user.timezone || 'America/New_York');
+      needsActionNote = `Schedule conflict with ${conflictingJob.customer_name} at ${conflictTime}`;
+    }
+
     // Create the job
     const { data: job, error: jobError } = await supabase
       .from('jobs')
@@ -295,7 +332,21 @@ export async function POST(request: NextRequest) {
         estimated_value: body.estimated_value || null,
         status: 'new',
         needs_action: hasConflict, // Flag for review if there's a conflict
+        needs_action_note: needsActionNote, // Explain why it needs action
         is_ai_booked: true,
+        // Revenue tier fields
+        revenue_tier: body.revenue_tier || null,
+        revenue_tier_label: body.revenue_tier_label || null,
+        revenue_tier_signals: body.revenue_tier_signals || null,
+        // Extended revenue tier fields
+        revenue_confidence: body.revenue_confidence || null,
+        revenue_tier_description: body.revenue_tier_description || null,
+        revenue_tier_range: body.revenue_tier_range || null,
+        // Diagnostic context fields
+        problem_duration: body.problem_duration || null,
+        problem_onset: body.problem_onset || null,
+        problem_pattern: body.problem_pattern || null,
+        customer_attempted_fixes: body.customer_attempted_fixes || null,
       })
       .select()
       .single();

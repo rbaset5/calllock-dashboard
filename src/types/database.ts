@@ -6,6 +6,11 @@ export type JobStatus = 'new' | 'confirmed' | 'en_route' | 'on_site' | 'complete
 export type UrgencyLevel = 'low' | 'medium' | 'high' | 'emergency';
 export type ServiceType = 'hvac' | 'plumbing' | 'electrical' | 'general';
 
+// Revenue tier classification from AI
+export type RevenueTier = 'replacement' | 'major_repair' | 'standard_repair' | 'minor' | 'diagnostic';
+export type RevenueTierLabel = '$$$$' | '$$$' | '$$' | '$' | '$$?';
+export type RevenueConfidence = 'low' | 'medium' | 'high';
+
 // New types for mobile-first IA
 export type LeadStatus = 'callback_requested' | 'thinking' | 'voicemail_left' | 'info_only' | 'deferred' | 'converted' | 'lost' | 'abandoned';
 export type LeadPriority = 'hot' | 'warm' | 'cold';
@@ -57,6 +62,19 @@ export interface Job {
   started_at: string | null;
   travel_started_at: string | null;
   estimated_value: number | null;
+  // Revenue tier classification from AI
+  revenue_tier: RevenueTier | null;
+  revenue_tier_label: RevenueTierLabel | null;
+  revenue_tier_signals: string[] | null;
+  // Extended revenue tier fields
+  revenue_confidence: RevenueConfidence | null;
+  revenue_tier_description: string | null;
+  revenue_tier_range: string | null;
+  // Diagnostic context fields
+  problem_duration: string | null;
+  problem_onset: string | null;
+  problem_pattern: string | null;
+  customer_attempted_fixes: string | null;
 }
 
 // Equipment on file for a customer
@@ -109,6 +127,23 @@ export interface Lead {
   lost_at: string | null;
   created_at: string;
   updated_at: string;
+  // Revenue tier classification from AI
+  revenue_tier: RevenueTier | null;
+  revenue_tier_label: RevenueTierLabel | null;
+  revenue_tier_signals: string[] | null;
+  // Extended revenue tier fields
+  revenue_confidence: RevenueConfidence | null;
+  revenue_tier_description: string | null;
+  revenue_tier_range: string | null;
+  // Diagnostic context fields
+  problem_duration: string | null;
+  problem_onset: string | null;
+  problem_pattern: string | null;
+  customer_attempted_fixes: string | null;
+  // Sales lead info (from replacement/sales inquiry calls)
+  sales_lead_notes: string | null;
+  equipment_type: string | null;
+  equipment_age: string | null;
 }
 
 export interface AIBookingReview {
@@ -125,9 +160,43 @@ export interface AIBookingReview {
   created_at: string;
 }
 
+// SMS event types for categorizing messages
+export type SmsEventType =
+  | 'booking_notification'
+  | 'booking_confirmation'
+  | 'reminder'
+  | 'emergency_alert'
+  | 'sales_lead_alert'
+  | 'abandoned_call'
+  | 'schedule_conflict'
+  | 'operator_reply'
+  | 'customer_reply'
+  | 'system';
+
+// Alert types and status for SMS alert context
+export type AlertType = 'emergency' | 'sales_lead' | 'abandoned_call';
+export type AlertStatus = 'pending' | 'replied' | 'resolved' | 'expired';
+export type AlertReplyCode = '1' | '2' | '3' | '4' | '5';
+
+export interface SmsAlertContext {
+  id: string;
+  user_id: string | null;
+  operator_phone: string;
+  alert_type: AlertType;
+  customer_phone: string | null;
+  customer_name: string | null;
+  lead_id: string | null;
+  job_id: string | null;
+  status: AlertStatus;
+  replied_at: string | null;
+  reply_code: AlertReplyCode | null;
+  created_at: string;
+}
+
 export interface SmsLog {
   id: string;
   job_id: string | null;
+  lead_id: string | null;
   user_id: string;
   direction: 'outbound' | 'inbound';
   to_phone: string;
@@ -136,6 +205,10 @@ export interface SmsLog {
   twilio_sid: string | null;
   status: string | null;
   created_at: string;
+  // Delivery status tracking (from Twilio webhooks)
+  event_type: SmsEventType | null;
+  delivery_status: string | null;
+  delivery_status_updated_at: string | null;
 }
 
 // Database schema type for Supabase client

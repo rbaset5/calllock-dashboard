@@ -3,13 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Phone, MapPin, Clock, Calendar, DollarSign, FileText, CalendarClock } from 'lucide-react';
+import { ArrowLeft, Phone, MapPin, Clock, Calendar, DollarSign, FileText, CalendarClock, Edit, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { StatusBadge, UrgencyBadge, ServiceTypeBadge } from '@/components/ui/badge';
+import { StatusBadge, UrgencyBadge, ServiceTypeBadge, RevenueTierBadge, ConfidenceIndicator, getRevenueTierInfo } from '@/components/ui/badge';
+import { DiagnosticContext } from '@/components/ui/diagnostic-context';
 import { JobStatusButtons } from '@/components/jobs/job-status-buttons';
 import { MapLink } from '@/components/jobs/map-link';
 import { RescheduleModal } from '@/components/jobs/reschedule-modal';
+import { CancelModal } from '@/components/jobs/cancel-modal';
+import { EditJobModal } from '@/components/jobs/edit-job-modal';
+import { SmsHistory } from '@/components/ui/sms-history';
 import { formatDateTime, formatScheduleTime, formatCurrency } from '@/lib/format';
 import { formatPhone, phoneHref } from '@/lib/utils';
 import type { Job } from '@/types/database';
@@ -23,6 +27,11 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Check if job can be edited (only 'new' status)
+  const canEdit = job?.status === 'new';
 
   // Check if job can be rescheduled
   const canReschedule = job?.scheduled_at &&
@@ -31,9 +40,26 @@ export default function JobDetailPage() {
     job.status !== 'en_route' &&
     job.status !== 'on_site';
 
+  // Check if job can be cancelled (same conditions as reschedule)
+  const canCancel = job?.scheduled_at &&
+    job.status !== 'complete' &&
+    job.status !== 'cancelled' &&
+    job.status !== 'en_route' &&
+    job.status !== 'on_site';
+
   const handleRescheduled = (updatedJob: Job) => {
     setJob(updatedJob);
     setShowRescheduleModal(false);
+  };
+
+  const handleEdited = (updatedJob: Job) => {
+    setJob(updatedJob);
+    setShowEditModal(false);
+  };
+
+  const handleCancelled = (updatedJob: Job) => {
+    setJob(updatedJob);
+    setShowCancelModal(false);
   };
 
   useEffect(() => {
@@ -129,6 +155,12 @@ export default function JobDetailPage() {
             )}
           </div>
         </div>
+        {canEdit && (
+          <Button variant="outline" size="sm" onClick={() => setShowEditModal(true)}>
+            <Edit className="w-4 h-4 mr-1" />
+            Edit
+          </Button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -176,16 +208,28 @@ export default function JobDetailPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Details</CardTitle>
-          {canReschedule && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowRescheduleModal(true)}
-            >
-              <CalendarClock className="w-4 h-4 mr-1" />
-              Reschedule
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {canReschedule && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRescheduleModal(true)}
+              >
+                <CalendarClock className="w-4 h-4 mr-1" />
+                Reschedule
+              </Button>
+            )}
+            {canCancel && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowCancelModal(true)}
+              >
+                <XCircle className="w-4 h-4 mr-1" />
+                Cancel
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {job.scheduled_at && (
@@ -219,6 +263,32 @@ export default function JobDetailPage() {
               </div>
             </div>
           )}
+
+          {/* Revenue Tier with Confidence */}
+          {job.revenue_tier_label && (
+            <div className="flex items-center gap-3">
+              <DollarSign className="w-5 h-5 text-gray-400" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <RevenueTierBadge tier={job.revenue_tier_label} />
+                  <span className="font-medium text-gray-900">
+                    {job.revenue_tier_description || getRevenueTierInfo(job.revenue_tier_label).label}
+                  </span>
+                  {job.revenue_confidence && (
+                    <ConfidenceIndicator confidence={job.revenue_confidence} />
+                  )}
+                </div>
+                <p className="text-sm text-gray-500">
+                  Est. {job.revenue_tier_range || getRevenueTierInfo(job.revenue_tier_label).range}
+                </p>
+                {job.revenue_tier_signals && job.revenue_tier_signals.length > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Signals: {job.revenue_tier_signals.join(', ')}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -237,6 +307,14 @@ export default function JobDetailPage() {
         </Card>
       )}
 
+      {/* Diagnostic Context */}
+      <DiagnosticContext
+        problemDuration={job.problem_duration}
+        problemOnset={job.problem_onset}
+        problemPattern={job.problem_pattern}
+        customerAttemptedFixes={job.customer_attempted_fixes}
+      />
+
       {/* Needs Action Note */}
       {job.needs_action_note && (
         <Card className="border-red-200 bg-red-50">
@@ -248,6 +326,9 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* SMS Activity */}
+      <SmsHistory jobId={job.id} />
 
       {/* Call Transcript */}
       {job.call_transcript && (
@@ -270,6 +351,25 @@ export default function JobDetailPage() {
           timezone={timezone}
           onClose={() => setShowRescheduleModal(false)}
           onRescheduled={handleRescheduled}
+        />
+      )}
+
+      {/* Edit Job Modal */}
+      {showEditModal && job && (
+        <EditJobModal
+          job={job}
+          onClose={() => setShowEditModal(false)}
+          onSaved={handleEdited}
+        />
+      )}
+
+      {/* Cancel Modal */}
+      {showCancelModal && job && (
+        <CancelModal
+          job={job}
+          timezone={timezone}
+          onClose={() => setShowCancelModal(false)}
+          onCancelled={handleCancelled}
         />
       )}
     </div>

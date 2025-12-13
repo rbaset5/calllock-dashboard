@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { RevenueTierBadge } from '@/components/ui/revenue-tier-badge';
 import { MoreHorizontal } from 'lucide-react';
 import type { Job } from '@/types/database';
 
@@ -75,12 +76,19 @@ export const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
               <span className="text-sm text-gray-700">{job.customer_name}</span>
             </div>
 
-            {/* Estimated Value */}
-            {job.estimated_value && (
+            {/* Revenue Tier Badge or Estimated Value */}
+            {job.revenue_tier_label ? (
+              <RevenueTierBadge
+                tier={job.revenue_tier}
+                label={job.revenue_tier_label}
+                signals={job.revenue_tier_signals}
+                showTooltip
+              />
+            ) : job.estimated_value ? (
               <span className="text-sm font-medium text-gray-900">
                 ${job.estimated_value.toLocaleString()}
               </span>
-            )}
+            ) : null}
           </div>
         </CardContent>
       </Card>

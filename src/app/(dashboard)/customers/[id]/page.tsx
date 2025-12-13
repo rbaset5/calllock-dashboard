@@ -1,23 +1,27 @@
 'use client';
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { CustomerDetailResponse } from '@/app/api/customers/[id]/route';
-import { CustomerDetail, CustomerNotes } from '@/components/customers';
+import { CustomerDetail, CustomerNotes, EditCustomerModal } from '@/components/customers';
+import { UpcomingAppointmentCard } from '@/components/customers/upcoming-appointment-card';
+import { InteractionTimeline } from '@/components/customers/interaction-timeline';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
+import type { Customer } from '@/types/database';
 
 interface CustomerDetailPageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 export default function CustomerDetailPage({ params }: CustomerDetailPageProps) {
-  const { id } = use(params);
+  const { id } = params;
   const router = useRouter();
   const [data, setData] = useState<CustomerDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timezone, setTimezone] = useState('America/New_York');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchCustomer = useCallback(async () => {
     try {
@@ -95,6 +99,13 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         Back
       </Button>
 
+      {/* Upcoming Appointment (if any) */}
+      {data.upcomingJobs && data.upcomingJobs.length > 0 && (
+        <div className="mb-4">
+          <UpcomingAppointmentCard job={data.upcomingJobs[0]} timezone={timezone} />
+        </div>
+      )}
+
       {/* Customer Updates (AI reads these to customer) */}
       <CustomerNotes phone={data.customer.phone} />
 
@@ -102,7 +113,30 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         customer={data.customer}
         serviceHistory={data.serviceHistory}
         timezone={timezone}
+        onEdit={() => setShowEditModal(true)}
       />
+
+      {/* Interaction Timeline (jobs + leads + SMS) */}
+      <div className="mt-4">
+        <InteractionTimeline
+          jobs={data.serviceHistory}
+          leads={data.leads || []}
+          smsLogs={data.recentSms || []}
+          timezone={timezone}
+        />
+      </div>
+
+      {/* Edit Customer Modal */}
+      {showEditModal && (
+        <EditCustomerModal
+          customer={data.customer}
+          onClose={() => setShowEditModal(false)}
+          onSaved={(updatedCustomer: Customer) => {
+            setData({ ...data, customer: updatedCustomer });
+            setShowEditModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

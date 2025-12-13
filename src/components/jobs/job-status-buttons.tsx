@@ -7,7 +7,6 @@ import {
   Truck,
   MapPin,
   Check,
-  X,
   AlertTriangle,
   DollarSign,
 } from 'lucide-react';
@@ -21,22 +20,20 @@ interface JobStatusButtonsProps {
   needsAction: boolean;
 }
 
+// Cancel button removed from status transitions - use CancelModal instead
+// to ensure Cal.com bookings are properly cancelled
 const statusTransitions: Record<JobStatus, { next: JobStatus | null; label: string; icon: typeof CheckCircle }[]> = {
   new: [
     { next: 'confirmed', label: 'Confirm', icon: CheckCircle },
-    { next: 'cancelled', label: 'Cancel', icon: X },
   ],
   confirmed: [
     { next: 'en_route', label: 'En Route', icon: Truck },
-    { next: 'cancelled', label: 'Cancel', icon: X },
   ],
   en_route: [
     { next: 'on_site', label: 'On Site', icon: MapPin },
-    { next: 'cancelled', label: 'Cancel', icon: X },
   ],
   on_site: [
     { next: 'complete', label: 'Complete', icon: Check },
-    { next: 'cancelled', label: 'Cancel', icon: X },
   ],
   complete: [],
   cancelled: [],
@@ -66,9 +63,7 @@ export function JobStatusButtons({ jobId, currentStatus, needsAction }: JobStatu
       }
     }
 
-    if (newStatus === 'cancelled') {
-      updates.cancelled_at = new Date().toISOString();
-    }
+    // Note: Cancel is now handled via CancelModal to ensure Cal.com sync
 
     const { error } = await (supabase
       .from('jobs') as any)
@@ -156,21 +151,20 @@ export function JobStatusButtons({ jobId, currentStatus, needsAction }: JobStatu
 
       {/* Status Transition Buttons */}
       {!showRevenueInput && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {transitions.map(({ next, label, icon: Icon }) => {
             if (!next) return null;
 
-            const isCancel = next === 'cancelled';
             const isComplete = next === 'complete';
 
             return (
               <Button
                 key={next}
-                variant={isCancel ? 'destructive' : 'primary'}
+                variant="primary"
                 size="lg"
                 loading={loading === next}
                 onClick={() => isComplete ? handleComplete() : updateStatus(next)}
-                className={isCancel ? 'col-span-1' : 'col-span-1'}
+                className="w-full"
               >
                 <Icon className="w-5 h-5 mr-2" />
                 {label}

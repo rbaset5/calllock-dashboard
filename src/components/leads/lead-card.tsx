@@ -2,6 +2,7 @@
 
 import { Lead } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
+import { RevenueTierBadge } from '@/components/ui/revenue-tier-badge';
 import { MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -94,12 +95,19 @@ export function LeadCard({ lead, onMenuClick, onClick }: LeadCardProps) {
             <span className="text-sm text-gray-700">{lead.customer_name}</span>
           </div>
 
-          {/* Estimated Value */}
-          {lead.estimated_value && (
+          {/* Revenue Tier Badge or Estimated Value */}
+          {lead.revenue_tier_label ? (
+            <RevenueTierBadge
+              tier={lead.revenue_tier}
+              label={lead.revenue_tier_label}
+              signals={lead.revenue_tier_signals}
+              showTooltip
+            />
+          ) : lead.estimated_value ? (
             <span className="text-sm font-medium text-gray-900">
               ${lead.estimated_value.toLocaleString()}
             </span>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>

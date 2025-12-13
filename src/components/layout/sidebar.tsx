@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Sun, Inbox, Calendar, Users, BarChart3, Settings, LogOut, BookOpen } from 'lucide-react';
+import { Sun, Inbox, Calendar, Users, BarChart3, Settings, LogOut, BookOpen, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 
 const navItems = [
   { href: '/today', label: 'Today', icon: Sun },
   { href: '/action-items', label: 'Action Items', icon: Inbox },
+  { href: '/alerts', label: 'Alerts', icon: Bell },
   { href: '/schedule', label: 'Schedule', icon: Calendar },
   { href: '/customers', label: 'Customers', icon: Users },
 ];
