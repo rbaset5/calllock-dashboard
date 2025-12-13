@@ -1,7 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendSMS, smsTemplates, notificationTemplates } from '@/lib/twilio';
-import { getAlertContext } from '@/lib/notification-service';
+import { getAlertContext, findLeadByCustomerPhone } from '@/lib/notification-service';
+
+/**
+ * Helper to get lead context with fallback to customer phone lookup
+ */
+async function getLeadContext(operatorPhone: string): Promise<{
+  leadId: string;
+  customerName: string;
+} | null> {
+  // First try to get context from sms_alert_context table
+  const context = await getAlertContext(operatorPhone);
+
+  if (context?.leadId) {
+    return {
+      leadId: context.leadId,
+      customerName: context.customerName || 'Lead',
+    };
+  }
+
+  // Fallback: if we have customer phone but no lead ID, look it up
+  if (context?.customerPhone) {
+    const leadInfo = await findLeadByCustomerPhone(context.customerPhone);
+    if (leadInfo) {
+      return leadInfo;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Helper to add note to a lead
+ */
+async function addNoteToLead(
+  supabase: ReturnType<typeof createAdminClient>,
+  leadId: string,
+  noteText: string,
+  from: string
+): Promise<void> {
+  const { data: lead } = await supabase
+    .from('leads')
+    .select('notes')
+    .eq('id', leadId)
+    .single();
+
+  const existingNotes = (lead?.notes as Array<{text: string; source: string; created_at: string}>) || [];
+  const newNote = {
+    text: noteText,
+    source: 'sms',
+    created_by: from,
+    created_at: new Date().toISOString(),
+  };
+
+  await supabase
+    .from('leads')
+    .update({
+      notes: [...existingNotes, newNote],
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', leadId);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,6 +146,188 @@ export async function POST(request: NextRequest) {
 
       console.log(`User ${userId} resubscribed to SMS`);
       return twimlResponse('');
+    }
+
+    // ============================================
+    // NUMERIC REPLY CODES (1-5)
+    // 1 = Called back, 2 = Left voicemail, 3 = Add note
+    // 4 = Scheduled/booked, 5 = Lost/not interested
+    // ============================================
+
+    // Code 1 - Called back successfully
+    if (body === '1') {
+      const leadContext = await getLeadContext(from);
+
+      if (leadContext) {
+        await supabase
+          .from('leads')
+          .update({ status: 'callback_requested', updated_at: new Date().toISOString() })
+          .eq('id', leadContext.leadId);
+
+        // Add auto-note
+        await addNoteToLead(supabase, leadContext.leadId, 'Contacted via phone', from);
+
+        const confirmMsg = `✓ ${leadContext.customerName} marked CONTACTED`;
+        await sendSMS(from, confirmMsg);
+
+        await supabase.from('sms_log').insert({
+          user_id: userId,
+          direction: 'inbound',
+          to_phone: process.env.TWILIO_PHONE_NUMBER!,
+          from_phone: from,
+          body: body,
+          status: 'received',
+          event_type: 'lead_update',
+        });
+
+        console.log(`Lead ${leadContext.leadId} marked contacted via code 1`);
+        return twimlResponse('');
+      } else {
+        await sendSMS(from, 'No recent lead to update. Open the app to manage leads.');
+        return twimlResponse('');
+      }
+    }
+
+    // Code 2 - Left voicemail / no answer
+    if (body === '2') {
+      const leadContext = await getLeadContext(from);
+
+      if (leadContext) {
+        await supabase
+          .from('leads')
+          .update({ status: 'voicemail_left', updated_at: new Date().toISOString() })
+          .eq('id', leadContext.leadId);
+
+        // Add auto-note
+        await addNoteToLead(supabase, leadContext.leadId, 'Left voicemail', from);
+
+        const confirmMsg = `✓ ${leadContext.customerName} marked VOICEMAIL`;
+        await sendSMS(from, confirmMsg);
+
+        await supabase.from('sms_log').insert({
+          user_id: userId,
+          direction: 'inbound',
+          to_phone: process.env.TWILIO_PHONE_NUMBER!,
+          from_phone: from,
+          body: body,
+          status: 'received',
+          event_type: 'lead_update',
+        });
+
+        console.log(`Lead ${leadContext.leadId} marked voicemail_left via code 2`);
+        return twimlResponse('');
+      } else {
+        await sendSMS(from, 'No recent lead to update. Open the app to manage leads.');
+        return twimlResponse('');
+      }
+    }
+
+    // Code 3 + text - Add note (e.g., "3 Customer prefers mornings")
+    const originalBodyRaw = (await request.clone().formData()).get('Body') as string;
+    if (originalBodyRaw?.startsWith('3 ') || originalBodyRaw?.startsWith('3:')) {
+      const noteText = originalBodyRaw.substring(2).trim();
+
+      if (!noteText) {
+        await sendSMS(from, 'Please include a note after 3 (e.g., "3 Customer prefers mornings")');
+        return twimlResponse('');
+      }
+
+      const leadContext = await getLeadContext(from);
+
+      if (leadContext) {
+        await addNoteToLead(supabase, leadContext.leadId, noteText, from);
+
+        const confirmMsg = `✓ Note added to ${leadContext.customerName}`;
+        await sendSMS(from, confirmMsg);
+
+        await supabase.from('sms_log').insert({
+          user_id: userId,
+          direction: 'inbound',
+          to_phone: process.env.TWILIO_PHONE_NUMBER!,
+          from_phone: from,
+          body: originalBodyRaw,
+          status: 'received',
+          event_type: 'lead_note',
+        });
+
+        console.log(`Note added to lead ${leadContext.leadId} via code 3`);
+        return twimlResponse('');
+      } else {
+        await sendSMS(from, 'No recent lead to add note to. Open the app to manage leads.');
+        return twimlResponse('');
+      }
+    }
+
+    // Code 4 - Scheduled/booked
+    if (body === '4') {
+      const leadContext = await getLeadContext(from);
+
+      if (leadContext) {
+        await supabase
+          .from('leads')
+          .update({ status: 'converted', updated_at: new Date().toISOString() })
+          .eq('id', leadContext.leadId);
+
+        // Add auto-note
+        await addNoteToLead(supabase, leadContext.leadId, 'Scheduled appointment', from);
+
+        const confirmMsg = `✓ ${leadContext.customerName} marked SCHEDULED`;
+        await sendSMS(from, confirmMsg);
+
+        await supabase.from('sms_log').insert({
+          user_id: userId,
+          direction: 'inbound',
+          to_phone: process.env.TWILIO_PHONE_NUMBER!,
+          from_phone: from,
+          body: body,
+          status: 'received',
+          event_type: 'lead_update',
+        });
+
+        console.log(`Lead ${leadContext.leadId} marked converted via code 4`);
+        return twimlResponse('');
+      } else {
+        await sendSMS(from, 'No recent lead to update. Open the app to manage leads.');
+        return twimlResponse('');
+      }
+    }
+
+    // Code 5 - Lost/not interested
+    if (body === '5') {
+      const leadContext = await getLeadContext(from);
+
+      if (leadContext) {
+        await supabase
+          .from('leads')
+          .update({
+            status: 'lost',
+            lost_reason: 'Not interested (marked via SMS)',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', leadContext.leadId);
+
+        // Add auto-note
+        await addNoteToLead(supabase, leadContext.leadId, 'Customer not interested', from);
+
+        const confirmMsg = `✓ ${leadContext.customerName} marked LOST`;
+        await sendSMS(from, confirmMsg);
+
+        await supabase.from('sms_log').insert({
+          user_id: userId,
+          direction: 'inbound',
+          to_phone: process.env.TWILIO_PHONE_NUMBER!,
+          from_phone: from,
+          body: body,
+          status: 'received',
+          event_type: 'lead_update',
+        });
+
+        console.log(`Lead ${leadContext.leadId} marked lost via code 5`);
+        return twimlResponse('');
+      } else {
+        await sendSMS(from, 'No recent lead to update. Open the app to manage leads.');
+        return twimlResponse('');
+      }
     }
 
     // ============================================
@@ -439,7 +681,7 @@ export async function POST(request: NextRequest) {
     // HELP - Show available commands
     // ============================================
     if (body === 'HELP' || body === '?') {
-      const helpMsg = 'Commands: OK, CALL, COMPLETE, CONTACTED, SCHEDULED, CLOSED, NOTE: [text], STOP';
+      const helpMsg = 'Codes: 1=Called 2=VM 3=Note 4=Booked 5=Lost\nOr: OK CALL COMPLETE STOP';
       await sendSMS(from, helpMsg);
 
       await supabase.from('sms_log').insert({

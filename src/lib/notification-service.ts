@@ -407,6 +407,51 @@ export async function getAlertContext(operatorPhone: string): Promise<{
 }
 
 /**
+ * Find lead by customer phone number (fallback when context doesn't have lead_id)
+ */
+export async function findLeadByCustomerPhone(
+  customerPhone: string
+): Promise<{ leadId: string; customerName: string } | null> {
+  const supabase = createAdminClient();
+
+  // Normalize phone number
+  const normalizedPhone = normalizePhoneForLookup(customerPhone);
+
+  // Try to find recent active lead by customer phone
+  const { data: lead, error } = await supabase
+    .from('leads')
+    .select('id, customer_name')
+    .or(`customer_phone.eq.${normalizedPhone},customer_phone.eq.${customerPhone}`)
+    .not('status', 'in', '("converted","lost")')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !lead) {
+    return null;
+  }
+
+  return {
+    leadId: lead.id,
+    customerName: lead.customer_name,
+  };
+}
+
+/**
+ * Normalize phone number for lookup
+ */
+function normalizePhoneForLookup(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+${digits}`;
+  }
+  return phone.startsWith('+') ? phone : `+${digits}`;
+}
+
+/**
  * Main entry point - sends or queues a notification
  */
 export async function sendOperatorNotification(
