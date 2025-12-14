@@ -6,6 +6,7 @@ import { CustomerDetailResponse } from '@/app/api/customers/[id]/route';
 import { CustomerDetail, CustomerNotes, EditCustomerModal } from '@/components/customers';
 import { UpcomingAppointmentCard } from '@/components/customers/upcoming-appointment-card';
 import { InteractionTimeline } from '@/components/customers/interaction-timeline';
+import { CallHistoryList } from '@/components/calls/call-history-list';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import type { Customer } from '@/types/database';
@@ -115,6 +116,11 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         timezone={timezone}
         onEdit={() => setShowEditModal(true)}
       />
+
+      {/* Dedicated Call History */}
+      <div className="mt-4">
+        <CallHistoryList phone={data.customer.phone} />
+      </div>
 
       {/* Interaction Timeline (jobs + leads + calls + SMS) */}
       <div className="mt-4">
