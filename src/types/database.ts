@@ -233,6 +233,12 @@ export type EndCallReason = CallOutcome;
 // Callback status for emergency alerts
 export type CallbackStatus = 'pending' | 'delivered' | 'expired' | 'no_answer';
 
+// Structured transcript message from Retell
+export interface TranscriptMessage {
+  role: 'agent' | 'user';
+  content: string;
+}
+
 // Call record (synced from backend)
 export interface Call {
   id: string;
@@ -251,6 +257,7 @@ export interface Call {
   problem_description: string | null;
   revenue_tier_label: string | null;
   revenue_tier_signals: string[] | null;
+  transcript_object: TranscriptMessage[] | null;  // Structured transcript with speaker labels
   job_id: string | null;
   lead_id: string | null;
   synced_from_backend: boolean;

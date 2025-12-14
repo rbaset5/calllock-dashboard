@@ -6,6 +6,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
  * Called after each call ends to sync call history to dashboard
  */
 
+interface TranscriptMessage {
+  role: 'agent' | 'user';
+  content: string;
+}
+
 interface IncomingCall {
   call_id: string;
   retell_call_id?: string;
@@ -21,6 +26,7 @@ interface IncomingCall {
   problem_description?: string;
   revenue_tier_label?: string;
   revenue_tier_signals?: string[];
+  transcript_object?: TranscriptMessage[];  // Structured transcript with speaker labels
   job_id?: string;
   lead_id?: string;
   user_email: string; // To find the user
@@ -85,6 +91,7 @@ export async function POST(request: NextRequest) {
           problem_description: body.problem_description || null,
           revenue_tier_label: body.revenue_tier_label || null,
           revenue_tier_signals: body.revenue_tier_signals || null,
+          transcript_object: body.transcript_object || null,
           job_id: body.job_id || null,
           lead_id: body.lead_id || null,
         })
@@ -126,6 +133,7 @@ export async function POST(request: NextRequest) {
         problem_description: body.problem_description || null,
         revenue_tier_label: body.revenue_tier_label || null,
         revenue_tier_signals: body.revenue_tier_signals || null,
+        transcript_object: body.transcript_object || null,
         job_id: body.job_id || null,
         lead_id: body.lead_id || null,
         synced_from_backend: true,
