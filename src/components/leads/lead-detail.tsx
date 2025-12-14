@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Lead } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,8 @@ import {
 import { EndCallReasonBadge, getEndCallReasonInfo } from '@/components/ui/end-call-reason-badge';
 import { DiagnosticContext } from '@/components/ui/diagnostic-context';
 import { OperatorNotes } from '@/components/ui/operator-notes';
+import { CallHistoryList } from '@/components/calls/call-history-list';
+import { CustomerContext } from '@/components/customers/customer-context';
 import {
   Collapsible,
   CollapsibleContent,
@@ -36,6 +39,8 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { categorizeTierSignals, isCriticalSignal } from '@/lib/revenue-signals';
+import { CriticalSignalBadge, SignalBadge } from '@/components/ui/critical-signal-badge';
 
 interface LeadDetailProps {
   lead: Lead;
@@ -160,14 +165,16 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
             <p className="text-xs text-gray-600 mt-1">
               Est. {lead.revenue_tier_range || tierInfo.range}
             </p>
-            {/* Show AI-detected signals if available */}
+            {/* Show AI-detected signals if available - critical signals first */}
             {tierSignals.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
-                {tierSignals.map((signal, i) => (
-                  <span key={i} className="text-xs bg-white/60 rounded px-1.5 py-0.5 text-gray-700">
-                    {signal}
-                  </span>
-                ))}
+                {tierSignals.map((signal, i) =>
+                  isCriticalSignal(signal) ? (
+                    <CriticalSignalBadge key={i} signal={signal} />
+                  ) : (
+                    <SignalBadge key={i} signal={signal} className="bg-white/60 text-gray-700" />
+                  )
+                )}
               </div>
             )}
           </div>
@@ -189,12 +196,16 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
 
           {/* Original Call Link */}
           {lead.original_call_id && (
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+            <Link
+              href={`/calls/${lead.original_call_id}`}
+              className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 hover:bg-gray-50 -mx-2 px-2 py-1 rounded transition"
+            >
               <Phone className="w-4 h-4 text-blue-500" />
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 flex-1">
                 From voice call on {new Date(lead.created_at).toLocaleDateString()}
               </span>
-            </div>
+              <span className="text-xs text-blue-600">View Call →</span>
+            </Link>
           )}
         </CardContent>
       </Card>
@@ -286,12 +297,18 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
         </Card>
       )}
 
+      {/* Customer Context */}
+      <CustomerContext phone={lead.customer_phone} />
+
       {/* Operator Notes */}
       <OperatorNotes
         customerPhone={lead.customer_phone}
         customerName={lead.customer_name}
         leadId={lead.id}
       />
+
+      {/* Call History */}
+      <CallHistoryList phone={lead.customer_phone} />
 
       {/* Call Transcript (Collapsible) */}
       {lead.call_transcript && (
