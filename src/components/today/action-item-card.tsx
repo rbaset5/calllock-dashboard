@@ -1,7 +1,7 @@
 'use client';
 
 import { ActionItem, ActionItemType } from '@/app/api/today/route';
-import { Phone, MoreHorizontal, MessageSquare, Calendar, XCircle, Clock, Eye, History, CheckCircle } from 'lucide-react';
+import { Phone, MoreHorizontal, MessageSquare, Calendar, XCircle, Clock, Eye, History, CheckCircle, User } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/format';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -296,16 +296,9 @@ export function ActionItemCard({
 
         {/* Customer Name with Avatar */}
         <div className="flex items-center gap-3 mt-2">
-          {(() => {
-            const avatarColor = getAvatarColor(item.title);
-            return (
-              <div className={`w-10 h-10 rounded-full ${avatarColor.bg} flex items-center justify-center flex-shrink-0`}>
-                <span className={`text-lg font-semibold ${avatarColor.text}`}>
-                  {item.title.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            );
-          })()}
+          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <User className="w-5 h-5 text-gray-400" />
+          </div>
           <p className="text-sm text-gray-500">{item.title}</p>
         </div>
 
