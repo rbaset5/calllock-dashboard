@@ -4,6 +4,8 @@ import * as React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { RevenueTierBadge } from '@/components/ui/revenue-tier-badge';
 import { MoreHorizontal } from 'lucide-react';
+import { getOrderedSignals, isCriticalSignal } from '@/lib/revenue-signals';
+import { CriticalSignalBadge, SignalBadge } from '@/components/ui/critical-signal-badge';
 import type { Job } from '@/types/database';
 
 interface JobCardProps {
@@ -91,14 +93,16 @@ export const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
             ) : null}
           </div>
 
-          {/* Inline Revenue Signals (visible without hover) */}
+          {/* Inline Revenue Signals (visible without hover) - critical first */}
           {job.revenue_tier_signals && job.revenue_tier_signals.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {job.revenue_tier_signals.slice(0, 2).map((signal, i) => (
-                <span key={i} className="text-xs bg-gray-100 rounded px-1.5 py-0.5 text-gray-600">
-                  {signal}
-                </span>
-              ))}
+              {getOrderedSignals(job.revenue_tier_signals).slice(0, 2).map((signal, i) =>
+                isCriticalSignal(signal) ? (
+                  <CriticalSignalBadge key={i} signal={signal} />
+                ) : (
+                  <SignalBadge key={i} signal={signal} />
+                )
+              )}
               {job.revenue_tier_signals.length > 2 && (
                 <span className="text-xs text-gray-400">
                   +{job.revenue_tier_signals.length - 2} more

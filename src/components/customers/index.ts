@@ -3,3 +3,6 @@ export { CustomerCard } from './customer-card';
 export { CustomerDetail } from './customer-detail';
 export { CustomerNotes } from './customer-notes';
 export { EditCustomerModal } from './edit-customer-modal';
+export { CustomerContext } from './customer-context';
+export { CustomerTimelineCompact } from './customer-timeline-compact';
+export { CustomerAlertHistory } from './customer-alert-history';

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge, UrgencyBadge } from '@/components/ui/badge';
 import { Phone, Mail, MapPin, Navigation, MessageSquare, Wrench, Calendar, DollarSign, Edit } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '@/lib/format';
+import { CustomerAlertHistory } from './customer-alert-history';
 
 interface CustomerDetailProps {
   customer: Customer;
@@ -179,6 +180,9 @@ export function CustomerDetail({ customer, serviceHistory, timezone, onEdit }: C
           <ServiceHistoryList jobs={serviceHistory} timezone={timezone} />
         </CardContent>
       </Card>
+
+      {/* Emergency Alert History */}
+      <CustomerAlertHistory phone={customer.phone} />
 
       {/* Notes */}
       {customer.notes && (

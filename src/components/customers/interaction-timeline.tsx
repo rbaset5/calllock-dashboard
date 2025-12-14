@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { isCriticalSignal, getOrderedSignals } from '@/lib/revenue-signals';
 import type { Job, Lead, SmsLog, Call } from '@/types/database';
 
 interface InteractionTimelineProps {
@@ -282,9 +283,21 @@ function CallTimelineItem({ call }: { call: Call }) {
           </p>
         )}
         {call.revenue_tier_signals && call.revenue_tier_signals.length > 0 && (
-          <p className="text-xs text-gray-500 mt-0.5">
-            Signals: {call.revenue_tier_signals.join(', ')}
-          </p>
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            {getOrderedSignals(call.revenue_tier_signals).map((signal, i) => (
+              <span
+                key={i}
+                className={cn(
+                  'text-xs px-1 py-0.5 rounded',
+                  isCriticalSignal(signal)
+                    ? 'bg-orange-100 text-orange-800 font-medium'
+                    : 'bg-gray-100 text-gray-600'
+                )}
+              >
+                {signal}
+              </span>
+            ))}
+          </div>
         )}
         <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
           <Clock className="w-3 h-3" />

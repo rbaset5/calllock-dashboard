@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Sun, Inbox, Calendar, Users, BarChart3, Settings, LogOut, BookOpen, Bell } from 'lucide-react';
+import { Sun, Inbox, Calendar, Users, BarChart3, Settings, LogOut, BookOpen, Bell, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 
@@ -15,6 +15,7 @@ const navItems = [
 ];
 
 const secondaryNavItems = [
+  { href: '/calls', label: 'Calls', icon: Phone },
   { href: '/knowledgebase', label: 'Knowledgebase', icon: BookOpen },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },

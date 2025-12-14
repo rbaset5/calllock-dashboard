@@ -15,6 +15,8 @@ import { CancelModal } from '@/components/jobs/cancel-modal';
 import { EditJobModal } from '@/components/jobs/edit-job-modal';
 import { SmsHistory } from '@/components/ui/sms-history';
 import { OperatorNotes } from '@/components/ui/operator-notes';
+import { CallHistoryList } from '@/components/calls/call-history-list';
+import { CustomerContext } from '@/components/customers/customer-context';
 import { formatDateTime, formatScheduleTime, formatCurrency } from '@/lib/format';
 import { formatPhone, phoneHref } from '@/lib/utils';
 import type { Job } from '@/types/database';
@@ -331,12 +333,18 @@ export default function JobDetailPage() {
       {/* SMS Activity */}
       <SmsHistory jobId={job.id} />
 
+      {/* Customer Context */}
+      <CustomerContext phone={job.customer_phone} />
+
       {/* Operator Notes */}
       <OperatorNotes
         customerPhone={job.customer_phone}
         customerName={job.customer_name}
         jobId={job.id}
       />
+
+      {/* Call History */}
+      <CallHistoryList phone={job.customer_phone} />
 
       {/* Call Transcript */}
       {job.call_transcript && (

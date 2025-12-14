@@ -1,6 +1,8 @@
 'use client';
 
+import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isCriticalSignal, getOrderedSignals } from '@/lib/revenue-signals';
 import type { RevenueTier, RevenueTierLabel } from '@/types/database';
 
 interface RevenueTierBadgeProps {
@@ -79,8 +81,18 @@ export function RevenueTierBadge({
           <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
             <div className="font-medium mb-1">{description}</div>
             <ul className="space-y-0.5">
-              {signals.map((signal, i) => (
-                <li key={i} className="text-gray-300">• {signal}</li>
+              {getOrderedSignals(signals).map((signal, i) => (
+                <li
+                  key={i}
+                  className={cn(
+                    isCriticalSignal(signal)
+                      ? 'text-orange-300 font-medium flex items-center gap-1'
+                      : 'text-gray-300'
+                  )}
+                >
+                  {isCriticalSignal(signal) && <AlertTriangle className="w-3 h-3" />}
+                  • {signal}
+                </li>
               ))}
             </ul>
             {/* Arrow */}

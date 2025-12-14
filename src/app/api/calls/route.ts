@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 /**
- * GET /api/calls?phone=xxx or ?customer_id=xxx
- * Returns call history for a customer
+ * GET /api/calls?phone=xxx&customer_id=xxx&outcome=xxx
+ * Returns call history with optional filtering
  */
 export async function GET(request: NextRequest) {
   try {
@@ -15,9 +15,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get user profile for timezone
+    const { data: profile } = await supabase
+      .from('users')
+      .select('timezone')
+      .eq('id', user.id)
+      .single();
+
     const { searchParams } = new URL(request.url);
     const phone = searchParams.get('phone');
     const customerId = searchParams.get('customer_id');
+    const outcome = searchParams.get('outcome');
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
@@ -33,6 +41,11 @@ export async function GET(request: NextRequest) {
       // Normalize phone for matching
       const normalizedPhone = phone.replace(/\D/g, '');
       query = query.or(`phone_number.ilike.%${normalizedPhone}%,phone_number.ilike.%${phone}%`);
+    }
+
+    // Filter by outcome
+    if (outcome) {
+      query = query.eq('outcome', outcome);
     }
 
     // Filter by customer (look up phone from customer record)
@@ -64,6 +77,7 @@ export async function GET(request: NextRequest) {
       total: count || 0,
       limit,
       offset,
+      timezone: profile?.timezone || 'America/New_York',
     });
   } catch (error) {
     console.error('API error:', error);
