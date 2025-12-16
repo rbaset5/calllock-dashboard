@@ -21,7 +21,7 @@ function AlphabetIndex({
         <button
           key={letter}
           onClick={() => onLetterClick(letter)}
-          className="w-6 h-5 text-[10px] font-semibold text-primary-600 hover:bg-primary-100 rounded flex items-center justify-center"
+          className="w-6 h-5 text-[10px] font-semibold text-navy-600 hover:bg-navy-100 rounded flex items-center justify-center"
         >
           {letter}
         </button>
@@ -101,13 +101,13 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-      <div className="p-4 lg:p-6">
+      <div className="cl-page-container">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-48" />
-          <div className="h-12 bg-gray-200 rounded" />
-          <div className="h-24 bg-gray-200 rounded" />
-          <div className="h-24 bg-gray-200 rounded" />
-          <div className="h-24 bg-gray-200 rounded" />
+          <div className="h-8 bg-navy-100 rounded w-48" />
+          <div className="h-12 bg-navy-100 rounded" />
+          <div className="h-24 bg-navy-100 rounded" />
+          <div className="h-24 bg-navy-100 rounded" />
+          <div className="h-24 bg-navy-100 rounded" />
         </div>
       </div>
     );
@@ -119,12 +119,12 @@ export default function CustomersPage() {
   const hasCustomers = customers.length > 0;
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="cl-page-container space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Customers</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="cl-heading-page">Customers</h1>
+          <p className="text-sm text-navy-400">
             {total} customer{total !== 1 ? 's' : ''} on file
           </p>
         </div>
@@ -133,6 +133,7 @@ export default function CustomersPage() {
           size="sm"
           onClick={() => fetchCustomers(true)}
           disabled={refreshing}
+          aria-label="Refresh customers"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
         </Button>
@@ -159,7 +160,7 @@ export default function CustomersPage() {
             {search || !groupedCustomers ? (
               // Flat list when searching
               <>
-                <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+                <h2 className="cl-heading-section">
                   Search Results
                 </h2>
                 <div className="space-y-3">
@@ -173,7 +174,7 @@ export default function CustomersPage() {
               groupedCustomers.sortedKeys.map((letter) => (
                 <div key={letter} id={`section-${letter}`}>
                   {/* Sticky section header */}
-                  <h2 className="sticky top-0 bg-[#F9FAFB] py-2 text-sm font-semibold text-gray-700 border-b border-gray-200 z-10 -mx-4 px-4 lg:-mx-6 lg:px-6">
+                  <h2 className="sticky top-0 bg-navy-50 py-2 text-sm font-semibold text-navy-700 border-b border-navy-200 z-10 -mx-4 px-4 lg:-mx-6 lg:px-6">
                     {letter}
                   </h2>
                   <div className="space-y-3 pt-3">
@@ -187,12 +188,12 @@ export default function CustomersPage() {
           </div>
         </>
       ) : (
-        <div className="bg-white rounded-lg border p-8 text-center">
-          <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <div className="bg-white rounded-xl border border-navy-200 p-8 text-center">
+          <Users className="w-12 h-12 text-navy-200 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-navy-800 mb-2">
             {search ? 'No customers found' : 'No customers yet'}
           </h3>
-          <p className="text-gray-500">
+          <p className="text-navy-400">
             {search
               ? 'Try a different search term'
               : 'Customers will appear here after completing jobs'}

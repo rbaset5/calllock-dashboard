@@ -3,31 +3,33 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Sun, Inbox, Calendar, Users } from 'lucide-react';
+import { AlertCircle, Calendar, Clock, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// V4 Navigation - ACTION/BOOKED model
 const navItems = [
-  { href: '/today', label: 'Today', icon: Sun },
-  { href: '/action-items', label: 'Action Items', icon: Inbox, hasBadge: true },
-  { href: '/schedule', label: 'Schedule', icon: Calendar },
-  { href: '/customers', label: 'Customers', icon: Users },
+  { href: '/action', label: 'Action', icon: AlertCircle, hasBadge: true },
+  { href: '/booked', label: 'Booked', icon: Calendar },
+  { href: '/history', label: 'History', icon: Clock },
+  { href: '/more', label: 'More', icon: MoreHorizontal },
 ];
 
 export function MobileNav() {
   const pathname = usePathname();
-  const [actionItemsCount, setActionItemsCount] = useState(0);
+  const [actionCount, setActionCount] = useState(0);
 
-  // Fetch action items count for badge
+  // Fetch action count for badge (leads needing attention)
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const response = await fetch('/api/leads');
+        const response = await fetch('/api/action');
         if (response.ok) {
           const data = await response.json();
-          setActionItemsCount(data.counts?.total || 0);
+          // Use total count from action API
+          setActionCount(data.counts?.total || 0);
         }
       } catch (error) {
-        console.error('Error fetching action items count:', error);
+        console.error('Error fetching action count:', error);
       }
     };
 
@@ -38,12 +40,12 @@ export function MobileNav() {
   }, []);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-bottom lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-navy-200 z-50 safe-area-bottom lg:hidden">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
-          const showBadge = item.hasBadge && actionItemsCount > 0;
+          const showBadge = item.hasBadge && actionCount > 0;
 
           return (
             <Link
@@ -52,21 +54,21 @@ export function MobileNav() {
               className={cn(
                 'relative flex flex-col items-center justify-center py-2 px-4 min-w-[64px] min-h-[56px] transition-colors',
                 isActive
-                  ? 'text-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-navy-600'
+                  : 'text-navy-400 hover:text-navy-600'
               )}
             >
               <div className="relative">
                 <Icon className="w-6 h-6" />
                 {showBadge && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
-                    {actionItemsCount > 99 ? '99+' : actionItemsCount}
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-gold-500 rounded-full">
+                    {actionCount > 99 ? '99+' : actionCount}
                   </span>
                 )}
               </div>
-              <span className="text-xs mt-1">{item.label}</span>
+              <span className="text-xs mt-1 font-medium">{item.label}</span>
               {isActive && (
-                <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-primary-600 rounded-full" />
+                <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-navy-600 rounded-full" />
               )}
             </Link>
           );

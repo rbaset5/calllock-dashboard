@@ -13,11 +13,21 @@ import { JobEventCard } from "@/components/ui/job-event-card"
 
 export type TimelineJob = {
   id: string
-  title: string
-  address: string
+  /** Problem type / issue description (e.g., "AC Not Cooling") */
+  problemType: string
   customerName: string
-  estimatedValue?: number
+  /** Customer phone number */
+  phone?: string
+  /** Neighborhood or area (e.g., "East Austin") */
+  neighborhood?: string
   scheduledTime: Date
+  // Kept for backwards compatibility and navigation
+  /** @deprecated Use problemType instead */
+  title?: string
+  /** Full address - kept for navigation */
+  address?: string
+  /** @deprecated No longer displayed */
+  estimatedValue?: number
 }
 
 type DailyTimelineProps = {
@@ -35,6 +45,22 @@ export default function DailyTimelineScheduler({
   selectedDate = new Date(),
   onJobClick,
 }: DailyTimelineProps) {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [showScrollFade, setShowScrollFade] = React.useState(true);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // Hide fade when scrolled to bottom (within 10px)
+    setShowScrollFade(scrollTop + clientHeight < scrollHeight - 10);
+  };
+
+  // Check on mount if content is scrollable
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      setShowScrollFade(el.scrollHeight > el.clientHeight);
+    }
+  }, [jobs]);
   // Calculate dynamic time range based on jobs
   const { dynamicStart, dynamicEnd } = React.useMemo(() => {
     if (jobs.length === 0) {
@@ -87,7 +113,12 @@ export default function DailyTimelineScheduler({
         <CardTitle className="text-center text-lg">{dateTitle}</CardTitle>
       </CardHeader>
       <CardContent className="px-0">
-        <div className="flex flex-col max-h-[400px] overflow-y-auto">
+        <div className="relative">
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex flex-col max-h-[400px] overflow-y-auto"
+          >
           {timeSlots.map((hour, index) => {
             const { time, period } = formatHour(hour)
             const jobsAtHour = getJobsAtHour(hour)
@@ -120,10 +151,11 @@ export default function DailyTimelineScheduler({
                       {jobsAtHour.map((job) => (
                         <JobEventCard
                           key={job.id}
-                          title={job.title}
-                          address={job.address}
+                          problemType={job.problemType || job.title || "HVAC Service"}
                           customerName={job.customerName}
-                          estimatedValue={job.estimatedValue}
+                          phone={job.phone}
+                          neighborhood={job.neighborhood}
+                          address={job.address}
                           compact
                           onClick={() => onJobClick?.(job)}
                         />
@@ -136,6 +168,12 @@ export default function DailyTimelineScheduler({
               </div>
             )
           })}
+          </div>
+
+          {/* Bottom fade indicator when more content to scroll */}
+          {showScrollFade && (
+            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+          )}
         </div>
       </CardContent>
     </Card>

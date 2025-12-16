@@ -9,23 +9,72 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
+      },
       colors: {
-        // CallLock brand colors (keeping for backwards compatibility)
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+        // CallLock Navy (Primary - Trust/Reliability)
+        navy: {
+          50: 'hsl(var(--cl-navy-50))',
+          100: 'hsl(var(--cl-navy-100))',
+          200: 'hsl(var(--cl-navy-200))',
+          300: 'hsl(var(--cl-navy-300))',
+          400: 'hsl(var(--cl-navy-400))',
+          500: 'hsl(var(--cl-navy-500))',
+          600: 'hsl(var(--cl-navy-600))',
+          700: 'hsl(var(--cl-navy-700))',
+          800: 'hsl(var(--cl-navy-800))',
+          900: 'hsl(var(--cl-navy-900))',
+          DEFAULT: 'hsl(var(--cl-navy-600))',
         },
-        // shadcn CSS variable colors
+        // CallLock Gold (Accent - Warmth/Action)
+        gold: {
+          50: 'hsl(var(--cl-gold-50))',
+          100: 'hsl(var(--cl-gold-100))',
+          200: 'hsl(var(--cl-gold-200))',
+          300: 'hsl(var(--cl-gold-300))',
+          400: 'hsl(var(--cl-gold-400))',
+          500: 'hsl(var(--cl-gold-500))',
+          600: 'hsl(var(--cl-gold-600))',
+          700: 'hsl(var(--cl-gold-700))',
+          800: 'hsl(var(--cl-gold-800))',
+          900: 'hsl(var(--cl-gold-900))',
+          DEFAULT: 'hsl(var(--cl-gold-500))',
+        },
+        // Semantic Colors
+        success: {
+          50: 'hsl(var(--cl-success-50))',
+          100: 'hsl(var(--cl-success-100))',
+          500: 'hsl(var(--cl-success-500))',
+          600: 'hsl(var(--cl-success-600))',
+          700: 'hsl(var(--cl-success-700))',
+          DEFAULT: 'hsl(var(--cl-success-500))',
+        },
+        warning: {
+          50: 'hsl(var(--cl-warning-50))',
+          100: 'hsl(var(--cl-warning-100))',
+          500: 'hsl(var(--cl-warning-500))',
+          600: 'hsl(var(--cl-warning-600))',
+          700: 'hsl(var(--cl-warning-700))',
+          DEFAULT: 'hsl(var(--cl-warning-500))',
+        },
+        error: {
+          50: 'hsl(var(--cl-error-50))',
+          100: 'hsl(var(--cl-error-100))',
+          500: 'hsl(var(--cl-error-500))',
+          600: 'hsl(var(--cl-error-600))',
+          700: 'hsl(var(--cl-error-700))',
+          DEFAULT: 'hsl(var(--cl-error-500))',
+        },
+        info: {
+          50: 'hsl(var(--cl-info-50))',
+          100: 'hsl(var(--cl-info-100))',
+          500: 'hsl(var(--cl-info-500))',
+          600: 'hsl(var(--cl-info-600))',
+          700: 'hsl(var(--cl-info-700))',
+          DEFAULT: 'hsl(var(--cl-info-500))',
+        },
+        // shadcn CSS variable colors (preserved for compatibility)
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -35,6 +84,10 @@ const config: Config = {
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
+        },
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -67,6 +120,8 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
       },
     },
   },

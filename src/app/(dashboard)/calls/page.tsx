@@ -90,14 +90,14 @@ export default function CallsPage() {
 
   if (loading && calls.length === 0) {
     return (
-      <div className="p-4 lg:p-6">
+      <div className="cl-page-container">
         <div className="mb-4 lg:mb-6">
-          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Call History</h1>
+          <h1 className="cl-heading-page">Call History</h1>
         </div>
         <div className="animate-pulse space-y-4">
-          <div className="h-12 bg-gray-200 rounded-lg w-full max-w-md" />
-          <div className="h-32 bg-gray-200 rounded-lg" />
-          <div className="h-32 bg-gray-200 rounded-lg" />
+          <div className="h-12 bg-navy-100 rounded-lg w-full max-w-md" />
+          <div className="h-32 bg-navy-100 rounded-lg" />
+          <div className="h-32 bg-navy-100 rounded-lg" />
         </div>
       </div>
     );
@@ -105,11 +105,11 @@ export default function CallsPage() {
 
   if (error) {
     return (
-      <div className="p-4 lg:p-6">
+      <div className="cl-page-container">
         <div className="mb-4 lg:mb-6">
-          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Call History</h1>
+          <h1 className="cl-heading-page">Call History</h1>
         </div>
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-error-50 border border-error-200 text-error-700 px-4 py-3 rounded-lg">
           {error}
         </div>
       </div>
@@ -117,24 +117,24 @@ export default function CallsPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6">
-      <div className="flex items-center justify-between mb-4 lg:mb-6">
-        <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Call History</h1>
-        <span className="text-sm text-gray-500">{total} calls</span>
+    <div className="cl-page-container space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="cl-heading-page">Call History</h1>
+        <span className="text-sm text-navy-400">{total} calls</span>
       </div>
 
       {/* Filters */}
-      <form onSubmit={handleSearch} className="mb-4 lg:mb-6">
+      <form onSubmit={handleSearch}>
         <div className="flex flex-col sm:flex-row gap-2">
           {/* Phone Search */}
           <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-300" />
             <input
               type="text"
               placeholder="Search by phone..."
               value={phoneSearch}
               onChange={(e) => setPhoneSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-9 pr-3 py-2.5 border border-navy-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-navy-500 placeholder:text-navy-300"
             />
           </div>
 
@@ -145,7 +145,7 @@ export default function CallsPage() {
               setOutcomeFilter(e.target.value);
               setOffset(0);
             }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2.5 border border-navy-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-navy-500"
           >
             {OUTCOME_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -173,9 +173,9 @@ export default function CallsPage() {
       {/* Calls List */}
       {calls.length === 0 ? (
         <div className="text-center py-12">
-          <Phone className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500">No calls found</p>
-          <p className="text-sm text-gray-400 mt-1">
+          <Phone className="w-16 h-16 mx-auto text-navy-200 mb-4" />
+          <p className="text-navy-600">No calls found</p>
+          <p className="text-sm text-navy-400 mt-1">
             {hasFilters
               ? 'Try adjusting your filters'
               : 'Call records will appear here when synced from CallLock'}
@@ -205,7 +205,7 @@ export default function CallsPage() {
               >
                 Previous
               </Button>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-navy-400">
                 {offset + 1} - {Math.min(offset + limit, total)} of {total}
               </span>
               <Button

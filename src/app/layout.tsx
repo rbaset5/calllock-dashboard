@@ -1,8 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import Script from "next/script";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import { ServiceWorkerRegistration } from "@/components/pwa";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "CallLock Dashboard",
@@ -14,7 +20,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#2563eb",
+  themeColor: "#334155", // Navy-600 for premium feel
 };
 
 export default function RootLayout({
@@ -24,7 +30,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <head>
+        <Script
+          src="https://unpkg.com/react-grab/dist/index.global.js"
+          strategy="beforeInteractive"
+        />
+        <Script
+          src="https://unpkg.com/@react-grab/claude-code/dist/client.global.js"
+          strategy="afterInteractive"
+        />
+      </head>
+      <body className={`${plusJakartaSans.variable} font-sans antialiased`}>
+        <ServiceWorkerRegistration />
+        {children}
+      </body>
     </html>
   );
 }

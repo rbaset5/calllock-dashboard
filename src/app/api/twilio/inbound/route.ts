@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendSMS, smsTemplates, notificationTemplates } from '@/lib/twilio';
 import { getAlertContext, findLeadByCustomerPhone } from '@/lib/notification-service';
+import {
+  parseTimeFromSMS,
+  parseSnoozeFromSMS,
+  generateBookingConfirmation,
+  generateSnoozeConfirmation,
+} from '@/lib/sms-time-parser';
 
 /**
  * Helper to get lead context with fallback to customer phone lookup
@@ -390,6 +396,260 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================
+    // SNOOZE - Remind later (V4)
+    // Format: SNOOZE 1H, SNOOZE 3H, SNOOZE TOMORROW, SNOOZE TOMORROW PM
+    // ============================================
+    const originalBodyForSnooze = (await request.clone().formData()).get('Body') as string;
+    if (originalBodyForSnooze?.toUpperCase().startsWith('SNOOZE')) {
+      const snoozePart = originalBodyForSnooze.substring(6).trim();
+      const leadContext = await getLeadContext(from);
+
+      if (!leadContext) {
+        await sendSMS(from, 'No recent lead to snooze. Open the app to manage leads.');
+        return twimlResponse('');
+      }
+
+      // Parse snooze duration
+      const parsed = parseSnoozeFromSMS(snoozePart);
+
+      if (!parsed.success || !parsed.snoozeUntil) {
+        await sendSMS(
+          from,
+          'Snooze format: SNOOZE 1H, SNOOZE 3H, SNOOZE TOMORROW, SNOOZE TOMORROW PM'
+        );
+        return twimlResponse('');
+      }
+
+      // Update lead with snooze time
+      await supabase
+        .from('leads')
+        .update({
+          remind_at: parsed.snoozeUntil.toISOString(),
+          callback_outcome: 'try_again',
+          callback_outcome_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', leadContext.leadId);
+
+      // Add note
+      await addNoteToLead(
+        supabase,
+        leadContext.leadId,
+        `Snoozed until ${parsed.displayText}`,
+        from,
+        userId
+      );
+
+      const confirmMsg = generateSnoozeConfirmation(leadContext.customerName, parsed.snoozeUntil);
+      await sendSMS(from, confirmMsg);
+
+      await supabase.from('sms_log').insert({
+        user_id: userId,
+        lead_id: leadContext.leadId,
+        direction: 'inbound',
+        to_phone: process.env.TWILIO_PHONE_NUMBER!,
+        from_phone: from,
+        body: originalBodyForSnooze,
+        status: 'received',
+        event_type: 'lead_snooze',
+      });
+
+      console.log(`Lead ${leadContext.leadId} snoozed until ${parsed.snoozeUntil.toISOString()}`);
+      return twimlResponse('');
+    }
+
+    // ============================================
+    // Code 4 with time - Book with specific time (V4)
+    // Format: 4 TUE 2PM, 4 TOMORROW 9AM, 4 MORNING
+    // ============================================
+    const originalBodyForBook = (await request.clone().formData()).get('Body') as string;
+    if (originalBodyForBook?.toUpperCase().startsWith('4 ')) {
+      const timePart = originalBodyForBook.substring(2).trim();
+      const leadContext = await getLeadContext(from);
+
+      if (!leadContext) {
+        await sendSMS(from, 'No recent lead to book. Open the app to manage leads.');
+        return twimlResponse('');
+      }
+
+      // Parse the time
+      const parsed = parseTimeFromSMS(timePart);
+
+      if (!parsed.success || !parsed.dateTime) {
+        // Need clarification
+        const promptMsg = parsed.clarificationPrompt || 'When? Reply: 4 TUE 2PM, 4 TOMORROW 9AM';
+        await sendSMS(from, promptMsg);
+        return twimlResponse('');
+      }
+
+      // Get lead details for booking
+      const { data: lead } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', leadContext.leadId)
+        .single();
+
+      if (!lead) {
+        await sendSMS(from, 'Lead not found. Open the app to manage leads.');
+        return twimlResponse('');
+      }
+
+      // Create job from lead (simplified booking without Cal.com for SMS flow)
+      const { data: job, error: jobError } = await supabase
+        .from('jobs')
+        .insert({
+          user_id: userId,
+          customer_name: lead.customer_name,
+          customer_phone: lead.customer_phone,
+          customer_address: lead.customer_address || '',
+          service_type: lead.service_type || 'hvac',
+          urgency: lead.urgency || 'medium',
+          ai_summary: lead.ai_summary,
+          scheduled_at: parsed.dateTime.toISOString(),
+          estimated_value: lead.estimated_value,
+          status: 'confirmed',
+          is_ai_booked: false,
+          booking_confirmed: true,
+          priority_color: lead.priority_color,
+          priority_reason: lead.priority_reason,
+        })
+        .select('id')
+        .single();
+
+      if (jobError || !job) {
+        console.error('Failed to create job via SMS:', jobError);
+        await sendSMS(from, 'Failed to book. Please try in the app.');
+        return twimlResponse('');
+      }
+
+      // Update lead as converted
+      await supabase
+        .from('leads')
+        .update({
+          status: 'converted',
+          converted_job_id: job.id,
+          converted_at: new Date().toISOString(),
+          callback_outcome: 'booked',
+          callback_outcome_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', leadContext.leadId);
+
+      // Send confirmation
+      const confirmMsg = generateBookingConfirmation(leadContext.customerName, parsed.dateTime);
+      await sendSMS(from, confirmMsg);
+
+      await supabase.from('sms_log').insert({
+        user_id: userId,
+        lead_id: leadContext.leadId,
+        job_id: job.id,
+        direction: 'inbound',
+        to_phone: process.env.TWILIO_PHONE_NUMBER!,
+        from_phone: from,
+        body: originalBodyForBook,
+        status: 'received',
+        event_type: 'lead_booking',
+      });
+
+      console.log(`Lead ${leadContext.leadId} booked as job ${job.id} via SMS`);
+      return twimlResponse('');
+    }
+
+    // ============================================
+    // BOOK with time - Alternative booking format (V4)
+    // Format: BOOK TUE 2PM, BOOK TOMORROW 9AM
+    // ============================================
+    if (originalBodyForBook?.toUpperCase().startsWith('BOOK ')) {
+      const timePart = originalBodyForBook.substring(5).trim();
+      const leadContext = await getLeadContext(from);
+
+      if (!leadContext) {
+        await sendSMS(from, 'No recent lead to book. Open the app to manage leads.');
+        return twimlResponse('');
+      }
+
+      // Parse the time
+      const parsed = parseTimeFromSMS(timePart);
+
+      if (!parsed.success || !parsed.dateTime) {
+        const promptMsg = parsed.clarificationPrompt || 'When? Reply: BOOK TUE 2PM, BOOK TOMORROW 9AM';
+        await sendSMS(from, promptMsg);
+        return twimlResponse('');
+      }
+
+      // Get lead details
+      const { data: lead } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', leadContext.leadId)
+        .single();
+
+      if (!lead) {
+        await sendSMS(from, 'Lead not found. Open the app to manage leads.');
+        return twimlResponse('');
+      }
+
+      // Create job
+      const { data: job, error: jobError } = await supabase
+        .from('jobs')
+        .insert({
+          user_id: userId,
+          customer_name: lead.customer_name,
+          customer_phone: lead.customer_phone,
+          customer_address: lead.customer_address || '',
+          service_type: lead.service_type || 'hvac',
+          urgency: lead.urgency || 'medium',
+          ai_summary: lead.ai_summary,
+          scheduled_at: parsed.dateTime.toISOString(),
+          estimated_value: lead.estimated_value,
+          status: 'confirmed',
+          is_ai_booked: false,
+          booking_confirmed: true,
+          priority_color: lead.priority_color,
+          priority_reason: lead.priority_reason,
+        })
+        .select('id')
+        .single();
+
+      if (jobError || !job) {
+        console.error('Failed to create job via SMS:', jobError);
+        await sendSMS(from, 'Failed to book. Please try in the app.');
+        return twimlResponse('');
+      }
+
+      // Update lead
+      await supabase
+        .from('leads')
+        .update({
+          status: 'converted',
+          converted_job_id: job.id,
+          converted_at: new Date().toISOString(),
+          callback_outcome: 'booked',
+          callback_outcome_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', leadContext.leadId);
+
+      const confirmMsg = generateBookingConfirmation(leadContext.customerName, parsed.dateTime);
+      await sendSMS(from, confirmMsg);
+
+      await supabase.from('sms_log').insert({
+        user_id: userId,
+        lead_id: leadContext.leadId,
+        job_id: job.id,
+        direction: 'inbound',
+        to_phone: process.env.TWILIO_PHONE_NUMBER!,
+        from_phone: from,
+        body: originalBodyForBook,
+        status: 'received',
+        event_type: 'lead_booking',
+      });
+
+      console.log(`Lead ${leadContext.leadId} booked as job ${job.id} via SMS BOOK command`);
+      return twimlResponse('');
+    }
+
+    // ============================================
     // OK / Y / YES - Confirm booking
     // ============================================
     if (body === 'OK' || body === 'Y' || body === 'YES' || body === 'CONFIRM') {
@@ -717,10 +977,14 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================
-    // HELP - Show available commands
+    // HELP - Show available commands (V4 updated)
     // ============================================
     if (body === 'HELP' || body === '?') {
-      const helpMsg = 'Codes: 1=Called 2=VM 3=Note 4=Booked 5=Lost\nOr: OK CALL COMPLETE STOP';
+      const helpMsg =
+        'Codes: 1=Called 2=VM 3=Note 4=Booked 5=Lost\n' +
+        'Book: 4 TUE 2PM or BOOK TOMORROW 9AM\n' +
+        'Snooze: SNOOZE 1H, SNOOZE TOMORROW\n' +
+        'More: OK CALL STOP';
       await sendSMS(from, helpMsg);
 
       await supabase.from('sms_log').insert({

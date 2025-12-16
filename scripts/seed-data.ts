@@ -35,998 +35,837 @@ function yesterdayAt(hour: number, minute = 0): Date {
 }
 
 // ============================================
-// CUSTOMERS (10 total)
-// Strategic equipment ages for revenue tier demos
+// V3 TRIAGE FIELD TYPES
+// ============================================
+
+type CallerType = 'residential' | 'commercial' | 'vendor' | 'recruiting' | 'unknown';
+type PrimaryIntent = 'new_lead' | 'active_job_issue' | 'booking_request' | 'admin_billing' | 'solicitation';
+type BookingStatus = 'confirmed' | 'attempted_failed' | 'not_requested';
+type StatusColor = 'red' | 'yellow' | 'green' | 'gray';
+
+// ============================================
+// SCENARIO: "HOT FRIDAY IN AUSTIN"
+// Peak summer day (102°F), ACE Cooling & Heating
+// 20 inbound calls from 7:45 AM - 5:30 PM
+// ============================================
+
+// ============================================
+// CUSTOMERS (12 total)
+// 3 Commercial + 9 Residential
 // ============================================
 
 export const seedCustomers = [
-  // === EXISTING CUSTOMERS (updated with Austin addresses) ===
+  // === COMMERCIAL ACCOUNTS ===
+
+  // Call #1 - Tony Russo (Restaurant Emergency)
   {
-    name: 'John Martinez',
+    name: 'Tony Russo',
     phone: '+15551234001',
-    email: 'john.martinez@email.com',
-    address: '123 Oak Street, Austin, TX 78701',
+    email: 'tony@bellaitalia.com',
+    address: '2500 Lake Austin Blvd, Austin, TX 78703',
     equipment: [
-      { type: 'Central AC', brand: 'Carrier', model: '24ACC636', year: 2019, location: 'Backyard' },
-      { type: 'Furnace', brand: 'Lennox', model: 'EL296V', year: 2019, location: 'Garage' }
+      { type: 'Commercial AC', brand: 'Carrier', model: '50XC', year: 2018, location: 'Roof' },
+      { type: 'Walk-in Cooler', brand: 'Kolpak', model: 'P7-0808-CT', year: 2019, location: 'Kitchen' },
     ],
-    notes: 'Prefers morning appointments. Gate code: 1234. Dog in backyard - friendly.',
+    notes: 'VIP - Owner of Bella Italia (3 locations). Authorize up to $5k without callback. Always needs same-day service.',
   },
+
+  // Call #5 - Diana Lawson (Property Manager)
   {
-    name: 'Sarah Johnson',
-    phone: '+15551234002',
-    email: 'sarah.j@email.com',
-    address: '456 Pine Avenue, Austin, TX 78702',
-    equipment: [
-      { type: 'Heat Pump', brand: 'Trane', model: 'XR15', year: 2021, location: 'Side yard' }
-    ],
-    notes: 'Works from home. Text before arriving.',
-  },
-  {
-    name: 'Mike Williams',
-    phone: '+15551234003',
-    email: null,
-    address: '789 Elm Drive, Austin, TX 78703',
-    equipment: [
-      { type: 'Central AC', brand: 'Rheem', model: 'RA1636AJ1NA', year: 2018, location: 'Roof' }
-    ],
-    notes: 'Annual maintenance customer since 2020.',
-  },
-  {
-    name: 'Lisa Chen',
-    phone: '+15551234004',
-    email: 'lisa.chen@email.com',
-    address: '321 Maple Lane, Austin, TX 78704',
-    equipment: [
-      { type: 'Furnace', brand: 'Goodman', model: 'GMVC960803BN', year: 2017, location: 'Attic' }
-    ],
-    notes: null,
-  },
-  {
-    name: 'Robert Davis',
+    name: 'Diana Lawson',
     phone: '+15551234005',
-    email: 'rdavis@email.com',
-    address: '654 Cedar Court, Austin, TX 78705',
+    email: 'dlawson@sunridgeapts.com',
+    address: '4200 Manchaca Rd, Austin, TX 78745',
     equipment: [
-      { type: 'Central AC', brand: 'Lennox', model: 'XC21', year: 2020, location: 'Backyard' },
-      { type: 'Water Heater', brand: 'Rheem', model: 'PROG50-38N', year: 2022, location: 'Garage' }
+      { type: 'Central AC (42 units)', brand: 'Rheem', model: 'RA14AZ', year: 2010, location: 'Various' },
     ],
-    notes: 'VIP customer. Always asks for same-day service.',
-  },
-  {
-    name: 'Jennifer Brown',
-    phone: '+15551234006',
-    email: 'jen.brown@email.com',
-    address: '987 Birch Way, Austin, TX 78731',
-    equipment: [
-      { type: 'Central AC', brand: 'Carrier', model: 'Infinity 26', year: 2022, location: 'Side of house' }
-    ],
-    notes: 'New customer. Referred by John Martinez.',
+    notes: 'Property Manager - Sunridge Apartments (42 units). Has maintenance budget authority. Prefers scheduled service windows.',
   },
 
-  // === NEW CUSTOMERS (strategic for demo) ===
-
-  // Patricia Henderson - R-22 REPLACEMENT OPPORTUNITY ($$$$)
+  // Call #14 - Wei Zhang (Commercial Kitchen)
   {
-    name: 'Patricia Henderson',
-    phone: '+15551234012',
-    email: 'patricia.h@email.com',
-    address: '2100 Ranch Road 620, Austin, TX 78734',
-    equipment: [
-      {
-        type: 'Central AC',
-        brand: 'Carrier',
-        model: 'Legacy 38CK',
-        year: 2003,  // 22 years old - replacement!
-        location: 'Backyard'
-      }
-    ],
-    notes: 'System uses R-22 refrigerant. Discussed replacement during last visit. Prefers financing options.',
-  },
-
-  // Marcus Thompson - VIP RESTAURANT OWNER (emergency demo)
-  {
-    name: 'Marcus Thompson',
-    phone: '+15551234013',
-    email: 'mthompson@thompsonrestaurants.com',
-    address: '456 Westlake Drive, Austin, TX 78746',
-    equipment: [
-      {
-        type: 'Commercial AC',
-        brand: 'Trane',
-        model: 'XL20i',
-        year: 2015,
-        location: 'Roof'
-      },
-      {
-        type: 'Walk-in Cooler',
-        brand: 'Kolpak',
-        model: 'P7-1010-CT',
-        year: 2018,
-        location: 'Kitchen'
-      }
-    ],
-    notes: 'VIP - Owner of Thompson Restaurant Group (5 locations). Authorize repairs up to $5k without callback. Always same-day service.',
-  },
-
-  // Elena Rodriguez - ELDERLY CUSTOMER (emergency demo)
-  {
-    name: 'Elena Rodriguez',
+    name: 'Wei Zhang',
     phone: '+15551234014',
-    email: null,
-    address: '789 South Congress Ave, Austin, TX 78704',
+    email: 'wei@goldendragonaustin.com',
+    address: '9001 N Lamar Blvd, Austin, TX 78753',
     equipment: [
-      {
-        type: 'Heat Pump',
-        brand: 'Rheem',
-        model: 'RP14',
-        year: 2010,
-        location: 'Side yard'
-      }
+      { type: 'Make-up Air Unit', brand: 'Captive Aire', model: 'A2G', year: 2016, location: 'Roof' },
+      { type: 'Commercial AC', brand: 'Trane', model: 'XR15', year: 2017, location: 'Roof' },
     ],
-    notes: 'Elderly customer. Gate code: 5678. Daughter handles billing: daughter@email.com (512-555-9876)',
+    notes: 'Restaurant - Golden Dragon. Health inspection next week. Willing to pay premium for immediate service.',
   },
 
-  // Brandon Cole - NEW CUSTOMER (referral demo)
+  // === RESIDENTIAL ACCOUNTS ===
+
+  // Call #2 - Jessica Palmer (New Homeowner)
   {
-    name: 'Brandon Cole',
+    name: 'Jessica Palmer',
+    phone: '+15551234002',
+    email: 'jpalmer@gmail.com',
+    address: '1823 Briarcliff Blvd, Austin, TX 78723',
+    equipment: [], // New customer, no equipment on file
+    notes: 'New customer - just moved in last month.',
+  },
+
+  // Call #3 - Robert Chen (Callback Complaint)
+  {
+    name: 'Robert Chen',
+    phone: '+15551234003',
+    email: 'rchen@outlook.com',
+    address: '5612 Burnet Rd, Austin, TX 78756',
+    equipment: [
+      { type: 'Central AC', brand: 'Goodman', model: 'GSX16', year: 2016, location: 'Backyard' },
+    ],
+    notes: 'CALLBACK COMPLAINT - Previous service 2 weeks ago ($450). Same issue returned. Handle carefully.',
+  },
+
+  // Call #6 - Maria Santos (Gas Smell - Safety)
+  {
+    name: 'Maria Santos',
+    phone: '+15551234006',
+    email: null,
+    address: '3401 S Congress Ave, Austin, TX 78704',
+    equipment: [
+      { type: 'Furnace', brand: 'Bryant', model: '315AAV', year: 2012, location: 'Attic' },
+    ],
+    notes: 'Elderly customer. Mother (82) lives with her. Gate code: 4521.',
+  },
+
+  // Call #7 - Harold Mitchell (R-22 Replacement)
+  {
+    name: 'Harold Mitchell',
+    phone: '+15551234007',
+    email: 'hmitchell@sbcglobal.net',
+    address: '8934 Jollyville Rd, Austin, TX 78759',
+    equipment: [
+      { type: 'Central AC', brand: 'Lennox', model: 'HS29', year: 2001, location: 'Side yard' },
+    ],
+    notes: 'R-22 system, 24 years old. Wife recovering from surgery - needs cool house. High replacement potential.',
+  },
+
+  // Call #8 - Kevin Park (Thermostat Upgrade)
+  {
+    name: 'Kevin Park',
+    phone: '+15551234008',
+    email: 'kpark@protonmail.com',
+    address: '2109 Windsor Rd, Austin, TX 78703',
+    equipment: [
+      { type: 'Heat Pump', brand: 'Carrier', model: '25HNB6', year: 2020, location: 'Backyard' },
+    ],
+    notes: 'New customer. Has Nest thermostat, needs professional install.',
+  },
+
+  // Call #10 - Carol Martinez (Annual Checkup)
+  {
+    name: 'Carol Martinez',
+    phone: '+15551234010',
+    email: 'carolm@austin.rr.com',
+    address: '7702 Shoal Creek Blvd, Austin, TX 78757',
+    equipment: [
+      { type: 'Central AC', brand: 'Trane', model: 'XL18i', year: 2019, location: 'Backyard' },
+    ],
+    notes: 'Maintenance plan customer since 2020. Requests tech Mike specifically.',
+  },
+
+  // Call #15 - Patricia Nelson (Blower Motor)
+  {
+    name: 'Patricia Nelson',
     phone: '+15551234015',
-    email: 'bcole@email.com',
-    address: '321 Mueller Blvd, Austin, TX 78723',
-    equipment: [],  // New customer - no equipment on file yet
-    notes: 'New customer - referred by John Martinez. First-time caller.',
+    email: 'pnelson@gmail.com',
+    address: '4501 Duval St, Austin, TX 78751',
+    equipment: [
+      { type: 'Central AC', brand: 'Rheem', model: 'RA17', year: 2017, location: 'Side of house' },
+    ],
+    notes: 'Had capacitor replaced last year.',
+  },
+
+  // Call #17 - David Nguyen (Water Leak)
+  {
+    name: 'David Nguyen',
+    phone: '+15551234017',
+    email: 'dnguyen@utexas.edu',
+    address: '2601 Speedway, Austin, TX 78712',
+    equipment: [
+      { type: 'Central AC', brand: 'Carrier', model: '24ACC6', year: 2018, location: 'Attic' },
+    ],
+    notes: 'Professor at UT. Prefers morning appointments.',
+  },
+
+  // Call #20 - Linda Cooper (Compressor Noise)
+  {
+    name: 'Linda Cooper',
+    phone: '+15551234020',
+    email: 'lcooper@yahoo.com',
+    address: '11501 N MoPac Expy, Austin, TX 78759',
+    equipment: [
+      { type: 'Central AC', brand: 'Lennox', model: 'XC21', year: 2016, location: 'Backyard' },
+    ],
+    notes: 'Weekend trip planned - needs service before Saturday.',
   },
 ];
 
 // ============================================
-// JOBS (15 total) - All revenue tiers
+// JOBS (9 total from completed calls)
 // ============================================
 
 export const seedJobs = [
-  // ============================================
-  // $$$$ REPLACEMENT TIER (2 jobs)
-  // ============================================
-
-  // Patricia Henderson - R-22 system replacement (TODAY 2:30 PM)
+  // Call #1 - Tony Russo - Restaurant Emergency ($$$ - TODAY 9:00 AM)
   {
-    customer_name: 'Patricia Henderson',
-    customer_phone: '+15551234012',
-    customer_address: '2100 Ranch Road 620, Austin, TX 78734',
-    service_type: 'hvac' as const,
-    urgency: 'high' as const,
-    status: 'confirmed' as const,
-    scheduled_at: todayAt(14, 30),
-    estimated_value: 10000,
-    ai_summary: 'AC not cooling properly. R-22 system is 22 years old. Customer interested in replacement quote with financing options.',
-    is_ai_booked: true,
-    booking_confirmed: false,  // HIGH VALUE - needs review!
-    // Revenue tier
-    revenue_tier: 'replacement' as const,
-    revenue_tier_label: '$$$$' as const,
-    revenue_tier_description: 'Potential Replacement',
-    revenue_tier_range: '$5,000-$15,000+',
-    revenue_tier_signals: ['R-22 system', '22 years old', 'Not cooling properly'],
-    revenue_confidence: 'high' as const,
-    // Diagnostic context
-    problem_duration: '2 days',
-    problem_onset: 'Started Tuesday afternoon',
-    problem_pattern: 'Gets worse in afternoon heat',
-    customer_attempted_fixes: 'Changed air filter, checked thermostat settings',
-  },
-
-  // Old system assessment - replacement likely
-  {
-    customer_name: 'Amanda Peters',
-    customer_phone: '+15551234007',
-    customer_address: '111 Willow Street, Austin, TX 78757',
-    service_type: 'hvac' as const,
-    urgency: 'medium' as const,
-    status: 'confirmed' as const,
-    scheduled_at: daysFromNowAt(2, 9, 0),
-    estimated_value: 8500,
-    ai_summary: 'System making loud noise on startup. Unit is 18 years old, likely needs replacement rather than repair.',
-    is_ai_booked: true,
-    booking_confirmed: false,  // Needs review
-    revenue_tier: 'replacement' as const,
-    revenue_tier_label: '$$$$' as const,
-    revenue_tier_description: 'Potential Replacement',
-    revenue_tier_range: '$5,000-$15,000+',
-    revenue_tier_signals: ['18 years old', 'Loud noise on startup', 'Replacement likely'],
-    revenue_confidence: 'medium' as const,
-    problem_duration: '1 week',
-    problem_onset: 'Gradual worsening',
-    problem_pattern: 'Every startup',
-    customer_attempted_fixes: null,
-  },
-
-  // ============================================
-  // $$$ MAJOR REPAIR TIER (3 jobs)
-  // ============================================
-
-  // Marcus Thompson - VIP compressor repair (TODAY - EN ROUTE)
-  {
-    customer_name: 'Marcus Thompson',
-    customer_phone: '+15551234013',
-    customer_address: '456 Westlake Drive, Austin, TX 78746',
+    customer_name: 'Tony Russo',
+    customer_phone: '+15551234001',
+    customer_address: '2500 Lake Austin Blvd, Austin, TX 78703',
     service_type: 'hvac' as const,
     urgency: 'emergency' as const,
     status: 'en_route' as const,
-    scheduled_at: todayAt(10, 0),
+    scheduled_at: todayAt(9, 0),
     estimated_value: 1900,
-    ai_summary: 'Commercial AC compressor making grinding noise. VIP restaurant owner - kitchen reaching 95F. Same-day emergency service.',
+    ai_summary: 'Walk-in cooler compressor grinding noise. Kitchen at 88°F, opens at 11 AM. VIP restaurant - 3 locations.',
     is_ai_booked: false,
     booking_confirmed: true,
-    travel_started_at: subMinutes(now, 25),
+    travel_started_at: subMinutes(now, 15),
     revenue_tier: 'major_repair' as const,
     revenue_tier_label: '$$$' as const,
     revenue_tier_description: 'Major Repair',
     revenue_tier_range: '$800-$3,000',
-    revenue_tier_signals: ['Compressor', 'Grinding noise', 'Commercial unit'],
+    revenue_tier_signals: ['Walk-in cooler', 'Compressor grinding', 'Commercial', 'Business impact'],
     revenue_confidence: 'high' as const,
     problem_duration: 'Started this morning',
-    problem_onset: 'Sudden - heard loud grinding',
+    problem_onset: 'Sudden - heard grinding at open',
     problem_pattern: 'Continuous when running',
     customer_attempted_fixes: 'Turned off system',
   },
 
-  // John Martinez - Compressor repair follow-up
+  // Call #2 - Jessica Palmer - Low Refrigerant ($$ - TODAY 11:30 AM)
   {
-    customer_name: 'John Martinez',
-    customer_phone: '+15551234001',
-    customer_address: '123 Oak Street, Austin, TX 78701',
-    service_type: 'hvac' as const,
-    urgency: 'high' as const,
-    status: 'on_site' as const,
-    scheduled_at: todayAt(9, 0),
-    estimated_value: 1200,
-    ai_summary: 'AC compressor not starting. System is 5 years old. May need capacitor or compressor replacement.',
-    is_ai_booked: false,
-    booking_confirmed: true,
-    travel_started_at: subMinutes(now, 45),
-    started_at: subMinutes(now, 20),
-    revenue_tier: 'major_repair' as const,
-    revenue_tier_label: '$$$' as const,
-    revenue_tier_description: 'Major Repair',
-    revenue_tier_range: '$800-$3,000',
-    revenue_tier_signals: ['Compressor not starting', 'May need replacement'],
-    revenue_confidence: 'medium' as const,
-    problem_duration: 'Since yesterday',
-    problem_onset: 'After power outage',
-    problem_pattern: 'Will not start at all',
-    customer_attempted_fixes: 'Reset breaker, checked thermostat',
-  },
-
-  // Heat exchanger inspection
-  {
-    customer_name: 'Lisa Chen',
-    customer_phone: '+15551234004',
-    customer_address: '321 Maple Lane, Austin, TX 78704',
-    service_type: 'hvac' as const,
-    urgency: 'high' as const,
-    status: 'confirmed' as const,
-    scheduled_at: todayAt(15, 0),
-    estimated_value: 2200,
-    ai_summary: 'Furnace making strange smell. Customer concerned about carbon monoxide. Heat exchanger inspection needed.',
-    is_ai_booked: true,
-    booking_confirmed: false,  // Needs review - safety concern
-    revenue_tier: 'major_repair' as const,
-    revenue_tier_label: '$$$' as const,
-    revenue_tier_description: 'Major Repair',
-    revenue_tier_range: '$800-$3,000',
-    revenue_tier_signals: ['Strange smell', 'Heat exchanger', 'Safety concern'],
-    revenue_confidence: 'medium' as const,
-    problem_duration: '3 days',
-    problem_onset: 'Noticed when heating started',
-    problem_pattern: 'When furnace runs',
-    customer_attempted_fixes: 'Opened windows, bought CO detector',
-  },
-
-  // ============================================
-  // $$ STANDARD REPAIR TIER (5 jobs)
-  // ============================================
-
-  // Motor replacement
-  {
-    customer_name: 'Sarah Johnson',
+    customer_name: 'Jessica Palmer',
     customer_phone: '+15551234002',
-    customer_address: '456 Pine Avenue, Austin, TX 78702',
+    customer_address: '1823 Briarcliff Blvd, Austin, TX 78723',
     service_type: 'hvac' as const,
-    urgency: 'medium' as const,
+    urgency: 'high' as const,
     status: 'confirmed' as const,
-    scheduled_at: todayAt(11, 0),
-    estimated_value: 450,
-    ai_summary: 'Heat pump blower motor making humming noise. Likely motor bearing failure.',
+    scheduled_at: todayAt(11, 30),
+    estimated_value: 425,
+    ai_summary: 'New homeowner. AC running constantly but house won\'t cool below 78°F. Low refrigerant suspected.',
     is_ai_booked: true,
     booking_confirmed: true,
     revenue_tier: 'standard_repair' as const,
     revenue_tier_label: '$$' as const,
     revenue_tier_description: 'Standard Repair',
     revenue_tier_range: '$200-$800',
-    revenue_tier_signals: ['Blower motor', 'Humming noise', 'Bearing failure'],
-    revenue_confidence: 'high' as const,
-    problem_duration: '1 week',
-    problem_onset: 'Gradual',
-    problem_pattern: 'Getting louder',
-    customer_attempted_fixes: null,
+    revenue_tier_signals: ['Low refrigerant', 'Not cooling', 'Running constantly'],
+    revenue_confidence: 'medium' as const,
+    problem_duration: 'Since moved in (1 month)',
+    problem_onset: 'Gradual realization',
+    problem_pattern: 'Constant - never reaches setpoint',
+    customer_attempted_fixes: 'Lowered thermostat, closed blinds',
   },
 
-  // Capacitor replacement
+  // Call #5 - Diana Lawson - Multi-Unit ($$$ - TODAY 1:00 PM)
   {
-    customer_name: 'Mike Williams',
-    customer_phone: '+15551234003',
-    customer_address: '789 Elm Drive, Austin, TX 78703',
+    customer_name: 'Diana Lawson',
+    customer_phone: '+15551234005',
+    customer_address: '4200 Manchaca Rd, Austin, TX 78745',
     service_type: 'hvac' as const,
-    urgency: 'medium' as const,
+    urgency: 'high' as const,
     status: 'confirmed' as const,
     scheduled_at: todayAt(13, 0),
-    estimated_value: 275,
-    ai_summary: 'AC unit clicking but not starting. Classic capacitor failure symptoms.',
+    estimated_value: 2400,
+    ai_summary: '3 units down at Sunridge Apartments (42-unit property). Building is 15 years old, same compressors failing. Quote for preventive replacement needed.',
     is_ai_booked: false,
     booking_confirmed: true,
-    revenue_tier: 'standard_repair' as const,
-    revenue_tier_label: '$$' as const,
-    revenue_tier_description: 'Standard Repair',
-    revenue_tier_range: '$200-$800',
-    revenue_tier_signals: ['Clicking', 'Not starting', 'Capacitor'],
+    revenue_tier: 'major_repair' as const,
+    revenue_tier_label: '$$$' as const,
+    revenue_tier_description: 'Major Repair',
+    revenue_tier_range: '$800-$3,000',
+    revenue_tier_signals: ['Multiple units', 'Commercial property', 'Compressor failures', 'Preventive quote'],
     revenue_confidence: 'high' as const,
-    problem_duration: 'Started today',
-    problem_onset: 'Sudden',
-    problem_pattern: 'Every attempt to start',
-    customer_attempted_fixes: 'Checked breaker',
+    problem_duration: 'Reported this morning',
+    problem_onset: 'Multiple tenant complaints overnight',
+    problem_pattern: '3 units affected - same symptoms',
+    customer_attempted_fixes: 'Reset breakers',
   },
 
-  // Refrigerant leak repair
+  // Call #8 - Kevin Park - Thermostat Install ($ - TUESDAY 10:00 AM)
   {
-    customer_name: 'Robert Davis',
-    customer_phone: '+15551234005',
-    customer_address: '654 Cedar Court, Austin, TX 78705',
+    customer_name: 'Kevin Park',
+    customer_phone: '+15551234008',
+    customer_address: '2109 Windsor Rd, Austin, TX 78703',
+    service_type: 'hvac' as const,
+    urgency: 'low' as const,
+    status: 'confirmed' as const,
+    scheduled_at: daysFromNowAt(4, 10, 0), // Next Tuesday
+    estimated_value: 175,
+    ai_summary: 'Smart thermostat installation. Customer has Nest, needs professional install.',
+    is_ai_booked: true,
+    booking_confirmed: true,
+    revenue_tier: 'minor' as const,
+    revenue_tier_label: '$' as const,
+    revenue_tier_description: 'Maintenance',
+    revenue_tier_range: '$75-$250',
+    revenue_tier_signals: ['Thermostat install', 'Nest', 'Professional install'],
+    revenue_confidence: 'high' as const,
+    problem_duration: null,
+    problem_onset: null,
+    problem_pattern: null,
+    customer_attempted_fixes: null,
+  },
+
+  // Call #10 - Carol Martinez - Annual Tune-up ($ - NEXT THURSDAY)
+  {
+    customer_name: 'Carol Martinez',
+    customer_phone: '+15551234010',
+    customer_address: '7702 Shoal Creek Blvd, Austin, TX 78757',
+    service_type: 'hvac' as const,
+    urgency: 'low' as const,
+    status: 'confirmed' as const,
+    scheduled_at: daysFromNowAt(6, 9, 0), // Next Thursday
+    estimated_value: 149,
+    ai_summary: 'Annual AC tune-up. Maintenance plan customer. Requests tech Mike specifically.',
+    is_ai_booked: true,
+    booking_confirmed: true,
+    revenue_tier: 'minor' as const,
+    revenue_tier_label: '$' as const,
+    revenue_tier_description: 'Maintenance',
+    revenue_tier_range: '$75-$250',
+    revenue_tier_signals: ['Tune-up', 'Maintenance plan', 'Annual service'],
+    revenue_confidence: 'high' as const,
+    problem_duration: null,
+    problem_onset: null,
+    problem_pattern: null,
+    customer_attempted_fixes: null,
+  },
+
+  // Call #14 - Wei Zhang - Commercial Kitchen ($$$$ - TODAY 3:00 PM)
+  {
+    customer_name: 'Wei Zhang',
+    customer_phone: '+15551234014',
+    customer_address: '9001 N Lamar Blvd, Austin, TX 78753',
+    service_type: 'hvac' as const,
+    urgency: 'emergency' as const,
+    status: 'confirmed' as const,
+    scheduled_at: todayAt(15, 0),
+    estimated_value: 12000,
+    ai_summary: 'Make-up air unit failed - kitchen too hot to work. Commercial hood system related. Health inspection next week. Potential $12k replacement.',
+    is_ai_booked: false,
+    booking_confirmed: true,
+    revenue_tier: 'replacement' as const,
+    revenue_tier_label: '$$$$' as const,
+    revenue_tier_description: 'Potential Replacement',
+    revenue_tier_range: '$5,000-$15,000+',
+    revenue_tier_signals: ['Commercial kitchen', 'Make-up air unit', 'Health inspection', 'Replacement likely'],
+    revenue_confidence: 'high' as const,
+    problem_duration: 'Started yesterday',
+    problem_onset: 'After lunch rush',
+    problem_pattern: 'Complete failure - no airflow',
+    customer_attempted_fixes: 'Opened back door, called previous vendor',
+  },
+
+  // Call #15 - Patricia Nelson - Blower Motor ($$$ - TODAY 4:30 PM)
+  {
+    customer_name: 'Patricia Nelson',
+    customer_phone: '+15551234015',
+    customer_address: '4501 Duval St, Austin, TX 78751',
     service_type: 'hvac' as const,
     urgency: 'high' as const,
-    status: 'new' as const,
+    status: 'confirmed' as const,
     scheduled_at: todayAt(16, 30),
-    estimated_value: 550,
-    ai_summary: 'AC blowing warm air. Refrigerant levels may be low. Leak detection and repair needed.',
+    estimated_value: 650,
+    ai_summary: 'AC blowing warm air, fan sounds slow. Had capacitor replaced last year. House at 81°F.',
     is_ai_booked: true,
-    booking_confirmed: false,  // VIP - needs review
-    revenue_tier: 'standard_repair' as const,
-    revenue_tier_label: '$$' as const,
-    revenue_tier_description: 'Standard Repair',
-    revenue_tier_range: '$200-$800',
-    revenue_tier_signals: ['Warm air', 'Refrigerant', 'Leak detection'],
+    booking_confirmed: true,
+    revenue_tier: 'major_repair' as const,
+    revenue_tier_label: '$$$' as const,
+    revenue_tier_description: 'Major Repair',
+    revenue_tier_range: '$800-$3,000',
+    revenue_tier_signals: ['Blower motor', 'Fan slow', 'Warm air'],
     revenue_confidence: 'medium' as const,
-    problem_duration: '4 days',
-    problem_onset: 'Gradual',
-    problem_pattern: 'Getting worse each day',
-    customer_attempted_fixes: 'Cleaned outdoor unit',
+    problem_duration: '2 days',
+    problem_onset: 'Gradual - got worse',
+    problem_pattern: 'Fan runs but airflow weak',
+    customer_attempted_fixes: 'Changed filter',
   },
 
-  // Ductwork repair
+  // Call #17 - David Nguyen - Condensate Drain ($$ - TOMORROW 8:30 AM)
   {
-    customer_name: 'Steve Miller',
-    customer_phone: '+15551234010',
-    customer_address: '444 Poplar Lane, Austin, TX 78752',
+    customer_name: 'David Nguyen',
+    customer_phone: '+15551234017',
+    customer_address: '2601 Speedway, Austin, TX 78712',
     service_type: 'hvac' as const,
     urgency: 'medium' as const,
     status: 'confirmed' as const,
-    scheduled_at: daysFromNowAt(3, 10, 0),
-    estimated_value: 400,
-    ai_summary: 'Uneven cooling throughout house. Likely ductwork leak or blockage.',
-    is_ai_booked: false,
+    scheduled_at: tomorrowAt(8, 30),
+    estimated_value: 195,
+    ai_summary: 'Water dripping from AC unit in attic. Catching in bucket. Clogged condensate drain suspected.',
+    is_ai_booked: true,
     booking_confirmed: true,
     revenue_tier: 'standard_repair' as const,
     revenue_tier_label: '$$' as const,
     revenue_tier_description: 'Standard Repair',
     revenue_tier_range: '$200-$800',
-    revenue_tier_signals: ['Uneven cooling', 'Ductwork'],
+    revenue_tier_signals: ['Water leak', 'Condensate drain', 'Clogged'],
+    revenue_confidence: 'high' as const,
+    problem_duration: 'Since yesterday',
+    problem_onset: 'Noticed water stain on ceiling',
+    problem_pattern: 'Slow drip when AC runs',
+    customer_attempted_fixes: 'Placed bucket',
+  },
+
+  // Call #20 - Linda Cooper - Compressor Noise ($$$ - SATURDAY 9:00 AM)
+  {
+    customer_name: 'Linda Cooper',
+    customer_phone: '+15551234020',
+    customer_address: '11501 N MoPac Expy, Austin, TX 78759',
+    service_type: 'hvac' as const,
+    urgency: 'high' as const,
+    status: 'confirmed' as const,
+    scheduled_at: daysFromNowAt(1, 9, 0), // Saturday
+    estimated_value: 1200,
+    ai_summary: 'Outside unit making loud buzzing/humming. Still cooling but worried about breakdown. Weekend trip planned - needs fixed before leaving.',
+    is_ai_booked: true,
+    booking_confirmed: true,
+    revenue_tier: 'major_repair' as const,
+    revenue_tier_label: '$$$' as const,
+    revenue_tier_description: 'Major Repair',
+    revenue_tier_range: '$800-$3,000',
+    revenue_tier_signals: ['Compressor noise', 'Buzzing', 'Breakdown risk'],
     revenue_confidence: 'medium' as const,
-    problem_duration: '2 weeks',
-    problem_onset: 'Gradual',
-    problem_pattern: 'Some rooms hot, others cold',
-    customer_attempted_fixes: 'Closed vents in some rooms',
-  },
-
-  // Thermostat + diagnostic
-  {
-    customer_name: 'Nancy Clark',
-    customer_phone: '+15551234009',
-    customer_address: '333 Aspen Road, Austin, TX 78756',
-    service_type: 'hvac' as const,
-    urgency: 'low' as const,
-    status: 'confirmed' as const,
-    scheduled_at: daysFromNowAt(4, 11, 0),
-    estimated_value: 350,
-    ai_summary: 'Thermostat showing wrong temperature. Wants upgrade to smart thermostat.',
-    is_ai_booked: false,
-    booking_confirmed: true,
-    revenue_tier: 'standard_repair' as const,
-    revenue_tier_label: '$$' as const,
-    revenue_tier_description: 'Standard Repair',
-    revenue_tier_range: '$200-$800',
-    revenue_tier_signals: ['Thermostat replacement', 'Smart thermostat upgrade'],
-    revenue_confidence: 'high' as const,
-    problem_duration: 'Ongoing',
-    problem_onset: 'Always been off',
-    problem_pattern: 'Constant 3-degree difference',
-    customer_attempted_fixes: 'Recalibrated thermostat',
-  },
-
-  // ============================================
-  // $ MAINTENANCE TIER (3 jobs)
-  // ============================================
-
-  // Annual tune-up
-  {
-    customer_name: 'Jennifer Brown',
-    customer_phone: '+15551234006',
-    customer_address: '987 Birch Way, Austin, TX 78731',
-    service_type: 'hvac' as const,
-    urgency: 'low' as const,
-    status: 'confirmed' as const,
-    scheduled_at: tomorrowAt(9, 0),
-    estimated_value: 149,
-    ai_summary: 'Seasonal AC tune-up. New customer wants first maintenance checkup.',
-    is_ai_booked: false,
-    booking_confirmed: true,
-    revenue_tier: 'minor' as const,
-    revenue_tier_label: '$' as const,
-    revenue_tier_description: 'Maintenance',
-    revenue_tier_range: '$75-$250',
-    revenue_tier_signals: ['Tune-up', 'Maintenance', 'Checkup'],
-    revenue_confidence: 'high' as const,
-    problem_duration: null,
-    problem_onset: null,
-    problem_pattern: null,
-    customer_attempted_fixes: null,
-  },
-
-  // Filter replacement + checkup
-  {
-    customer_name: 'Tom Anderson',
-    customer_phone: '+15551234008',
-    customer_address: '222 Spruce Blvd, Austin, TX 78758',
-    service_type: 'hvac' as const,
-    urgency: 'low' as const,
-    status: 'confirmed' as const,
-    scheduled_at: daysFromNowAt(5, 10, 0),
-    estimated_value: 125,
-    ai_summary: 'Filter replacement and quick system check. Customer on maintenance plan.',
-    is_ai_booked: true,
-    booking_confirmed: true,
-    revenue_tier: 'minor' as const,
-    revenue_tier_label: '$' as const,
-    revenue_tier_description: 'Maintenance',
-    revenue_tier_range: '$75-$250',
-    revenue_tier_signals: ['Filter replacement', 'Maintenance plan'],
-    revenue_confidence: 'high' as const,
-    problem_duration: null,
-    problem_onset: null,
-    problem_pattern: null,
-    customer_attempted_fixes: null,
-  },
-
-  // ============================================
-  // $$? DIAGNOSTIC TIER (1 job)
-  // ============================================
-
-  // Unclear scope - needs inspection
-  {
-    customer_name: 'Brandon Cole',
-    customer_phone: '+15551234015',
-    customer_address: '321 Mueller Blvd, Austin, TX 78723',
-    service_type: 'hvac' as const,
-    urgency: 'medium' as const,
-    status: 'new' as const,
-    scheduled_at: tomorrowAt(14, 0),
-    estimated_value: 89,  // Diagnostic fee
-    ai_summary: 'New customer - AC not working well. Unclear issue. Needs diagnostic to determine scope.',
-    is_ai_booked: true,
-    booking_confirmed: false,  // New customer, AI booked
-    revenue_tier: 'diagnostic' as const,
-    revenue_tier_label: '$$?' as const,
-    revenue_tier_description: 'Needs Diagnostic',
-    revenue_tier_range: '$89 diagnostic',
-    revenue_tier_signals: ['Unclear scope', 'Needs inspection'],
-    revenue_confidence: 'low' as const,
-    problem_duration: 'A while',
-    problem_onset: 'Not sure',
-    problem_pattern: 'Sometimes works, sometimes does not',
-    customer_attempted_fixes: 'Nothing yet',
-  },
-
-  // ============================================
-  // COMPLETED JOB (yesterday) - for history
-  // ============================================
-  {
-    customer_name: 'Karen White',
-    customer_phone: '+15551234011',
-    customer_address: '555 Hickory Drive, Austin, TX 78759',
-    service_type: 'hvac' as const,
-    urgency: 'medium' as const,
-    status: 'complete' as const,
-    scheduled_at: yesterdayAt(10, 0),
-    completed_at: yesterdayAt(11, 45),
-    estimated_value: 275,
-    revenue: 285,  // Actual revenue collected
-    ai_summary: 'Refrigerant recharge and coil cleaning completed. System running well.',
-    is_ai_booked: false,
-    booking_confirmed: true,
-    revenue_tier: 'standard_repair' as const,
-    revenue_tier_label: '$$' as const,
-    revenue_tier_description: 'Standard Repair',
-    revenue_tier_range: '$200-$800',
-    revenue_tier_signals: ['Refrigerant recharge', 'Coil cleaning'],
-    revenue_confidence: 'high' as const,
-    problem_duration: null,
-    problem_onset: null,
-    problem_pattern: null,
-    customer_attempted_fixes: null,
+    problem_duration: '3 days',
+    problem_onset: 'Started after power surge',
+    problem_pattern: 'Continuous when unit runs',
+    customer_attempted_fixes: 'Watched YouTube videos',
   },
 ];
 
 // ============================================
-// LEADS (8 total) - Various priorities + sales
+// LEADS (5 total - callbacks & sales)
+// Includes V3 Triage Fields
 // ============================================
 
 export const seedLeads = [
-  // ============================================
-  // HOT LEADS
-  // ============================================
-
-  // $$$$ Sales lead - replacement inquiry (uses callback_requested status with sales notes)
+  // Call #3 - Robert Chen - Callback Complaint (HOT - RED)
   {
-    customer_name: 'Diana Walsh',
-    customer_phone: '+15551235001',
-    customer_address: '1500 Barton Springs Rd, Austin, TX 78704',
+    customer_name: 'Robert Chen',
+    customer_phone: '+15551234003',
+    customer_address: '5612 Burnet Rd, Austin, TX 78756',
     status: 'callback_requested' as const,
     priority: 'hot' as const,
-    why_not_booked: 'Needs replacement quote, not repair - SALES LEAD',
-    issue_description: 'Central AC is 18 years old, finally died. Wants new high-efficiency system with financing.',
+    why_not_booked: 'CALLBACK COMPLAINT - Previous service 2 weeks ago didn\'t fix issue. Promised callback within 15 min.',
+    issue_description: 'Unit broken again 2 weeks after $450 repair. Same problem returned. Angry, mentioned BBB and Google review.',
+    service_type: 'hvac' as const,
+    urgency: 'high' as const,
+    estimated_value: 89, // Diagnostic - warranty claim
+    callback_requested_at: subMinutes(now, 45).toISOString(),
+    ai_summary: 'URGENT: Callback complaint. Customer paid $450 two weeks ago for repair, same issue returned. Very unhappy, mentioned BBB/Google review. Previous work order needs review. Reputation risk.',
+    revenue_tier: 'diagnostic' as const,
+    revenue_tier_label: '$$?' as const,
+    revenue_tier_description: 'Needs Diagnostic',
+    revenue_tier_range: '$89 diagnostic (may be warranty)',
+    revenue_tier_signals: ['Callback complaint', 'Previous repair failed', 'Reputation risk'],
+    revenue_confidence: 'low' as const,
+    // V3 TRIAGE FIELDS
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'active_job_issue' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: true,
+    status_color: 'red' as StatusColor,
+  },
+
+  // Call #7 - Harold Mitchell - R-22 Replacement Sales Lead (HOT - YELLOW)
+  {
+    customer_name: 'Harold Mitchell',
+    customer_phone: '+15551234007',
+    customer_address: '8934 Jollyville Rd, Austin, TX 78759',
+    status: 'callback_requested' as const,
+    priority: 'hot' as const,
+    why_not_booked: 'SALES LEAD - Wants repair quote AND replacement options. Requested sales manager callback.',
+    issue_description: 'AC barely cooling. System is 24 years old, uses R-22. Wife recovering from surgery - needs cool house.',
     service_type: 'hvac' as const,
     urgency: 'high' as const,
     estimated_value: 12000,
-    callback_requested_at: subMinutes(now, 90).toISOString(),
-    ai_summary: 'Customer called about dead AC. 18-year-old system ready to replace. Very interested in high-SEER unit. Asked for owner callback with quote and financing options. Mentioned neighbor got quote for $14k. Budget seems flexible.',
+    callback_requested_at: subMinutes(now, 120).toISOString(),
+    ai_summary: 'High-value sales lead. R-22 system, 24 years old. Knows refrigerant is phased out. Wife post-surgery needs cool house. Interested in both repair quote and replacement options with financing.',
     revenue_tier: 'replacement' as const,
     revenue_tier_label: '$$$$' as const,
     revenue_tier_description: 'Potential Replacement',
     revenue_tier_range: '$5,000-$15,000+',
-    revenue_tier_signals: ['18 years old', 'System dead', 'Replacement inquiry', 'High-efficiency wanted', 'Financing mentioned'],
+    revenue_tier_signals: ['R-22 system', '24 years old', 'Replacement inquiry', 'Financing interest'],
     revenue_confidence: 'high' as const,
-    sales_lead_notes: 'Interested in Carrier or Trane. Mentioned neighbor got $14k quote. Wants SEER 20+. Open to financing.',
+    sales_lead_notes: 'Wife recovering from surgery. Urgent need for cooling. Open to financing. Knows R-22 is obsolete.',
     equipment_type: 'Central AC',
-    equipment_age: '18 years',
+    equipment_age: '24 years',
+    // V3 TRIAGE FIELDS
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'yellow' as StatusColor,
   },
 
-  // $$$ Callback requested - major repair
+  // Call #11 - Brandon Hayes - Rental Property (WARM - YELLOW)
   {
-    customer_name: 'David Kim',
-    customer_phone: '+15551235002',
-    customer_address: '100 Main Street, Austin, TX 78701',
-    status: 'callback_requested' as const,
-    priority: 'hot' as const,
-    why_not_booked: 'Wanted to check prices with spouse first',
-    issue_description: 'AC compressor making loud noise. May need replacement.',
+    customer_name: 'Brandon Hayes',
+    customer_phone: '+15551234011',
+    customer_address: '4823 Airport Blvd, Austin, TX 78751',
+    status: 'thinking' as const,
+    priority: 'warm' as const,
+    why_not_booked: 'Tenant calling - needs landlord approval. Owner (James Liu) must authorize service.',
+    issue_description: 'AC making loud clicking noise. Tenant can\'t authorize service.',
     service_type: 'hvac' as const,
-    urgency: 'high' as const,
-    estimated_value: 1800,
-    callback_requested_at: subMinutes(now, 120).toISOString(),
-    ai_summary: 'Customer called about loud compressor. Seemed ready to book but wanted to discuss cost with spouse. Requested callback in 2 hours. Sounded concerned about the noise.',
-    revenue_tier: 'major_repair' as const,
-    revenue_tier_label: '$$$' as const,
-    revenue_tier_description: 'Major Repair',
-    revenue_tier_range: '$800-$3,000',
-    revenue_tier_signals: ['Compressor', 'Loud noise', 'May need replacement'],
-    revenue_confidence: 'medium' as const,
-  },
-
-  // $$ Callback requested - schedule conflict
-  {
-    customer_name: 'Amanda White',
-    customer_phone: '+15551235003',
-    customer_address: '200 Second Avenue, Austin, TX 78702',
-    status: 'callback_requested' as const,
-    priority: 'hot' as const,
-    why_not_booked: 'At work, needs to check schedule',
-    issue_description: 'Furnace not igniting. Getting error code E3 on thermostat.',
-    service_type: 'hvac' as const,
-    urgency: 'high' as const,
-    estimated_value: 400,
-    callback_requested_at: subMinutes(now, 45).toISOString(),
-    ai_summary: 'Urgent furnace issue but customer at work. Asked to call back after 5pm today to schedule for tomorrow morning. Error code E3 indicates ignition failure.',
+    urgency: 'medium' as const,
+    estimated_value: 350,
+    ai_summary: 'Rental property - tenant called. AC clicking (likely capacitor). Needs landlord James Liu approval. Owner on file but tenant can\'t authorize. Callback to owner needed.',
     revenue_tier: 'standard_repair' as const,
     revenue_tier_label: '$$' as const,
     revenue_tier_description: 'Standard Repair',
     revenue_tier_range: '$200-$800',
-    revenue_tier_signals: ['Furnace not igniting', 'Error code E3'],
+    revenue_tier_signals: ['Clicking noise', 'Capacitor likely', 'Landlord approval'],
     revenue_confidence: 'medium' as const,
+    // V3 TRIAGE FIELDS
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'yellow' as StatusColor,
   },
 
-  // ============================================
-  // WARM LEADS
-  // ============================================
-
-  // $$$ Thinking - getting quotes
+  // Call #16 - Michael Thompson - Heat Pump Quote (WARM - YELLOW)
   {
-    customer_name: 'Chris Taylor',
-    customer_phone: '+15551235004',
-    customer_address: '300 Third Street, Austin, TX 78703',
+    customer_name: 'Michael Thompson',
+    customer_phone: '+15551234016',
+    customer_address: '6701 Bee Cave Rd, Austin, TX 78746',
     status: 'thinking' as const,
     priority: 'warm' as const,
-    why_not_booked: 'Getting other quotes first',
-    issue_description: 'Wants heat pump replacement quote. System is 15 years old.',
+    why_not_booked: 'Getting 3 quotes before deciding. Scheduled in-home consultation.',
+    issue_description: 'Want to replace AC with heat pump. Interested in rebates and financing. No rush.',
     service_type: 'hvac' as const,
     urgency: 'low' as const,
-    estimated_value: 7500,
-    ai_summary: 'Customer shopping for new heat pump system. Current unit is 15 years old and working but inefficient. Getting 3 quotes before deciding. Wants high-efficiency system.',
+    estimated_value: 15000,
+    ai_summary: 'Sales opportunity - heat pump replacement. Getting 3 quotes, focused on efficiency. Interested in rebates and financing. Scheduled for in-home consultation next week.',
     revenue_tier: 'replacement' as const,
     revenue_tier_label: '$$$$' as const,
     revenue_tier_description: 'Potential Replacement',
     revenue_tier_range: '$5,000-$15,000+',
-    revenue_tier_signals: ['15 years old', 'Replacement inquiry', 'Heat pump'],
+    revenue_tier_signals: ['Heat pump conversion', 'Getting quotes', 'Rebate interest', 'Financing interest'],
     revenue_confidence: 'medium' as const,
+    sales_lead_notes: 'Eco-conscious. Wants high-efficiency. Budget flexible. Getting competitor quotes.',
+    equipment_type: 'Central AC (converting to Heat Pump)',
+    equipment_age: 'Current system 12 years',
+    // V3 TRIAGE FIELDS
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'yellow' as StatusColor,
   },
 
-  // $$ Voicemail left
+  // Call #19 - Jennifer Adams - Callback Request (WARM - YELLOW)
   {
-    customer_name: 'Emily Garcia',
-    customer_phone: '+15551235005',
-    customer_address: '400 Fourth Boulevard, Austin, TX 78704',
-    status: 'voicemail_left' as const,
+    customer_name: 'Jennifer Adams',
+    customer_phone: '+15551234019',
+    customer_address: '901 W Riverside Dr, Austin, TX 78704',
+    status: 'callback_requested' as const,
     priority: 'warm' as const,
-    why_not_booked: 'No answer - left voicemail',
-    issue_description: 'Missed inbound call. Returned call went to voicemail.',
+    why_not_booked: 'At work, can\'t talk. Requested callback after 5:30 PM.',
+    issue_description: 'AC not cooling evenly - some rooms fine. Thinks it might be ductwork.',
     service_type: 'hvac' as const,
     urgency: 'medium' as const,
-    estimated_value: 250,
-    ai_summary: 'Inbound call disconnected after 30 seconds. Called back but no answer. Left voicemail asking them to call back. Unknown issue.',
+    estimated_value: 89, // Diagnostic
+    callback_requested_at: todayAt(17, 30).toISOString(),
+    ai_summary: 'Uneven cooling - some rooms OK, others hot. Customer suspects ductwork issue. At work, requested callback after 5:30 PM. Needs diagnostic to determine scope.',
     revenue_tier: 'diagnostic' as const,
     revenue_tier_label: '$$?' as const,
     revenue_tier_description: 'Needs Diagnostic',
     revenue_tier_range: '$89 diagnostic',
-    revenue_tier_signals: ['Unknown scope', 'Missed call'],
+    revenue_tier_signals: ['Uneven cooling', 'Ductwork suspected', 'Unclear scope'],
     revenue_confidence: 'low' as const,
-  },
-
-  // $$ Landlord approval needed
-  {
-    customer_name: 'Michelle Lee',
-    customer_phone: '+15551235006',
-    customer_address: '600 Sixth Court, Austin, TX 78705',
-    status: 'thinking' as const,
-    priority: 'warm' as const,
-    why_not_booked: 'Landlord needs to approve repair',
-    issue_description: 'AC making clicking noise. Tenant needs landlord approval for service.',
-    service_type: 'hvac' as const,
-    urgency: 'medium' as const,
-    estimated_value: 300,
-    ai_summary: 'Rental property - tenant called about clicking AC. Waiting for landlord to approve service call. Will call back once approved.',
-    revenue_tier: 'standard_repair' as const,
-    revenue_tier_label: '$$' as const,
-    revenue_tier_description: 'Standard Repair',
-    revenue_tier_range: '$200-$800',
-    revenue_tier_signals: ['Clicking noise', 'AC repair'],
-    revenue_confidence: 'medium' as const,
-  },
-
-  // ============================================
-  // COLD LEADS
-  // ============================================
-
-  // $ Deferred - maintenance plan
-  {
-    customer_name: 'James Wilson',
-    customer_phone: '+15551235007',
-    customer_address: '500 Fifth Lane, Austin, TX 78731',
-    status: 'deferred' as const,
-    priority: 'cold' as const,
-    why_not_booked: 'Not ready yet - call back next week',
-    issue_description: 'Interested in preventive maintenance plan.',
-    service_type: 'hvac' as const,
-    urgency: 'low' as const,
-    estimated_value: 200,
-    remind_at: daysFromNowAt(5, 9, 0).toISOString(),
-    ai_summary: 'Customer interested in maintenance plan but traveling this week. Asked to be called back next Monday morning.',
-    revenue_tier: 'minor' as const,
-    revenue_tier_label: '$' as const,
-    revenue_tier_description: 'Maintenance',
-    revenue_tier_range: '$75-$250',
-    revenue_tier_signals: ['Maintenance plan', 'Preventive'],
-    revenue_confidence: 'high' as const,
-  },
-
-  // Lost call (customer hung up)
-  {
-    customer_name: 'Unknown Caller',
-    customer_phone: '+15551235008',
-    customer_address: null,
-    status: 'lost' as const,
-    priority: 'cold' as const,
-    why_not_booked: 'Customer hung up before completing call',
-    issue_description: 'Call disconnected before gathering information.',
-    service_type: 'hvac' as const,
-    urgency: 'low' as const,
-    estimated_value: null,
-    ai_summary: 'Customer hung up after 15 seconds. Only said hello and mentioned AC. No contact info collected.',
-    revenue_tier: null,
-    revenue_tier_label: null,
-    revenue_tier_description: null,
-    revenue_tier_range: null,
-    revenue_tier_signals: null,
-    revenue_confidence: null,
+    // V3 TRIAGE FIELDS
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'yellow' as StatusColor,
   },
 ];
 
 // ============================================
-// CALLS (12 records) - Call history with transcripts
+// CALLS (20 total - Full transcript records)
+// Includes V3 Triage Fields
 // ============================================
 
 export const seedCalls = [
-  // Patricia Henderson - R-22 replacement ($$$$)
+  // Call #1 - Tony Russo - Restaurant Emergency (7:45 AM)
   {
     call_id: 'seed_call_001',
     retell_call_id: 'retell_seed_001',
-    phone_number: '+15551234012',
-    customer_name: 'Patricia Henderson',
-    started_at: todayAt(9, 15),
-    ended_at: todayAt(9, 22),
-    duration_seconds: 420,
-    direction: 'inbound' as const,
-    outcome: 'completed' as const,
-    hvac_issue_type: 'Cooling',
-    urgency_tier: 'high',
-    problem_description: 'AC not cooling properly. R-22 system is 22 years old.',
-    revenue_tier_label: '$$$$',
-    revenue_tier_signals: ['R-22 system', '22 years old', 'Not cooling'],
-    transcript_object: [
-      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
-      { role: 'user' as const, content: 'Hi, my air conditioner is not cooling very well. It is getting pretty hot in here.' },
-      { role: 'agent' as const, content: 'Oh wow, I can imagine that is uncomfortable in this heat. Do you happen to know how old your system is?' },
-      { role: 'user' as const, content: 'It is pretty old - I think we have had it for about 22 years. I know it uses that old Freon stuff.' },
-      { role: 'agent' as const, content: 'Got it - sounds like an R-22 system. Those are being phased out, so good to know. Let me get your ZIP code to check our service area.' },
-      { role: 'user' as const, content: '78734' },
-      { role: 'agent' as const, content: 'Perfect, we service your area. Can I get your phone number for our records?' },
-      { role: 'user' as const, content: '555-123-4012' },
-      { role: 'agent' as const, content: 'Great. Let me check our schedule. I have today at 2:30 PM or tomorrow at 9 AM - which works better for you?' },
-      { role: 'user' as const, content: 'Today would be amazing if you can do that!' },
-      { role: 'agent' as const, content: 'Absolutely! What is the service address?' },
-      { role: 'user' as const, content: '2100 Ranch Road 620, Austin' },
-      { role: 'agent' as const, content: 'Got it. You are all set for today at 2:30. Our technician will give you a call when they are on the way. Is there anything else I can help with?' },
-      { role: 'user' as const, content: 'No, that is great. Thank you so much!' },
-      { role: 'agent' as const, content: 'You are welcome, Patricia! Have a great day and stay cool.' },
-    ],
-  },
-
-  // Marcus Thompson - VIP compressor emergency ($$$)
-  {
-    call_id: 'seed_call_002',
-    retell_call_id: 'retell_seed_002',
-    phone_number: '+15551234013',
-    customer_name: 'Marcus Thompson',
-    started_at: todayAt(8, 45),
-    ended_at: todayAt(8, 52),
+    phone_number: '+15551234001',
+    customer_name: 'Tony Russo',
+    started_at: todayAt(7, 45),
+    ended_at: todayAt(7, 52),
     duration_seconds: 420,
     direction: 'inbound' as const,
     outcome: 'completed' as const,
     hvac_issue_type: 'Cooling',
     urgency_tier: 'emergency',
-    problem_description: 'Commercial AC compressor making grinding noise. Restaurant kitchen overheating.',
+    problem_description: 'Walk-in cooler compressor making grinding noise. Kitchen at 88°F.',
     revenue_tier_label: '$$$',
-    revenue_tier_signals: ['Compressor', 'Grinding noise', 'Commercial unit'],
+    revenue_tier_signals: ['Walk-in cooler', 'Compressor', 'Commercial', 'Business impact'],
+    // V3 TRIAGE FIELDS
+    caller_type: 'commercial' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'confirmed' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'green' as StatusColor,
     transcript_object: [
       { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
-      { role: 'user' as const, content: 'This is Marcus Thompson. I need someone out here right now - my restaurant AC is making a terrible grinding sound and the kitchen is already at 95 degrees.' },
-      { role: 'agent' as const, content: 'Oh wow, that sounds urgent. Let me see what we can do right away. What is your address?' },
-      { role: 'user' as const, content: '456 Westlake Drive. I am a regular customer - we have used you guys before.' },
-      { role: 'agent' as const, content: 'Yes, I see your account Mr. Thompson. I can get a technician out there by 10 AM - would that work?' },
-      { role: 'user' as const, content: 'That works. Please hurry - we open at 11 and I need this fixed.' },
-      { role: 'agent' as const, content: 'Absolutely, we will prioritize this. Our tech will call when they are on the way. Anything else?' },
+      { role: 'user' as const, content: 'This is Tony from Bella Italia. I need someone here NOW. My walk-in cooler is making a terrible grinding sound and my kitchen is already at 88 degrees.' },
+      { role: 'agent' as const, content: 'Oh no, that sounds urgent! Let me help you right away, Tony. What is your address?' },
+      { role: 'user' as const, content: '2500 Lake Austin Boulevard. We open at 11 and if this cooler goes down, I am going to lose a lot of inventory.' },
+      { role: 'agent' as const, content: 'I understand the urgency. I can get a technician to you by 9 AM this morning. Would that work?' },
+      { role: 'user' as const, content: 'Yes, please. Make it happen. You guys have done good work for my other locations.' },
+      { role: 'agent' as const, content: 'Absolutely. I have you down for 9 AM at 2500 Lake Austin Blvd. Our tech will call when they are on the way. Is there anything else?' },
       { role: 'user' as const, content: 'No, just get here fast. Thanks.' },
-      { role: 'agent' as const, content: 'We are on it, Mr. Thompson. Have a great day!' },
     ],
   },
 
-  // John Martinez - compressor repair ($$$)
+  // Call #2 - Jessica Palmer - New Homeowner (8:15 AM)
+  {
+    call_id: 'seed_call_002',
+    retell_call_id: 'retell_seed_002',
+    phone_number: '+15551234002',
+    customer_name: 'Jessica Palmer',
+    started_at: todayAt(8, 15),
+    ended_at: todayAt(8, 22),
+    duration_seconds: 420,
+    direction: 'inbound' as const,
+    outcome: 'completed' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'high',
+    problem_description: 'AC running constantly but house won\'t cool below 78°F.',
+    revenue_tier_label: '$$',
+    revenue_tier_signals: ['Not cooling', 'Running constantly', 'New homeowner'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'confirmed' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'green' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, I just moved into a new house last month and the AC seems to run all day but never cools below 78 degrees.' },
+      { role: 'agent' as const, content: 'That does sound frustrating, especially in this heat! It could be low refrigerant. What is your ZIP code?' },
+      { role: 'user' as const, content: '78723.' },
+      { role: 'agent' as const, content: 'Great, we service that area. I can get someone out today at 11:30 AM. Would that work?' },
+      { role: 'user' as const, content: 'That would be perfect! The address is 1823 Briarcliff Boulevard.' },
+      { role: 'agent' as const, content: 'Got it. You are all set for 11:30 AM today. The technician will call when they are on the way.' },
+      { role: 'user' as const, content: 'Thank you so much!' },
+    ],
+  },
+
+  // Call #3 - Robert Chen - Callback Complaint (8:32 AM)
   {
     call_id: 'seed_call_003',
     retell_call_id: 'retell_seed_003',
-    phone_number: '+15551234001',
-    customer_name: 'John Martinez',
-    started_at: yesterdayAt(16, 30),
-    ended_at: yesterdayAt(16, 38),
+    phone_number: '+15551234003',
+    customer_name: 'Robert Chen',
+    started_at: todayAt(8, 32),
+    ended_at: todayAt(8, 40),
     duration_seconds: 480,
     direction: 'inbound' as const,
-    outcome: 'completed' as const,
+    outcome: 'urgent_escalation' as const,
     hvac_issue_type: 'Cooling',
     urgency_tier: 'high',
-    problem_description: 'AC compressor not starting after power outage.',
-    revenue_tier_label: '$$$',
-    revenue_tier_signals: ['Compressor not starting', 'After power outage'],
+    problem_description: 'AC broken again 2 weeks after $450 repair. Callback complaint.',
+    revenue_tier_label: '$$?',
+    revenue_tier_signals: ['Callback complaint', 'Previous repair failed', 'Reputation risk'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'active_job_issue' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: true,
+    status_color: 'red' as StatusColor,
     transcript_object: [
-      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you?' },
-      { role: 'user' as const, content: 'Hey, this is John Martinez. We had a power outage last night and now my AC will not start.' },
-      { role: 'agent' as const, content: 'I am sorry to hear that, John. Can you tell me what happens when you try to turn it on?' },
-      { role: 'user' as const, content: 'Nothing. I hear a click from the thermostat but the outside unit does not do anything.' },
-      { role: 'agent' as const, content: 'Have you tried resetting the breaker for the AC?' },
-      { role: 'user' as const, content: 'Yeah, I flipped it off and on. Still nothing.' },
-      { role: 'agent' as const, content: 'Got it. That sounds like it could be the compressor or capacitor. Let me get you scheduled. I have tomorrow morning at 9 AM available.' },
-      { role: 'user' as const, content: 'That works. Same address - 123 Oak Street.' },
-      { role: 'agent' as const, content: 'Perfect. You are all set for 9 AM tomorrow. Is there anything else?' },
-      { role: 'user' as const, content: 'Nope, thanks!' },
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Yeah, I am REALLY upset. You guys were here TWO WEEKS ago and charged me $450, and now it is broken AGAIN. Same exact problem!' },
+      { role: 'agent' as const, content: 'I am so sorry to hear that. That is definitely not the experience we want you to have. Can I get your phone number so I can look up your account?' },
+      { role: 'user' as const, content: '555-123-4003. I want someone here TODAY and I better not be charged again for the same thing.' },
+      { role: 'agent' as const, content: 'I completely understand your frustration. Let me send an urgent alert to our manager. Someone will call you back within 15 minutes to get this resolved.' },
+      { role: 'user' as const, content: 'It better be 15 minutes. I am ready to leave a bad review on Google and contact the BBB if this is not handled.' },
+      { role: 'agent' as const, content: 'I hear you, and we take this very seriously. You will receive a callback within 15 minutes. Is this the best number to reach you?' },
+      { role: 'user' as const, content: 'Yes. I will be waiting.' },
     ],
   },
 
-  // Sarah Johnson - motor repair ($$)
+  // Call #4 - Marketing Solutions Inc - SEO Pitch / SPAM (8:48 AM)
   {
     call_id: 'seed_call_004',
     retell_call_id: 'retell_seed_004',
-    phone_number: '+15551234002',
-    customer_name: 'Sarah Johnson',
-    started_at: yesterdayAt(14, 15),
-    ended_at: yesterdayAt(14, 21),
-    duration_seconds: 360,
+    phone_number: '+15559990001',
+    customer_name: 'Marketing Solutions Inc',
+    started_at: todayAt(8, 48),
+    ended_at: todayAt(8, 49),
+    duration_seconds: 65,
     direction: 'inbound' as const,
-    outcome: 'completed' as const,
-    hvac_issue_type: 'Heating',
-    urgency_tier: 'medium',
-    problem_description: 'Heat pump blower motor making humming noise.',
-    revenue_tier_label: '$$',
-    revenue_tier_signals: ['Blower motor', 'Humming noise'],
-    transcript_object: [
-      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
-      { role: 'user' as const, content: 'Hi, my heat pump is making this weird humming sound. It has been going on for about a week and getting louder.' },
-      { role: 'agent' as const, content: 'That could be the blower motor bearings. Do you know how old your system is?' },
-      { role: 'user' as const, content: 'About 3 years old - it is a Trane.' },
-      { role: 'agent' as const, content: 'Good news is that should still be under warranty. Let me get you scheduled. How is today at 11 AM?' },
-      { role: 'user' as const, content: 'That works for me. I work from home so any time is fine.' },
-      { role: 'agent' as const, content: 'Perfect. The technician will text before arriving. Is there anything else?' },
-      { role: 'user' as const, content: 'No, that is it. Thanks!' },
-    ],
-  },
-
-  // Mike Williams - capacitor ($$)
-  {
-    call_id: 'seed_call_005',
-    retell_call_id: 'retell_seed_005',
-    phone_number: '+15551234003',
-    customer_name: 'Mike Williams',
-    started_at: todayAt(7, 45),
-    ended_at: todayAt(7, 51),
-    duration_seconds: 360,
-    direction: 'inbound' as const,
-    outcome: 'completed' as const,
-    hvac_issue_type: 'Cooling',
-    urgency_tier: 'medium',
-    problem_description: 'AC clicking but not starting.',
-    revenue_tier_label: '$$',
-    revenue_tier_signals: ['Clicking', 'Not starting', 'Capacitor'],
-    transcript_object: [
-      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you?' },
-      { role: 'user' as const, content: 'Hi, my AC is clicking but will not start. Started this morning.' },
-      { role: 'agent' as const, content: 'Clicking but not starting usually means the capacitor. When was your last maintenance?' },
-      { role: 'user' as const, content: 'Last spring. You guys did the tune-up.' },
-      { role: 'agent' as const, content: 'Good to know. Let me get you in today. I have 1 PM available.' },
-      { role: 'user' as const, content: 'That works. 789 Elm Drive.' },
-      { role: 'agent' as const, content: 'Got it. See you at 1 PM!' },
-    ],
-  },
-
-  // Diana Walsh - sales lead ($$$$)
-  {
-    call_id: 'seed_call_006',
-    retell_call_id: 'retell_seed_006',
-    phone_number: '+15551235001',
-    customer_name: 'Diana Walsh',
-    started_at: subMinutes(now, 95),
-    ended_at: subMinutes(now, 88),
-    duration_seconds: 420,
-    direction: 'inbound' as const,
-    outcome: 'sales_lead' as const,
-    hvac_issue_type: 'Cooling',
-    urgency_tier: 'high',
-    problem_description: '18-year-old AC dead, wants replacement quote.',
-    revenue_tier_label: '$$$$',
-    revenue_tier_signals: ['18 years old', 'System dead', 'Replacement inquiry'],
-    transcript_object: [
-      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
-      { role: 'user' as const, content: 'Hi, my AC finally gave up. It is 18 years old and I think it is time for a new one.' },
-      { role: 'agent' as const, content: 'I understand. 18 years is a good run for an AC. Are you looking for a replacement quote?' },
-      { role: 'user' as const, content: 'Yes, I want something more efficient. My neighbor just got a new system - said it was around $14,000.' },
-      { role: 'agent' as const, content: 'We can definitely help with that. For replacement quotes, I will have the owner call you to discuss options. Can I confirm your phone number?' },
-      { role: 'user' as const, content: '555-123-5001. I am interested in the high-efficiency models, and I might need financing.' },
-      { role: 'agent' as const, content: 'Noted - high efficiency with financing options. The owner will call you within the hour. What is your address for the quote?' },
-      { role: 'user' as const, content: '1500 Barton Springs Road.' },
-      { role: 'agent' as const, content: 'Perfect. Expect a call shortly. Have a great day!' },
-    ],
-  },
-
-  // David Kim - callback requested ($$$)
-  {
-    call_id: 'seed_call_007',
-    retell_call_id: 'retell_seed_007',
-    phone_number: '+15551235002',
-    customer_name: 'David Kim',
-    started_at: subMinutes(now, 125),
-    ended_at: subMinutes(now, 118),
-    duration_seconds: 420,
-    direction: 'inbound' as const,
-    outcome: 'callback_later' as const,
-    hvac_issue_type: 'Cooling',
-    urgency_tier: 'high',
-    problem_description: 'AC compressor making loud noise.',
-    revenue_tier_label: '$$$',
-    revenue_tier_signals: ['Compressor', 'Loud noise'],
-    transcript_object: [
-      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you?' },
-      { role: 'user' as const, content: 'My AC is making this really loud banging noise. I am worried it is the compressor.' },
-      { role: 'agent' as const, content: 'That does sound concerning. How long has it been making this noise?' },
-      { role: 'user' as const, content: 'Just started today. Look, I need to check with my wife about the cost first. Can you call me back in a couple hours?' },
-      { role: 'agent' as const, content: 'Of course. What time works best?' },
-      { role: 'user' as const, content: 'Around 3 PM? That gives me time to talk to her.' },
-      { role: 'agent' as const, content: 'Got it. We will call you back at 3 PM. Is this the best number?' },
-      { role: 'user' as const, content: 'Yes, 555-123-5002. Thanks for understanding.' },
-    ],
-  },
-
-  // Wrong number
-  {
-    call_id: 'seed_call_008',
-    retell_call_id: 'retell_seed_008',
-    phone_number: '+15551239001',
-    customer_name: null,
-    started_at: todayAt(10, 30),
-    ended_at: todayAt(10, 31),
-    duration_seconds: 45,
-    direction: 'inbound' as const,
-    outcome: 'wrong_number' as const,
+    outcome: 'spam_vendor' as const,
     hvac_issue_type: null,
     urgency_tier: null,
     problem_description: null,
     revenue_tier_label: null,
     revenue_tier_signals: null,
+    caller_type: 'vendor' as CallerType,
+    primary_intent: 'solicitation' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'gray' as StatusColor,
     transcript_object: [
       { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
-      { role: 'user' as const, content: 'Oh, sorry - I was trying to call the pizza place.' },
-      { role: 'agent' as const, content: 'No problem! Have a great day!' },
-      { role: 'user' as const, content: 'Thanks, bye!' },
+      { role: 'user' as const, content: 'Hi, this is Marketing Solutions. We noticed your Google rankings could be improved and wanted to offer you a free consultation.' },
+      { role: 'agent' as const, content: 'Thank you, but we are not interested in marketing services at this time. Have a great day!' },
+      { role: 'user' as const, content: 'But we can get you to page one of Google for—' },
+      { role: 'agent' as const, content: 'Thank you, goodbye.' },
     ],
   },
 
-  // Out of service area
+  // Call #5 - Diana Lawson - Property Manager (9:05 AM)
+  {
+    call_id: 'seed_call_005',
+    retell_call_id: 'retell_seed_005',
+    phone_number: '+15551234005',
+    customer_name: 'Diana Lawson',
+    started_at: todayAt(9, 5),
+    ended_at: todayAt(9, 14),
+    duration_seconds: 540,
+    direction: 'inbound' as const,
+    outcome: 'completed' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'high',
+    problem_description: '3 units down at 42-unit apartment complex. Same compressors failing.',
+    revenue_tier_label: '$$$',
+    revenue_tier_signals: ['Multi-unit', 'Commercial property', 'Multiple failures'],
+    caller_type: 'commercial' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'confirmed' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'green' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'This is Diana Lawson from Sunridge Apartments. I have 3 units with no AC this morning and tenants are calling me non-stop.' },
+      { role: 'agent' as const, content: 'That sounds like a challenging morning! How many units total in the building?' },
+      { role: 'user' as const, content: '42 units. The building is 15 years old and these compressors keep failing. I need someone out here today, and I also want a quote on preventive replacement.' },
+      { role: 'agent' as const, content: 'I can definitely help with both. I have 1 PM available for today. What is the property address?' },
+      { role: 'user' as const, content: '4200 Manchaca Road. I have maintenance budget authority so we can move quickly on decisions.' },
+      { role: 'agent' as const, content: 'Perfect. I have you scheduled for 1 PM today. The tech will assess all 3 units and provide a quote for preventive measures on the remaining units.' },
+      { role: 'user' as const, content: 'That is exactly what I need. Thank you.' },
+    ],
+  },
+
+  // Call #6 - Maria Santos - Gas Smell / SAFETY EMERGENCY (9:22 AM)
+  {
+    call_id: 'seed_call_006',
+    retell_call_id: 'retell_seed_006',
+    phone_number: '+15551234006',
+    customer_name: 'Maria Santos',
+    started_at: todayAt(9, 22),
+    ended_at: todayAt(9, 28),
+    duration_seconds: 360,
+    direction: 'inbound' as const,
+    outcome: 'safety_emergency' as const,
+    hvac_issue_type: 'Heating',
+    urgency_tier: 'emergency',
+    problem_description: 'Gas smell near furnace. Elderly mother (82) in home.',
+    revenue_tier_label: '$$$',
+    revenue_tier_signals: ['Gas smell', 'Safety concern', 'Elderly occupant'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'red' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'I smell gas near my furnace. I am very worried. My mother is 82 and lives with me.' },
+      { role: 'agent' as const, content: 'I understand this is concerning. Have you already turned off the furnace?' },
+      { role: 'user' as const, content: 'Yes, I turned it off right away.' },
+      { role: 'agent' as const, content: 'Good. If the smell gets stronger or you feel dizzy, please leave the house immediately and call 911. I am sending an emergency alert to our dispatcher right now. Someone will call you back within 15 minutes.' },
+      { role: 'user' as const, content: 'Thank you. The smell is faint but I am scared.' },
+      { role: 'agent' as const, content: 'I understand. Keep windows open if you can. What is your address?' },
+      { role: 'user' as const, content: '3401 South Congress Avenue.' },
+      { role: 'agent' as const, content: 'Got it. Someone will call you back very soon. Stay safe.' },
+    ],
+  },
+
+  // Call #7 - Harold Mitchell - R-22 Sales Lead (9:45 AM)
+  {
+    call_id: 'seed_call_007',
+    retell_call_id: 'retell_seed_007',
+    phone_number: '+15551234007',
+    customer_name: 'Harold Mitchell',
+    started_at: todayAt(9, 45),
+    ended_at: todayAt(9, 54),
+    duration_seconds: 540,
+    direction: 'inbound' as const,
+    outcome: 'sales_lead' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'high',
+    problem_description: 'R-22 system 24 years old, barely cooling. Replacement candidate.',
+    revenue_tier_label: '$$$$',
+    revenue_tier_signals: ['R-22 system', '24 years old', 'Replacement inquiry'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'yellow' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'My AC is barely cooling and it is 24 years old. I know it uses that old Freon that is being phased out.' },
+      { role: 'agent' as const, content: 'Yes, R-22 systems are no longer manufactured. At 24 years, you are definitely in replacement territory. Are you interested in a repair quote or also looking at replacement options?' },
+      { role: 'user' as const, content: 'Both, actually. My wife just had surgery and she really needs the house cool. But I want to know if it is worth repairing or if I should just replace it.' },
+      { role: 'agent' as const, content: 'I understand. For replacement quotes and options, I will have our sales manager call you. They can discuss financing options too. What is the best number to reach you?' },
+      { role: 'user' as const, content: '555-123-4007. I am home all day caring for my wife.' },
+      { role: 'agent' as const, content: 'Perfect. Our sales manager will call you within the hour to discuss your options. What is your address?' },
+      { role: 'user' as const, content: '8934 Jollyville Road in Austin.' },
+      { role: 'agent' as const, content: 'Got it. You will hear from us soon. I hope your wife feels better!' },
+    ],
+  },
+
+  // Call #8 - Kevin Park - Thermostat Upgrade (10:12 AM)
+  {
+    call_id: 'seed_call_008',
+    retell_call_id: 'retell_seed_008',
+    phone_number: '+15551234008',
+    customer_name: 'Kevin Park',
+    started_at: todayAt(10, 12),
+    ended_at: todayAt(10, 18),
+    duration_seconds: 360,
+    direction: 'inbound' as const,
+    outcome: 'completed' as const,
+    hvac_issue_type: 'Maintenance',
+    urgency_tier: 'low',
+    problem_description: 'Smart thermostat installation - has Nest, needs pro install.',
+    revenue_tier_label: '$',
+    revenue_tier_signals: ['Thermostat install', 'Nest'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'booking_request' as PrimaryIntent,
+    booking_status: 'confirmed' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'green' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, I bought a Nest thermostat and I need someone to install it. I tried myself but the wiring is confusing.' },
+      { role: 'agent' as const, content: 'No problem! We install smart thermostats all the time. When would you like to schedule?' },
+      { role: 'user' as const, content: 'Sometime next week if possible. I am flexible on time.' },
+      { role: 'agent' as const, content: 'I have Tuesday at 10 AM available. Would that work?' },
+      { role: 'user' as const, content: 'Perfect. The address is 2109 Windsor Road.' },
+      { role: 'agent' as const, content: 'Great. You are scheduled for Tuesday at 10 AM. The tech will call before arriving.' },
+      { role: 'user' as const, content: 'Thanks!' },
+    ],
+  },
+
+  // Call #9 - Unknown - Customer Hangup (10:35 AM)
   {
     call_id: 'seed_call_009',
     retell_call_id: 'retell_seed_009',
-    phone_number: '+15551239002',
-    customer_name: 'George Brown',
-    started_at: todayAt(11, 15),
-    ended_at: todayAt(11, 18),
-    duration_seconds: 180,
-    direction: 'inbound' as const,
-    outcome: 'out_of_area' as const,
-    hvac_issue_type: 'Cooling',
-    urgency_tier: 'medium',
-    problem_description: 'AC not cooling',
-    revenue_tier_label: null,
-    revenue_tier_signals: null,
-    transcript_object: [
-      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you?' },
-      { role: 'user' as const, content: 'Hi, my AC stopped working. Can you come take a look?' },
-      { role: 'agent' as const, content: 'I would be happy to help. What is your ZIP code?' },
-      { role: 'user' as const, content: '75201' },
-      { role: 'agent' as const, content: 'I am sorry, that is in Dallas. We only service the Austin area. I can recommend some companies up there if you would like.' },
-      { role: 'user' as const, content: 'Oh, I see. No that is okay, I will find someone. Thanks anyway.' },
-      { role: 'agent' as const, content: 'No problem. Have a great day!' },
-    ],
-  },
-
-  // Customer hung up (abandoned)
-  {
-    call_id: 'seed_call_010',
-    retell_call_id: 'retell_seed_010',
-    phone_number: '+15551235008',
+    phone_number: '+15559990002',
     customer_name: null,
-    started_at: subMinutes(now, 180),
-    ended_at: subMinutes(now, 179),
-    duration_seconds: 15,
+    started_at: todayAt(10, 35),
+    ended_at: todayAt(10, 35),
+    duration_seconds: 22,
     direction: 'inbound' as const,
     outcome: 'customer_hangup' as const,
     hvac_issue_type: null,
@@ -1034,100 +873,426 @@ export const seedCalls = [
     problem_description: null,
     revenue_tier_label: null,
     revenue_tier_signals: null,
+    caller_type: 'unknown' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'gray' as StatusColor,
     transcript_object: [
       { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
-      { role: 'user' as const, content: 'Hello? Is this... AC...' },
+      { role: 'user' as const, content: 'Hello, I need...' },
     ],
   },
 
-  // Elena Rodriguez - emergency alert (urgent)
+  // Call #10 - Carol Martinez - Annual Checkup (10:58 AM)
   {
-    call_id: 'seed_call_011',
-    retell_call_id: 'retell_seed_011',
-    phone_number: '+15551234014',
-    customer_name: 'Elena Rodriguez',
-    started_at: subMinutes(now, 50),
-    ended_at: subMinutes(now, 44),
-    duration_seconds: 360,
-    direction: 'inbound' as const,
-    outcome: 'urgent_escalation' as const,
-    hvac_issue_type: 'Heating',
-    urgency_tier: 'emergency',
-    problem_description: 'No heat - elderly customer, inside temperature is 58F.',
-    revenue_tier_label: '$$',
-    revenue_tier_signals: ['No heat', 'Elderly', 'Emergency'],
-    transcript_object: [
-      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you?' },
-      { role: 'user' as const, content: 'My heater stopped working. I am very cold - it is only 58 degrees in here.' },
-      { role: 'agent' as const, content: 'I am so sorry to hear that. That is definitely too cold. Let me get you help right away. What is your address?' },
-      { role: 'user' as const, content: '789 South Congress Ave. I am 78 years old and I really need heat.' },
-      { role: 'agent' as const, content: 'I understand this is urgent. I am sending an alert to our dispatcher right now. Someone will call you back within 15 minutes. Is this the best number?' },
-      { role: 'user' as const, content: 'Yes. My daughter is also available at 512-555-9876 if you can not reach me.' },
-      { role: 'agent' as const, content: 'Got it. We will have someone call you very shortly. Stay warm!' },
-    ],
-  },
-
-  // Jennifer Brown - tune-up booking ($)
-  {
-    call_id: 'seed_call_012',
-    retell_call_id: 'retell_seed_012',
-    phone_number: '+15551234006',
-    customer_name: 'Jennifer Brown',
-    started_at: yesterdayAt(11, 0),
-    ended_at: yesterdayAt(11, 6),
-    duration_seconds: 360,
+    call_id: 'seed_call_010',
+    retell_call_id: 'retell_seed_010',
+    phone_number: '+15551234010',
+    customer_name: 'Carol Martinez',
+    started_at: todayAt(10, 58),
+    ended_at: todayAt(11, 5),
+    duration_seconds: 420,
     direction: 'inbound' as const,
     outcome: 'completed' as const,
     hvac_issue_type: 'Maintenance',
     urgency_tier: 'low',
-    problem_description: 'Annual AC tune-up request.',
+    problem_description: 'Annual AC tune-up. Maintenance plan customer. Requests tech Mike.',
     revenue_tier_label: '$',
-    revenue_tier_signals: ['Tune-up', 'Maintenance'],
+    revenue_tier_signals: ['Tune-up', 'Maintenance plan'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'booking_request' as PrimaryIntent,
+    booking_status: 'confirmed' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'green' as StatusColor,
     transcript_object: [
-      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you?' },
-      { role: 'user' as const, content: 'Hi, I would like to schedule a tune-up for my AC. John Martinez recommended you guys.' },
-      { role: 'agent' as const, content: 'That is great! We are happy to help. When would you like to schedule?' },
-      { role: 'user' as const, content: 'Sometime this week if possible. Morning works best.' },
-      { role: 'agent' as const, content: 'I have tomorrow at 9 AM available. Would that work?' },
-      { role: 'user' as const, content: 'Perfect! 987 Birch Way in Austin.' },
-      { role: 'agent' as const, content: 'You are all set. See you tomorrow at 9 AM!' },
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, my reminder said it is time for my annual tune-up. I am on your maintenance plan.' },
+      { role: 'agent' as const, content: 'Great! Let me look you up. Can I have your phone number?' },
+      { role: 'user' as const, content: '555-123-4010. And can I request Mike as my technician? He did my service last year and was excellent.' },
+      { role: 'agent' as const, content: 'Of course! I will note that request. I have next Thursday at 9 AM available. Does that work?' },
+      { role: 'user' as const, content: 'That is perfect.' },
+      { role: 'agent' as const, content: 'You are all set for Thursday at 9 AM at 7702 Shoal Creek Boulevard. I have noted your preference for Mike.' },
+      { role: 'user' as const, content: 'Wonderful, thank you!' },
+    ],
+  },
+
+  // Call #11 - Brandon Hayes - Rental Property (11:15 AM)
+  {
+    call_id: 'seed_call_011',
+    retell_call_id: 'retell_seed_011',
+    phone_number: '+15551234011',
+    customer_name: 'Brandon Hayes',
+    started_at: todayAt(11, 15),
+    ended_at: todayAt(11, 22),
+    duration_seconds: 420,
+    direction: 'inbound' as const,
+    outcome: 'callback_later' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'medium',
+    problem_description: 'Tenant calling - AC clicking noise. Needs landlord approval.',
+    revenue_tier_label: '$$',
+    revenue_tier_signals: ['Clicking noise', 'Rental property', 'Landlord approval needed'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'yellow' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, I am a tenant and my AC is making a loud clicking sound. But I need to get approval from my landlord before scheduling service.' },
+      { role: 'agent' as const, content: 'I understand. Do you know who your landlord is? We may have them on file.' },
+      { role: 'user' as const, content: 'His name is James Liu. The property is at 4823 Airport Boulevard.' },
+      { role: 'agent' as const, content: 'Let me check... Yes, we have James Liu on file. Would you like us to reach out to him for authorization?' },
+      { role: 'user' as const, content: 'That would be great. I do not want to bother him but the clicking is getting annoying.' },
+      { role: 'agent' as const, content: 'I will contact Mr. Liu and arrange service once approved. Is your number the best to reach if we have updates?' },
+      { role: 'user' as const, content: 'Yes, 555-123-4011. Thanks for helping!' },
+    ],
+  },
+
+  // Call #12 - Wrong Number (11:42 AM)
+  {
+    call_id: 'seed_call_012',
+    retell_call_id: 'retell_seed_012',
+    phone_number: '+15559990003',
+    customer_name: null,
+    started_at: todayAt(11, 42),
+    ended_at: todayAt(11, 43),
+    duration_seconds: 35,
+    direction: 'inbound' as const,
+    outcome: 'wrong_number' as const,
+    hvac_issue_type: null,
+    urgency_tier: null,
+    problem_description: null,
+    revenue_tier_label: null,
+    revenue_tier_signals: null,
+    caller_type: 'unknown' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'gray' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Is this the pizza place?' },
+      { role: 'agent' as const, content: 'No, this is ACE Cooling, an HVAC company. You may have dialed the wrong number.' },
+      { role: 'user' as const, content: 'Oh sorry! Wrong number.' },
+    ],
+  },
+
+  // Call #13 - Amanda Foster - Infant in Home / URGENT (12:05 PM)
+  {
+    call_id: 'seed_call_013',
+    retell_call_id: 'retell_seed_013',
+    phone_number: '+15551234013',
+    customer_name: 'Amanda Foster',
+    started_at: todayAt(12, 5),
+    ended_at: todayAt(12, 12),
+    duration_seconds: 420,
+    direction: 'inbound' as const,
+    outcome: 'urgent_escalation' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'emergency',
+    problem_description: 'AC completely stopped. House at 84°F. 4-month-old baby in home.',
+    revenue_tier_label: '$$',
+    revenue_tier_signals: ['System down', 'Infant', 'Emergency'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'red' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'My AC completely stopped working and I have a 4-month-old baby. It is already 84 degrees in here!' },
+      { role: 'agent' as const, content: 'I understand this is urgent with a baby in the home. Does the unit make any noise when you try to turn it on?' },
+      { role: 'user' as const, content: 'It just clicks and then nothing happens. Please, I need someone as soon as possible.' },
+      { role: 'agent' as const, content: 'That clicking usually means the capacitor. I am sending an emergency alert to our dispatcher right now. Someone will call you back within 15 minutes to arrange service.' },
+      { role: 'user' as const, content: 'Thank you so much. The address is 7210 Burnet Road.' },
+      { role: 'agent' as const, content: 'Got it. In the meantime, try to keep the baby in the coolest room and use fans if you have them. Help is on the way.' },
+      { role: 'user' as const, content: 'I will. Thank you!' },
+    ],
+  },
+
+  // Call #14 - Wei Zhang - Commercial Kitchen (12:28 PM)
+  {
+    call_id: 'seed_call_014',
+    retell_call_id: 'retell_seed_014',
+    phone_number: '+15551234014',
+    customer_name: 'Wei Zhang',
+    started_at: todayAt(12, 28),
+    ended_at: todayAt(12, 38),
+    duration_seconds: 600,
+    direction: 'inbound' as const,
+    outcome: 'completed' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'emergency',
+    problem_description: 'Make-up air unit failed. Kitchen too hot to work. Health inspection next week.',
+    revenue_tier_label: '$$$$',
+    revenue_tier_signals: ['Commercial kitchen', 'Make-up air unit', 'Health inspection'],
+    caller_type: 'commercial' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'confirmed' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'green' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'This is Wei from Golden Dragon Restaurant. Our make-up air unit stopped working and the kitchen is too hot for my cooks to work.' },
+      { role: 'agent' as const, content: 'I understand this is urgent for your business. How long has it been out?' },
+      { role: 'user' as const, content: 'Since yesterday afternoon. We have a health inspection next week and I cannot operate with no ventilation. I will pay extra for fast service.' },
+      { role: 'agent' as const, content: 'Let me see what we can do. I have a 3 PM slot open today. What is your address?' },
+      { role: 'user' as const, content: '9001 North Lamar Boulevard. The unit is on the roof.' },
+      { role: 'agent' as const, content: 'Got it. I will have our commercial specialist there at 3 PM. This may require a replacement if the unit is severely damaged - are you prepared for that discussion?' },
+      { role: 'user' as const, content: 'Yes, whatever it takes. I cannot fail that inspection.' },
+      { role: 'agent' as const, content: 'Understood. See you at 3 PM, Wei.' },
+    ],
+  },
+
+  // Call #15 - Patricia Nelson - Blower Motor (1:15 PM)
+  {
+    call_id: 'seed_call_015',
+    retell_call_id: 'retell_seed_015',
+    phone_number: '+15551234015',
+    customer_name: 'Patricia Nelson',
+    started_at: todayAt(13, 15),
+    ended_at: todayAt(13, 22),
+    duration_seconds: 420,
+    direction: 'inbound' as const,
+    outcome: 'completed' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'high',
+    problem_description: 'AC blowing warm air. Fan sounds slow. House at 81°F.',
+    revenue_tier_label: '$$$',
+    revenue_tier_signals: ['Blower motor', 'Fan slow', 'Warm air'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'confirmed' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'green' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, my AC is blowing air but it is not cold. And the fan sounds slower than usual.' },
+      { role: 'agent' as const, content: 'That could be a blower motor issue. Have you had any work done on the system recently?' },
+      { role: 'user' as const, content: 'You guys replaced the capacitor last year. It is already 81 degrees in here.' },
+      { role: 'agent' as const, content: 'I see your history. Let me get you in today. I have 4:30 PM available. Does that work?' },
+      { role: 'user' as const, content: 'Yes, please! The address is 4501 Duval Street.' },
+      { role: 'agent' as const, content: 'Perfect. You are set for 4:30 PM today. Hang in there!' },
+    ],
+  },
+
+  // Call #16 - Michael Thompson - Heat Pump Quote / Sales Lead (1:48 PM)
+  {
+    call_id: 'seed_call_016',
+    retell_call_id: 'retell_seed_016',
+    phone_number: '+15551234016',
+    customer_name: 'Michael Thompson',
+    started_at: todayAt(13, 48),
+    ended_at: todayAt(13, 58),
+    duration_seconds: 600,
+    direction: 'inbound' as const,
+    outcome: 'sales_lead' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'low',
+    problem_description: 'Wants to replace AC with heat pump. Getting quotes.',
+    revenue_tier_label: '$$$$',
+    revenue_tier_signals: ['Heat pump conversion', 'Getting quotes', 'Rebate interest'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'yellow' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, we are thinking about replacing our AC with a heat pump system. We want to be more energy efficient.' },
+      { role: 'agent' as const, content: 'Great choice! Heat pumps can significantly reduce energy costs. How old is your current system?' },
+      { role: 'user' as const, content: 'About 12 years. It still works but we are getting quotes before it dies. We heard there are rebates available.' },
+      { role: 'agent' as const, content: 'Yes, there are federal and utility rebates. For a project this size, I would recommend an in-home consultation with our sales team. Are you getting other quotes?' },
+      { role: 'user' as const, content: 'Yes, we are talking to 3 companies. We are in no rush - just want to make an informed decision.' },
+      { role: 'agent' as const, content: 'I completely understand. Let me schedule a consultation for you. What day works best?' },
+      { role: 'user' as const, content: 'How about next Wednesday afternoon? The address is 6701 Bee Cave Road.' },
+      { role: 'agent' as const, content: 'Perfect. I will have our comfort consultant call you to confirm the exact time. Thank you for considering ACE Cooling!' },
+    ],
+  },
+
+  // Call #17 - David Nguyen - Water Leak (2:22 PM)
+  {
+    call_id: 'seed_call_017',
+    retell_call_id: 'retell_seed_017',
+    phone_number: '+15551234017',
+    customer_name: 'David Nguyen',
+    started_at: todayAt(14, 22),
+    ended_at: todayAt(14, 29),
+    duration_seconds: 420,
+    direction: 'inbound' as const,
+    outcome: 'completed' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'medium',
+    problem_description: 'Water dripping from AC in attic. Condensate drain clogged.',
+    revenue_tier_label: '$$',
+    revenue_tier_signals: ['Water leak', 'Condensate drain', 'Clogged'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'confirmed' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'green' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, I noticed water dripping from my AC unit in the attic. I put a bucket under it but I am worried.' },
+      { role: 'agent' as const, content: 'Good call on the bucket! That is usually a clogged condensate drain - easy fix. How long has it been dripping?' },
+      { role: 'user' as const, content: 'I noticed a water stain on my ceiling yesterday and found the drip this morning.' },
+      { role: 'agent' as const, content: 'I can get someone out tomorrow morning at 8:30 AM. The bucket should hold until then. Does that work?' },
+      { role: 'user' as const, content: 'That is perfect. I have an early class but my wife will be home. The address is 2601 Speedway.' },
+      { role: 'agent' as const, content: 'Great. The tech will call before arriving. Keep that bucket emptied!' },
+    ],
+  },
+
+  // Call #18 - Out of Service Area (2:55 PM)
+  {
+    call_id: 'seed_call_018',
+    retell_call_id: 'retell_seed_018',
+    phone_number: '+15559990004',
+    customer_name: 'Unknown',
+    started_at: todayAt(14, 55),
+    ended_at: todayAt(14, 58),
+    duration_seconds: 180,
+    direction: 'inbound' as const,
+    outcome: 'out_of_area' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'medium',
+    problem_description: 'AC not cooling - but location in Pflugerville (outside service area).',
+    revenue_tier_label: null,
+    revenue_tier_signals: null,
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'gray' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, my AC is not cooling. Can you send someone out?' },
+      { role: 'agent' as const, content: 'I would be happy to help! What is your ZIP code?' },
+      { role: 'user' as const, content: '78660 - I am in Pflugerville.' },
+      { role: 'agent' as const, content: 'I am sorry, but Pflugerville is outside our service area. We focus on Austin and the immediate surrounding areas. I can recommend a partner company that services Pflugerville if you would like.' },
+      { role: 'user' as const, content: 'Oh, I see. That is okay, I will find someone. Thanks anyway.' },
+      { role: 'agent' as const, content: 'No problem! Good luck with your repair.' },
+    ],
+  },
+
+  // Call #19 - Jennifer Adams - Callback Request (3:30 PM)
+  {
+    call_id: 'seed_call_019',
+    retell_call_id: 'retell_seed_019',
+    phone_number: '+15551234019',
+    customer_name: 'Jennifer Adams',
+    started_at: todayAt(15, 30),
+    ended_at: todayAt(15, 36),
+    duration_seconds: 360,
+    direction: 'inbound' as const,
+    outcome: 'callback_later' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'medium',
+    problem_description: 'AC not cooling evenly. Some rooms fine. Ductwork suspected.',
+    revenue_tier_label: '$$?',
+    revenue_tier_signals: ['Uneven cooling', 'Ductwork suspected'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'not_requested' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'yellow' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, my AC is not cooling evenly. Some rooms are fine but others are hot. I think it might be a ductwork issue?' },
+      { role: 'agent' as const, content: 'That is definitely possible. Uneven cooling often indicates duct leaks or blocked vents. When would you like to schedule a diagnostic?' },
+      { role: 'user' as const, content: 'Actually, I am at work right now and cannot really talk. Can you call me back after 5:30?' },
+      { role: 'agent' as const, content: 'Of course! We will call you back after 5:30 PM today. Is this the best number?' },
+      { role: 'user' as const, content: 'Yes, 555-123-4019. The address is 901 West Riverside Drive when you need it.' },
+      { role: 'agent' as const, content: 'Got it. Talk to you later today!' },
+    ],
+  },
+
+  // Call #20 - Linda Cooper - Compressor Noise (4:45 PM)
+  {
+    call_id: 'seed_call_020',
+    retell_call_id: 'retell_seed_020',
+    phone_number: '+15551234020',
+    customer_name: 'Linda Cooper',
+    started_at: todayAt(16, 45),
+    ended_at: todayAt(16, 53),
+    duration_seconds: 480,
+    direction: 'inbound' as const,
+    outcome: 'completed' as const,
+    hvac_issue_type: 'Cooling',
+    urgency_tier: 'high',
+    problem_description: 'Outside unit loud buzzing/humming. Still cooling but worried about breakdown.',
+    revenue_tier_label: '$$$',
+    revenue_tier_signals: ['Compressor noise', 'Buzzing', 'Breakdown risk'],
+    caller_type: 'residential' as CallerType,
+    primary_intent: 'new_lead' as PrimaryIntent,
+    booking_status: 'confirmed' as BookingStatus,
+    is_callback_complaint: false,
+    status_color: 'green' as StatusColor,
+    transcript_object: [
+      { role: 'agent' as const, content: 'Thanks for calling ACE Cooling! How can I help you today?' },
+      { role: 'user' as const, content: 'Hi, my outside unit is making a loud buzzing sound. It is still cooling but I am worried it is about to break down.' },
+      { role: 'agent' as const, content: 'Good instinct to call - that buzzing could indicate a compressor issue. How long has it been making this noise?' },
+      { role: 'user' as const, content: 'About 3 days. It started after we had a power surge. I am going out of town this weekend and really need it fixed before I leave.' },
+      { role: 'agent' as const, content: 'I understand. Let me see... I have Saturday morning at 9 AM available. Would that work?' },
+      { role: 'user' as const, content: 'That is cutting it close - we leave Saturday afternoon. Can you really have it fixed by then?' },
+      { role: 'agent' as const, content: 'Our tech will assess and make repairs if possible. Most compressor issues can be fixed same-visit. What is your address?' },
+      { role: 'user' as const, content: '11501 North MoPac Expressway. Thank you!' },
+      { role: 'agent' as const, content: 'You are scheduled for Saturday at 9 AM. Have a great trip!' },
     ],
   },
 ];
 
 // ============================================
-// EMERGENCY ALERTS (2 records)
+// EMERGENCY ALERTS (3 records)
 // ============================================
 
 export const seedEmergencyAlerts = [
-  // Marcus Thompson - RESOLVED (yesterday evening -> today morning)
+  // Call #3 - Robert Chen - Callback Complaint (Priority)
   {
     alert_id: 'seed_alert_001',
-    phone_number: '+15551234013',
-    customer_name: 'Marcus Thompson',
-    customer_address: '456 Westlake Drive, Austin, TX 78746',
+    phone_number: '+15551234003',
+    customer_name: 'Robert Chen',
+    customer_address: '5612 Burnet Rd, Austin, TX 78756',
     urgency_tier: 'Urgent',
-    problem_description: 'No AC - restaurant kitchen reaching 95F. Business impact.',
-    sms_sent_at: yesterdayAt(18, 30),
-    sms_message_sid: 'SM1234567890abcdef',
-    callback_promised_by: yesterdayAt(18, 45),  // 15 min promise
-    callback_delivered_at: yesterdayAt(18, 40),  // Called back in 10 min
-    callback_status: 'delivered' as const,
-    resolved_at: todayAt(10, 30),
-    resolution_notes: 'Compressor failure confirmed. Replaced compressor same-day. Restaurant operational by lunch. Customer very satisfied.',
+    problem_description: 'CALLBACK COMPLAINT: AC broken again 2 weeks after $450 repair. Threatening BBB/Google review. Reputation risk.',
+    sms_sent_at: subMinutes(now, 40),
+    sms_message_sid: 'SM_SEED_CHEN_001',
+    callback_promised_by: subMinutes(now, 25), // 15 min promise, now OVERDUE
+    callback_delivered_at: null,
+    callback_status: 'pending' as const,
+    resolved_at: null,
+    resolution_notes: null,
   },
 
-  // Elena Rodriguez - PENDING (today)
+  // Call #6 - Maria Santos - Gas Smell (Life Safety)
   {
     alert_id: 'seed_alert_002',
-    phone_number: '+15551234014',
-    customer_name: 'Elena Rodriguez',
-    customer_address: '789 South Congress Ave, Austin, TX 78704',
+    phone_number: '+15551234006',
+    customer_name: 'Maria Santos',
+    customer_address: '3401 S Congress Ave, Austin, TX 78704',
+    urgency_tier: 'LifeSafety',
+    problem_description: 'GAS SMELL near furnace. Elderly mother (82) in home. Furnace turned off. Windows open.',
+    sms_sent_at: subMinutes(now, 35),
+    sms_message_sid: 'SM_SEED_SANTOS_002',
+    callback_promised_by: subMinutes(now, 20), // 15 min promise, OVERDUE
+    callback_delivered_at: null,
+    callback_status: 'pending' as const,
+    resolved_at: null,
+    resolution_notes: null,
+  },
+
+  // Call #13 - Amanda Foster - Infant in Home
+  {
+    alert_id: 'seed_alert_003',
+    phone_number: '+15551234013',
+    customer_name: 'Amanda Foster',
+    customer_address: '7210 Burnet Rd, Austin, TX 78757',
     urgency_tier: 'Urgent',
-    problem_description: 'No heat - elderly customer (78 years old), inside temperature is 58F.',
-    sms_sent_at: subMinutes(now, 45),
-    sms_message_sid: 'SM0987654321fedcba',
-    callback_promised_by: subMinutes(now, 30),  // 15 min from SMS
+    problem_description: 'AC completely down. House at 84°F. 4-MONTH-OLD BABY in home. Clicking sound (capacitor likely).',
+    sms_sent_at: subMinutes(now, 25),
+    sms_message_sid: 'SM_SEED_FOSTER_003',
+    callback_promised_by: subMinutes(now, 10), // 15 min promise, OVERDUE
     callback_delivered_at: null,
     callback_status: 'pending' as const,
     resolved_at: null,
@@ -1136,167 +1301,203 @@ export const seedEmergencyAlerts = [
 ];
 
 // ============================================
-// SMS LOG (8 records)
+// SMS LOG (10 records)
 // ============================================
 
 export const seedSmsLog = [
-  // Emergency alert - Marcus Thompson (yesterday)
+  // Emergency Alert - Robert Chen (Callback Complaint)
   {
     direction: 'outbound' as const,
     to_phone: DISPATCHER_PHONE,
     from_phone: TWILIO_FROM,
-    body: 'URGENT: No AC - restaurant kitchen reaching 95F\nCaller: Marcus Thompson\nPhone: (555) 123-4013\nAddress: 456 Westlake Drive, Austin, TX 78746\nBusiness impact - needs immediate response\nPromised callback within 15 min',
-    twilio_sid: 'SM1234567890abcdef',
+    body: 'PRIORITY: CALLBACK COMPLAINT\nCustomer: Robert Chen\nPhone: (555) 123-4003\nAddress: 5612 Burnet Rd, Austin, TX 78756\nIssue: AC broken again 2 weeks after $450 repair\nRisk: Threatening BBB and Google review\nPromised callback within 15 min',
+    twilio_sid: 'SM_SEED_CHEN_001',
     status: 'delivered',
     event_type: 'emergency_alert' as const,
     delivery_status: 'delivered',
-    created_at: yesterdayAt(18, 30),
+    created_at: subMinutes(now, 40),
   },
 
-  // Operator reply to Marcus alert
-  {
-    direction: 'inbound' as const,
-    to_phone: TWILIO_FROM,
-    from_phone: DISPATCHER_PHONE,
-    body: '1',  // Reply code 1 = "En route now"
-    twilio_sid: null,
-    status: 'received',
-    event_type: 'operator_reply' as const,
-    delivery_status: null,
-    created_at: yesterdayAt(18, 35),
-  },
-
-  // Emergency alert - Elena Rodriguez (today)
+  // Emergency Alert - Maria Santos (Gas Smell)
   {
     direction: 'outbound' as const,
     to_phone: DISPATCHER_PHONE,
     from_phone: TWILIO_FROM,
-    body: 'URGENT: No heat - elderly customer\nCaller: Elena Rodriguez\nPhone: (555) 123-4014\nAddress: 789 South Congress Ave, Austin, TX 78704\nInside temp: 58F, customer is 78 years old\nDaughter contact: 512-555-9876\nPromised callback within 15 min',
-    twilio_sid: 'SM0987654321fedcba',
+    body: 'LIFE SAFETY ALERT: Gas Smell\nCustomer: Maria Santos\nPhone: (555) 123-4006\nAddress: 3401 S Congress Ave, Austin, TX 78704\nSituation: Gas smell near furnace. Elderly mother (82) in home.\nFurnace OFF, windows open.\nPromised callback within 15 min',
+    twilio_sid: 'SM_SEED_SANTOS_002',
     status: 'delivered',
     event_type: 'emergency_alert' as const,
     delivery_status: 'delivered',
-    created_at: subMinutes(now, 45),
+    created_at: subMinutes(now, 35),
   },
 
-  // Sales lead alert - Diana Walsh
+  // Emergency Alert - Amanda Foster (Baby)
   {
     direction: 'outbound' as const,
     to_phone: DISPATCHER_PHONE,
     from_phone: TWILIO_FROM,
-    body: 'SALES LEAD: AC Replacement\nCustomer: Diana Walsh\nPhone: (555) 123-5001\nAddress: 1500 Barton Springs Rd, Austin, TX 78704\nEquipment: Central AC, 18 years old (dead)\nNotes: Wants high-SEER unit, mentioned $14k neighbor quote, interested in financing\nPromised owner callback',
-    twilio_sid: 'SM1111111111111111',
+    body: 'URGENT: Infant in Home\nCustomer: Amanda Foster\nPhone: (555) 123-4013\nAddress: 7210 Burnet Rd, Austin, TX 78757\nSituation: AC completely down, house 84°F\n4-MONTH-OLD BABY in home\nClicking sound - likely capacitor\nPromised callback within 15 min',
+    twilio_sid: 'SM_SEED_FOSTER_003',
+    status: 'delivered',
+    event_type: 'emergency_alert' as const,
+    delivery_status: 'delivered',
+    created_at: subMinutes(now, 25),
+  },
+
+  // Sales Lead Alert - Harold Mitchell (R-22 Replacement)
+  {
+    direction: 'outbound' as const,
+    to_phone: DISPATCHER_PHONE,
+    from_phone: TWILIO_FROM,
+    body: 'SALES LEAD: AC Replacement\nCustomer: Harold Mitchell\nPhone: (555) 123-4007\nAddress: 8934 Jollyville Rd, Austin, TX 78759\nEquipment: Central AC, R-22, 24 years old\nNotes: Wife post-surgery needs cooling. Open to financing.\nHigh-value opportunity: $12k+',
+    twilio_sid: 'SM_SEED_MITCHELL_004',
+    status: 'delivered',
+    event_type: 'sales_lead_alert' as const,
+    delivery_status: 'delivered',
+    created_at: subMinutes(now, 120),
+  },
+
+  // Sales Lead Alert - Michael Thompson (Heat Pump)
+  {
+    direction: 'outbound' as const,
+    to_phone: DISPATCHER_PHONE,
+    from_phone: TWILIO_FROM,
+    body: 'SALES LEAD: Heat Pump Conversion\nCustomer: Michael Thompson\nPhone: (555) 123-4016\nAddress: 6701 Bee Cave Rd, Austin, TX 78746\nNotes: Getting 3 quotes. Interested in rebates + financing.\nScheduled for in-home consultation.\nHigh-value opportunity: $15k+',
+    twilio_sid: 'SM_SEED_THOMPSON_005',
     status: 'delivered',
     event_type: 'sales_lead_alert' as const,
     delivery_status: 'delivered',
     created_at: subMinutes(now, 90),
   },
 
-  // Booking notification - Patricia Henderson ($$$$)
+  // Booking Notification - Tony Russo (Commercial Emergency)
   {
     direction: 'outbound' as const,
     to_phone: DISPATCHER_PHONE,
     from_phone: TWILIO_FROM,
-    body: 'NEW BOOKING: Patricia Henderson\nTime: Today 2:30 PM\nAddress: 2100 Ranch Road 620, Austin, TX 78734\nIssue: AC not cooling - R-22 system, 22 years old\nValue: $$$$ (Potential Replacement)\nNeeds AI Booking Review',
-    twilio_sid: 'SM2222222222222222',
+    body: 'EMERGENCY BOOKING: Restaurant\nCustomer: Tony Russo - Bella Italia (VIP)\nTime: Today 9:00 AM\nAddress: 2500 Lake Austin Blvd, Austin, TX 78703\nIssue: Walk-in cooler compressor grinding, kitchen 88°F\nValue: $$$ Major Repair\nVIP - Authorize up to $5k',
+    twilio_sid: 'SM_SEED_RUSSO_006',
     status: 'delivered',
     event_type: 'booking_notification' as const,
     delivery_status: 'delivered',
-    created_at: todayAt(9, 23),
+    created_at: todayAt(7, 53),
   },
 
-  // Booking notification - Marcus Thompson (VIP emergency)
+  // Booking Notification - Wei Zhang (Commercial Kitchen)
   {
     direction: 'outbound' as const,
     to_phone: DISPATCHER_PHONE,
     from_phone: TWILIO_FROM,
-    body: 'EMERGENCY BOOKING: Marcus Thompson (VIP)\nTime: Today 10:00 AM\nAddress: 456 Westlake Drive, Austin, TX 78746\nIssue: Commercial AC compressor grinding - restaurant\nValue: $$$ (Major Repair)\nVIP - Same-day required',
-    twilio_sid: 'SM3333333333333333',
+    body: 'EMERGENCY BOOKING: Commercial Kitchen\nCustomer: Wei Zhang - Golden Dragon\nTime: Today 3:00 PM\nAddress: 9001 N Lamar Blvd, Austin, TX 78753\nIssue: Make-up air unit failed, kitchen too hot\nValue: $$$$ Potential Replacement\nHealth inspection next week',
+    twilio_sid: 'SM_SEED_ZHANG_007',
     status: 'delivered',
     event_type: 'booking_notification' as const,
     delivery_status: 'delivered',
-    created_at: todayAt(8, 53),
+    created_at: todayAt(12, 40),
   },
 
-  // Booking notification - John Martinez
+  // Booking Notification - Diana Lawson (Multi-Unit)
   {
     direction: 'outbound' as const,
     to_phone: DISPATCHER_PHONE,
     from_phone: TWILIO_FROM,
-    body: 'NEW BOOKING: John Martinez\nTime: Today 9:00 AM\nAddress: 123 Oak Street, Austin, TX 78701\nIssue: AC compressor not starting after power outage\nValue: $$$ (Major Repair)',
-    twilio_sid: 'SM4444444444444444',
+    body: 'NEW BOOKING: Property Manager\nCustomer: Diana Lawson - Sunridge Apts (42 units)\nTime: Today 1:00 PM\nAddress: 4200 Manchaca Rd, Austin, TX 78745\nIssue: 3 units down, compressors failing\nValue: $$$ Major Repair + Quote for preventive replacement',
+    twilio_sid: 'SM_SEED_LAWSON_008',
     status: 'delivered',
     event_type: 'booking_notification' as const,
     delivery_status: 'delivered',
-    created_at: yesterdayAt(16, 40),
+    created_at: todayAt(9, 15),
   },
 
-  // Abandoned call alert
+  // Abandoned Call Alert
   {
     direction: 'outbound' as const,
     to_phone: DISPATCHER_PHONE,
     from_phone: TWILIO_FROM,
-    body: 'MISSED CALL: Customer hung up\nPhone: (555) 123-5008\nDuration: 15 seconds\nNo info collected\nConsider callback attempt',
-    twilio_sid: 'SM5555555555555555',
+    body: 'MISSED CALL: Customer hung up\nPhone: (555) 999-0002\nDuration: 22 seconds\nSaid: "Hello, I need..."\nNo info collected\nConsider callback attempt',
+    twilio_sid: 'SM_SEED_HANGUP_009',
     status: 'delivered',
     event_type: 'abandoned_call' as const,
     delivery_status: 'delivered',
-    created_at: subMinutes(now, 178),
+    created_at: todayAt(10, 36),
+  },
+
+  // Operator Reply to Robert Chen alert
+  {
+    direction: 'inbound' as const,
+    to_phone: TWILIO_FROM,
+    from_phone: DISPATCHER_PHONE,
+    body: '1', // Reply code 1 = "En route now"
+    twilio_sid: null,
+    status: 'received',
+    event_type: 'operator_reply' as const,
+    delivery_status: null,
+    created_at: subMinutes(now, 38),
   },
 ];
 
 // ============================================
-// OPERATOR NOTES (5 records)
+// OPERATOR NOTES (6 records)
 // ============================================
 
 export const seedOperatorNotes = [
-  // VIP permanent note - Marcus Thompson
-  {
-    customer_phone: '+15551234013',
-    customer_name: 'Marcus Thompson',
-    note_text: 'VIP - Owner of Thompson Restaurant Group (5 locations). Authorize repairs up to $5k without callback. Always requires same-day service. Account in good standing.',
-    created_by: 'dispatcher@acecooling.com',
-    expires_at: null,  // Permanent
-    is_active: true,
-  },
-
-  // Active temporary note - Elena Rodriguez (daughter available)
-  {
-    customer_phone: '+15551234014',
-    customer_name: 'Elena Rodriguez',
-    note_text: 'Daughter Maria available this week (Dec 12-15) to be present for service. Call daughter at 512-555-9876 30 min before arriving. Elderly customer - handle with care.',
-    created_by: 'dispatcher@acecooling.com',
-    expires_at: daysFromNowAt(2, 23, 59),  // Expires in 2 days
-    is_active: true,
-  },
-
-  // Expired temporary note - John Martinez (out of town)
+  // VIP permanent note - Tony Russo (Restaurant)
   {
     customer_phone: '+15551234001',
-    customer_name: 'John Martinez',
-    note_text: 'Out of town Dec 1-10. Do NOT schedule service until after Dec 10.',
+    customer_name: 'Tony Russo',
+    note_text: 'VIP - Owner of Bella Italia (3 locations). Authorize repairs up to $5k without callback. Always needs same-day service. Account in excellent standing.',
     created_by: 'dispatcher@acecooling.com',
-    expires_at: daysFromNowAt(-3, 0, 0),  // Expired 3 days ago
-    is_active: false,
+    expires_at: null, // Permanent
+    is_active: true,
   },
 
-  // R-22 follow-up note - Patricia Henderson
+  // VIP permanent note - Diana Lawson (Property Manager)
   {
-    customer_phone: '+15551234012',
-    customer_name: 'Patricia Henderson',
-    note_text: 'Discussed R-22 replacement during November visit. Customer interested in financing options. System is 22 years old and running on borrowed time. Follow up with replacement quote if called back.',
-    created_by: 'tech.mike@acecooling.com',
+    customer_phone: '+15551234005',
+    customer_name: 'Diana Lawson',
+    note_text: 'Property Manager - Sunridge Apartments (42 units). Has maintenance budget authority for repairs up to $3k per unit. Prefers scheduled service windows (9-5 weekdays). Contact for multi-unit discounts.',
+    created_by: 'dispatcher@acecooling.com',
+    expires_at: null, // Permanent
+    is_active: true,
+  },
+
+  // Callback complaint history - Robert Chen
+  {
+    customer_phone: '+15551234003',
+    customer_name: 'Robert Chen',
+    note_text: 'CALLBACK COMPLAINT: Previous service 2 weeks ago ($450 capacitor replacement) - same issue returned. Customer unhappy, mentioned BBB/Google review. HANDLE WITH CARE. Review work order #WO-2024-1234.',
+    created_by: 'AI Assistant',
     expires_at: null,
     is_active: true,
   },
 
-  // New customer note - Brandon Cole
+  // Temporary note - Maria Santos (elderly mother)
   {
-    customer_phone: '+15551234015',
-    customer_name: 'Brandon Cole',
-    note_text: 'New customer - referred by John Martinez. First-time caller. Treat well to encourage repeat business. Address has no gate code needed.',
-    created_by: 'AI Assistant',
+    customer_phone: '+15551234006',
+    customer_name: 'Maria Santos',
+    note_text: 'Elderly customer - handle with care. Gate code: 4521. Mother (82) lives with her. If calling, speak clearly and slowly.',
+    created_by: 'dispatcher@acecooling.com',
     expires_at: null,
+    is_active: true,
+  },
+
+  // Temporary note - Amanda Foster (baby)
+  {
+    customer_phone: '+15551234013',
+    customer_name: 'Amanda Foster',
+    note_text: 'PRIORITY: 4-month-old baby in home. Emergency AC failure. Prioritize this service call.',
+    created_by: 'AI Assistant',
+    expires_at: daysFromNowAt(1, 23, 59), // Expires tomorrow
+    is_active: true,
+  },
+
+  // R-22 follow-up note - Harold Mitchell
+  {
+    customer_phone: '+15551234007',
+    customer_name: 'Harold Mitchell',
+    note_text: 'HIGH-VALUE SALES LEAD: R-22 system, 24 years old. Wife recovering from surgery - urgent need for cooling. Open to financing. Competitor quotes expected. Schedule sales consultation ASAP.',
+    created_by: 'AI Assistant',
+    expires_at: daysFromNowAt(7, 23, 59), // Expires in 1 week
     is_active: true,
   },
 ];

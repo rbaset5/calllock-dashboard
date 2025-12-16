@@ -114,7 +114,7 @@ export default function SchedulePage() {
   };
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="cl-page-container space-y-4">
       <Card className="py-4">
         <CardContent className="px-4">
           <ScheduleCalendar
@@ -127,11 +127,11 @@ export default function SchedulePage() {
           />
         </CardContent>
 
-        <CardFooter className="flex flex-col items-start gap-4 border-t px-4 !pt-4">
+        <CardFooter className="flex flex-col items-start gap-4 border-t border-navy-200 px-4 !pt-4">
           {/* Date Header */}
           <div className="flex w-full items-center justify-between">
-            <div className="text-base font-semibold text-foreground">
-              {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            <div className="text-base font-semibold text-navy-800">
+              {format(selectedDate, 'EEEE, MMMM d')}
             </div>
             <Button variant="ghost" size="icon" className="size-8" title="Add Job">
               <PlusIcon className="w-4 h-4" />
@@ -143,29 +143,29 @@ export default function SchedulePage() {
           <div className="flex w-full flex-col gap-2">
             {loading ? (
               <div className="animate-pulse space-y-2">
-                <div className="h-16 bg-gray-100 rounded-md" />
-                <div className="h-16 bg-gray-100 rounded-md" />
+                <div className="h-16 bg-navy-100 rounded-lg" />
+                <div className="h-16 bg-navy-100 rounded-lg" />
               </div>
             ) : dayData && dayData.jobs.length > 0 ? (
               dayData.jobs.map((job) => (
                 <button
                   key={job.id}
                   onClick={() => handleJobClick(job.id)}
-                  className="bg-muted hover:bg-muted/80 after:bg-primary/70 relative rounded-md p-3 pl-5 text-left transition-colors after:absolute after:inset-y-3 after:left-2 after:w-1 after:rounded-full"
+                  className="bg-navy-50 hover:bg-navy-100 border border-navy-200 relative rounded-xl p-4 pl-5 text-left transition-colors after:absolute after:inset-y-4 after:left-2 after:w-1 after:rounded-full after:bg-navy-600"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground truncate">
+                      <div className="font-semibold text-navy-800 truncate">
                         {formatServiceType(job.service_type)} - {job.customer_name}
                       </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3 mt-1.5 text-sm text-navy-400">
                         <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
+                          <Clock className="w-3.5 h-3.5" />
                           {formatJobTime(job)}
                         </span>
                         {job.customer_address && (
                           <span className="flex items-center gap-1 truncate">
-                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                             <span className="truncate">{job.customer_address.split(',')[0]}</span>
                           </span>
                         )}
@@ -179,7 +179,7 @@ export default function SchedulePage() {
                         showTooltip
                       />
                     ) : job.estimated_value ? (
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="text-sm font-bold text-gold-600">
                         ${job.estimated_value.toLocaleString()}
                       </div>
                     ) : null}
@@ -187,7 +187,7 @@ export default function SchedulePage() {
                 </button>
               ))
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-navy-400">
                 <p className="text-sm">No jobs scheduled for this day</p>
                 <Button variant="outline" size="sm" className="mt-3">
                   <PlusIcon className="w-4 h-4 mr-1.5" />
@@ -199,9 +199,9 @@ export default function SchedulePage() {
 
           {/* Day Stats */}
           {dayData && dayData.jobs.length > 0 && (
-            <div className="flex w-full items-center justify-between pt-2 border-t text-sm text-muted-foreground">
-              <span>{dayData.jobs.length} job{dayData.jobs.length !== 1 ? 's' : ''}</span>
-              <span className="font-medium text-foreground">
+            <div className="flex w-full items-center justify-between pt-3 border-t border-navy-200 text-sm">
+              <span className="text-navy-400">{dayData.jobs.length} job{dayData.jobs.length !== 1 ? 's' : ''}</span>
+              <span className="font-bold text-gold-600">
                 ${dayData.totalEstimatedRevenue.toLocaleString()} estimated
               </span>
             </div>

@@ -5,7 +5,7 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { MoreHorizontal, User, Phone, MessageSquare, MapPin, Eye, Calendar, X } from "lucide-react";
+import { MoreHorizontal, Phone, MessageSquare, MapPin, Eye, Calendar, X } from "lucide-react";
 import {
   DropDrawer,
   DropDrawerTrigger,
@@ -16,10 +16,13 @@ import {
 
 // Define the props for the JobEventCard component
 export interface JobEventCardProps {
-  title: string; // Main job type (e.g., "Plumbing Services")
-  address: string; // Location address
+  /** Problem type / issue description (e.g., "AC Not Cooling") */
+  problemType: string;
   customerName: string;
-  estimatedValue?: number;
+  /** Customer phone number - displayed on card and used for call/SMS actions */
+  phone?: string;
+  /** Neighborhood or area (e.g., "East Austin") */
+  neighborhood?: string;
   scheduledTime?: string; // e.g., "8:00"
   scheduledPeriod?: string; // e.g., "AM" or "PM"
   className?: string;
@@ -33,8 +36,13 @@ export interface JobEventCardProps {
   onViewDetails?: () => void;
   onReschedule?: () => void;
   onCancel?: () => void;
-  /** Customer phone number for call/SMS actions */
-  phone?: string;
+  /** Full address - kept for navigation but not displayed */
+  address?: string;
+  // Deprecated props kept for backwards compatibility
+  /** @deprecated Use problemType instead */
+  title?: string;
+  /** @deprecated No longer displayed on card */
+  estimatedValue?: number;
 }
 
 /**
@@ -44,10 +52,10 @@ export interface JobEventCardProps {
 const JobEventCard = React.forwardRef<HTMLDivElement, JobEventCardProps>(
   (
     {
-      title,
-      address,
+      problemType,
       customerName,
-      estimatedValue,
+      phone,
+      neighborhood,
       scheduledTime,
       scheduledPeriod,
       className,
@@ -59,10 +67,15 @@ const JobEventCard = React.forwardRef<HTMLDivElement, JobEventCardProps>(
       onViewDetails,
       onReschedule,
       onCancel,
-      phone,
+      address,
+      // Deprecated props - kept for backwards compat
+      title,
+      estimatedValue,
     },
     ref
   ) => {
+    // Support backwards compatibility: use problemType or fall back to title
+    const displayProblem = problemType || title || "HVAC Service";
     // Animation variants for the card
     const cardVariants = {
       hidden: { opacity: 0, y: 20 },
@@ -80,8 +93,11 @@ const JobEventCard = React.forwardRef<HTMLDivElement, JobEventCardProps>(
       <motion.div
         ref={ref}
         className={cn(
-          "w-full rounded-2xl p-4 text-card-foreground cursor-pointer",
-          compact ? "bg-primary/5" : "bg-card border shadow-sm",
+          "w-full rounded-r-2xl rounded-l-sm p-4 text-card-foreground cursor-pointer",
+          "border-l-4 border-l-navy-600",
+          compact
+            ? "bg-gradient-to-r from-navy-50/40 to-transparent"
+            : "bg-gradient-to-r from-navy-50/60 to-white border-y border-r shadow-sm",
           className
         )}
         variants={cardVariants}
@@ -94,35 +110,34 @@ const JobEventCard = React.forwardRef<HTMLDivElement, JobEventCardProps>(
         whileTap={{ scale: 0.98 }}
         transition={{ duration: 0.2, ease: "easeInOut" }}
         onClick={onClick}
-        aria-label={`${title} job details`}
+        aria-label={`${displayProblem} job details`}
       >
         <div className="flex gap-0">
           {/* Time Column - Left side with shaded background (hidden in compact mode) */}
           {!compact && (
-            <div className="flex-shrink-0 w-16 -m-4 mr-4 rounded-l-2xl bg-primary/10 flex flex-col items-center justify-center">
+            <div className="flex-shrink-0 w-16 -m-4 mr-4 rounded-l-sm bg-navy-100 flex flex-col items-center justify-center">
               {scheduledTime ? (
                 <>
-                  <div className="text-lg font-semibold text-primary">
+                  <div className="text-lg font-semibold text-navy-700">
                     {scheduledTime}
                   </div>
-                  <div className="text-xs text-primary/70 uppercase">
+                  <div className="text-xs text-navy-500 uppercase">
                     {scheduledPeriod}
                   </div>
                 </>
               ) : (
-                <div className="text-sm text-primary/70">TBD</div>
+                <div className="text-sm text-navy-400">TBD</div>
               )}
             </div>
           )}
 
           {/* Content Column - Right side */}
-          <div className="flex-1 min-w-0 flex flex-col space-y-2">
-            {/* Row 1: Title with menu icon */}
+          <div className="flex-1 min-w-0 flex flex-col space-y-1">
+            {/* Row 1: Problem Type with menu icon */}
             <div className="flex items-start justify-between">
-              <div className="flex flex-col">
-                <h3 className="text-base font-bold text-foreground">{title}</h3>
-                <p className="text-sm text-muted-foreground">{address}</p>
-              </div>
+              <h3 className="text-base font-bold text-navy-800 line-clamp-1">
+                {displayProblem}
+              </h3>
               <DropDrawer>
                 <DropDrawerTrigger asChild>
                   <button
@@ -176,18 +191,24 @@ const JobEventCard = React.forwardRef<HTMLDivElement, JobEventCardProps>(
               </DropDrawer>
             </div>
 
-            {/* Row 2: Customer & Price */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">{customerName}</span>
+            {/* Row 2: Customer Name */}
+            <p className="text-sm font-semibold text-navy-700">{customerName}</p>
+
+            {/* Row 3: Phone Number */}
+            {phone && (
+              <div className="flex items-center gap-1.5 text-sm text-navy-500">
+                <Phone className="h-3.5 w-3.5 text-navy-400" />
+                <span>{phone}</span>
               </div>
-              {estimatedValue !== undefined && (
-                <span className="text-base font-semibold text-foreground">
-                  ${estimatedValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              )}
-            </div>
+            )}
+
+            {/* Row 4: Full Address */}
+            {address && (
+              <div className="flex items-center gap-1.5 text-sm text-navy-500">
+                <MapPin className="h-3.5 w-3.5 text-navy-400 flex-shrink-0" />
+                <span className="line-clamp-1">{address}</span>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

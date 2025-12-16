@@ -39,7 +39,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 async function seed() {
   console.log(`\n🌱 Seeding production-grade demo data for user: ${seedUserEmail}\n`);
-  console.log('📖 Story: "Busy Wednesday at ACE Cooling"\n');
+  console.log('📖 Story: "Hot Friday in Austin" - 20 realistic HVAC calls\n');
 
   // 1. Look up user
   const { data: user, error: userError } = await supabase
@@ -62,7 +62,7 @@ async function seed() {
   await clearSeedData(userId);
 
   // 3. Insert customers
-  console.log('\n👥 Creating customers (10 total)...');
+  console.log('\n👥 Creating customers (12 total)...');
   const customersToInsert = seedCustomers.map(c => ({
     ...c,
     user_id: userId,
@@ -80,8 +80,8 @@ async function seed() {
   console.log(`  ✅ Created ${insertedCustomers?.length || 0} customers`);
 
   // 4. Insert jobs
-  console.log('\n📋 Creating jobs (15 total - all revenue tiers)...');
-  const jobsToInsert = seedJobs.map(j => {
+  console.log('\n📋 Creating jobs (9 total - all revenue tiers)...');
+  const jobsToInsert = seedJobs.map((j: any) => {
     // Find matching customer
     const customer = insertedCustomers?.find(c => c.phone === j.customer_phone);
     return {
@@ -139,8 +139,8 @@ async function seed() {
   console.log(`     Revenue tiers: $$$$ (${tierCounts['$$$$']}), $$$ (${tierCounts['$$$']}), $$ (${tierCounts['$$']}), $ (${tierCounts['$']}), $$? (${tierCounts['$$?']})`);
 
   // 5. Insert leads
-  console.log('\n📞 Creating leads (8 total - hot/warm/cold + sales)...');
-  const leadsToInsert = seedLeads.map(l => ({
+  console.log('\n📞 Creating leads (5 total - hot/warm/cold + sales)...');
+  const leadsToInsert = seedLeads.map((l: any) => ({
     user_id: userId,
     customer_name: l.customer_name,
     customer_phone: l.customer_phone,
@@ -166,6 +166,12 @@ async function seed() {
     sales_lead_notes: l.sales_lead_notes || null,
     equipment_type: l.equipment_type || null,
     equipment_age: l.equipment_age || null,
+    // V3 Triage Engine fields
+    caller_type: l.caller_type || null,
+    primary_intent: l.primary_intent || null,
+    booking_status: l.booking_status || null,
+    is_callback_complaint: l.is_callback_complaint || false,
+    status_color: l.status_color || 'gray',
   }));
 
   const { data: insertedLeads, error: leadsError } = await supabase
@@ -180,7 +186,7 @@ async function seed() {
   console.log(`  ✅ Created ${insertedLeads?.length || 0} leads`);
 
   // 6. Insert calls (link to jobs/leads by phone)
-  console.log('\n📱 Creating calls (12 total - with transcripts)...');
+  console.log('\n📱 Creating calls (20 total - with transcripts)...');
   const callsToInsert = seedCalls.map(c => {
     // Find matching job or lead by phone number
     const matchingJob = insertedJobs?.find(j => j.customer_phone === c.phone_number);
@@ -206,6 +212,12 @@ async function seed() {
       job_id: matchingJob?.id || null,
       lead_id: matchingLead?.id || null,
       synced_from_backend: true,  // Mark as synced
+      // V3 Triage Engine fields
+      caller_type: c.caller_type || null,
+      primary_intent: c.primary_intent || null,
+      booking_status: c.booking_status || null,
+      is_callback_complaint: c.is_callback_complaint || false,
+      status_color: c.status_color || 'gray',
     };
   });
 
@@ -222,7 +234,7 @@ async function seed() {
   }
 
   // 7. Insert emergency alerts
-  console.log('\n🚨 Creating emergency alerts (2 total - 1 resolved, 1 pending)...');
+  console.log('\n🚨 Creating emergency alerts (3 total - all pending for demo)...');
   const alertsToInsert = seedEmergencyAlerts.map(a => {
     // Find matching call
     const matchingCall = insertedCalls?.find(c => c.phone_number === a.phone_number);
@@ -262,7 +274,7 @@ async function seed() {
   }
 
   // 8. Insert SMS log
-  console.log('\n💬 Creating SMS log (8 total - alerts + notifications)...');
+  console.log('\n💬 Creating SMS log (10 total - alerts + notifications)...');
   const smsToInsert = seedSmsLog.map(s => {
     // Find matching job or lead for linking
     const matchingJob = insertedJobs?.find(j =>
@@ -301,7 +313,7 @@ async function seed() {
   }
 
   // 9. Insert operator notes
-  console.log('\n📝 Creating operator notes (5 total - VIP, temporary, expired)...');
+  console.log('\n📝 Creating operator notes (6 total - VIP, temporary, expired)...');
   const notesToInsert = seedOperatorNotes.map(n => {
     // Find matching customer
     const matchingCustomer = insertedCustomers?.find(c => c.phone === n.customer_phone);
@@ -366,7 +378,7 @@ async function seed() {
    • Jobs: ${insertedJobs?.length || 0} (all 5 revenue tiers)
    • Leads: ${insertedLeads?.length || 0} (hot/warm/cold + sales)
    • Calls: ${insertedCalls?.length || 0} (with transcripts)
-   • Emergency Alerts: ${insertedAlerts?.length || 0} (1 resolved, 1 pending)
+   • Emergency Alerts: ${insertedAlerts?.length || 0} (all pending for demo)
    • SMS Log: ${insertedSms?.length || 0}
    • Operator Notes: ${insertedNotes?.length || 0}
    • AI Reviews: ${jobsNeedingReview.length}
@@ -378,13 +390,13 @@ async function seed() {
    • $ Maintenance: ${tierCounts['$']}
    • $$? Diagnostic: ${tierCounts['$$?']}
 
-🎬 Demo Scenarios:
-   • View Today's Schedule → See busy day with en_route/on_site jobs
-   • Click Patricia Henderson → See $$$$ R-22 replacement opportunity
-   • View Calls → See speaker-labeled transcripts
-   • View Alerts → See resolved + pending emergency workflow
-   • View Leads → See Diana Walsh $$$$ sales opportunity
-   • View Customer → See equipment history + operator notes
+🎬 Demo Scenarios ("Hot Friday in Austin"):
+   • View Today's Schedule → See busy Friday with emergency + routine jobs
+   • Commercial Customers → Tony Russo (restaurant), Diana Lawson (42 units)
+   • Safety Emergency → Maria Santos - Gas smell, elderly mother
+   • Callback Complaint → Robert Chen - RED border, warranty issue
+   • Sales Opportunities → Harold Mitchell (R-22), Michael Thompson (heat pump)
+   • View Alerts → 3 pending alerts with callback promises
 
 🔗 View your dashboard at: http://localhost:3000
 

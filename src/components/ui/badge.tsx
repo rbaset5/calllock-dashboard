@@ -7,15 +7,20 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-        // Custom variants for backwards compatibility
-        success: "border-transparent bg-green-100 text-green-700",
-        warning: "border-transparent bg-yellow-100 text-yellow-700",
-        error: "border-transparent bg-red-100 text-red-700",
-        info: "border-transparent bg-blue-100 text-blue-700",
+        // Base variants using CallLock design tokens
+        default: "border-transparent bg-navy-100 text-navy-700",
+        secondary: "border-navy-200 bg-navy-50 text-navy-600",
+        outline: "border-navy-300 text-navy-600 bg-white",
+
+        // Semantic variants
+        success: "border-transparent bg-success-100 text-success-700",
+        warning: "border-transparent bg-gold-100 text-gold-700",
+        error: "border-transparent bg-error-100 text-error-700",
+        info: "border-transparent bg-info-100 text-info-700",
+
+        // Legacy compatibility (map to new variants)
+        destructive: "border-transparent bg-error-100 text-error-700",
+        primary: "border-transparent bg-navy-100 text-navy-700",
       },
     },
     defaultVariants: {
@@ -95,12 +100,12 @@ type LeadPriority = 'hot' | 'warm' | 'cold';
 
 function LeadPriorityBadge({ priority }: { priority: LeadPriority | string }) {
   const priorityConfig: Record<string, { label: string; className: string }> = {
-    hot: { label: 'Hot', className: 'bg-red-100 text-red-700 border-red-200' },
-    warm: { label: 'Warm', className: 'bg-orange-100 text-orange-700 border-orange-200' },
-    cold: { label: 'Cold', className: 'bg-gray-100 text-gray-600 border-gray-200' },
+    hot: { label: 'Hot', className: 'bg-error-100 text-error-700 border-error-200' },
+    warm: { label: 'Warm', className: 'bg-gold-100 text-gold-700 border-gold-200' },
+    cold: { label: 'Cold', className: 'bg-navy-100 text-navy-500 border-navy-200' },
   };
 
-  const config = priorityConfig[priority] || { label: priority, className: 'bg-gray-100 text-gray-600 border-gray-200' };
+  const config = priorityConfig[priority] || { label: priority, className: 'bg-navy-100 text-navy-500 border-navy-200' };
 
   return (
     <span className={cn(
@@ -123,11 +128,11 @@ interface RevenueTierConfig {
 }
 
 const REVENUE_TIER_CONFIG: Record<RevenueTier, RevenueTierConfig> = {
-  '$$$$': { symbol: '$$$$', label: 'Potential Replacement', range: '$5,000 - $15,000+', className: 'bg-red-100 text-red-700 border-red-200' },
-  '$$$': { symbol: '$$$', label: 'Major Repair', range: '$800 - $3,000', className: 'bg-orange-100 text-orange-700 border-orange-200' },
-  '$$': { symbol: '$$', label: 'Standard Repair', range: '$200 - $800', className: 'bg-blue-100 text-blue-700 border-blue-200' },
-  '$': { symbol: '$', label: 'Maintenance', range: '$75 - $250', className: 'bg-green-100 text-green-700 border-green-200' },
-  '$$?': { symbol: '$$?', label: 'Diagnostic', range: '$99', className: 'bg-gray-100 text-gray-600 border-gray-200' },
+  '$$$$': { symbol: '$$$$', label: 'Potential Replacement', range: '$5,000 - $15,000+', className: 'bg-error-100 text-error-700 border-error-200' },
+  '$$$': { symbol: '$$$', label: 'Major Repair', range: '$800 - $3,000', className: 'bg-gold-100 text-gold-700 border-gold-200' },
+  '$$': { symbol: '$$', label: 'Standard Repair', range: '$200 - $800', className: 'bg-info-100 text-info-700 border-info-200' },
+  '$': { symbol: '$', label: 'Maintenance', range: '$75 - $250', className: 'bg-success-100 text-success-700 border-success-200' },
+  '$$?': { symbol: '$$?', label: 'Diagnostic', range: '$99', className: 'bg-navy-100 text-navy-500 border-navy-200' },
 };
 
 function RevenueTierBadge({ tier }: { tier: RevenueTier | string | null | undefined }) {
@@ -210,9 +215,9 @@ interface ConfidenceIndicatorConfig {
 }
 
 const CONFIDENCE_CONFIG: Record<RevenueConfidence, ConfidenceIndicatorConfig> = {
-  high: { icon: '●●●', label: 'High confidence', className: 'bg-green-100 text-green-700' },
-  medium: { icon: '●●○', label: 'Medium confidence', className: 'bg-yellow-100 text-yellow-700' },
-  low: { icon: '●○○', label: 'Low confidence', className: 'bg-gray-100 text-gray-500' },
+  high: { icon: '●●●', label: 'High confidence', className: 'bg-success-100 text-success-700' },
+  medium: { icon: '●●○', label: 'Medium confidence', className: 'bg-gold-100 text-gold-700' },
+  low: { icon: '●○○', label: 'Low confidence', className: 'bg-navy-100 text-navy-400' },
 };
 
 function ConfidenceIndicator({ confidence, showLabel = false }: { confidence: RevenueConfidence | string | null | undefined; showLabel?: boolean }) {

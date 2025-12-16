@@ -42,6 +42,28 @@ export function TodayScheduleSection({ jobs, timezone, jobCounts = {} }: TodaySc
     return isSameDay(jobDate, selectedDate);
   });
 
+  // Extract problem type from AI summary
+  const extractProblemType = (aiSummary: string | null): string => {
+    if (!aiSummary) return "HVAC Service";
+    const firstSentence = aiSummary.split(/[.!?]/)[0].trim();
+    const cleaned = firstSentence
+      .replace(/^(the customer (called|reported|mentioned|said) (about |that )?)/i, '')
+      .replace(/^(their |the )/i, '');
+    const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    return capitalized.length > 35 ? capitalized.slice(0, 35) + "..." : capitalized;
+  };
+
+  // Extract neighborhood from address
+  const extractNeighborhood = (address: string | null): string => {
+    if (!address) return "";
+    const parts = address.split(',').map(p => p.trim());
+    if (parts.length >= 2) {
+      const neighborhood = parts[1].replace(/\s+(TX|CA|NY|FL)\s*\d*/i, '').trim();
+      return neighborhood || parts[0];
+    }
+    return parts[0];
+  };
+
   // Convert jobs to timeline format
   const timelineJobs: TimelineJob[] = jobsForSelectedDate.map((job) => {
     const scheduledTime = job.scheduled_at
@@ -49,11 +71,12 @@ export function TodayScheduleSection({ jobs, timezone, jobCounts = {} }: TodaySc
       : new Date();
     return {
       id: job.id,
-      title: formatServiceType(job.service_type),
-      address: job.customer_address?.split(',')[0] || 'Address TBD',
+      problemType: extractProblemType(job.ai_summary),
       customerName: job.customer_name,
-      estimatedValue: job.estimated_value || undefined,
+      phone: job.customer_phone || '',
+      neighborhood: extractNeighborhood(job.customer_address),
       scheduledTime,
+      address: job.customer_address || '',
     };
   });
 

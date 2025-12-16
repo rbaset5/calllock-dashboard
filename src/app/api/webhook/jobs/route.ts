@@ -76,6 +76,14 @@ interface IncomingJob {
   customer_attempted_fixes?: string;
   // Call tracking - links to original call record
   call_id?: string;
+  // V3 Triage Engine fields
+  caller_type?: 'residential' | 'commercial' | 'vendor' | 'recruiting' | 'unknown';
+  primary_intent?: 'new_lead' | 'active_job_issue' | 'booking_request' | 'admin_billing' | 'solicitation';
+  booking_status?: 'confirmed' | 'attempted_failed' | 'not_requested';
+  is_callback_complaint?: boolean;
+  // V3 Status Color and Archive fields
+  status_color?: 'red' | 'green' | 'blue' | 'gray';
+  is_archived?: boolean;
 }
 
 /**
@@ -113,8 +121,18 @@ function mapEndCallReasonToLeadStatus(reason?: EndCallReason): LeadStatus | null
 
 /**
  * Map LeadStatus to LeadPriority
+ * Priority boost for commercial callers and callback complaints
  */
-function mapLeadStatusToPriority(status: LeadStatus): 'hot' | 'warm' | 'cold' {
+function mapLeadStatusToPriority(
+  status: LeadStatus,
+  callerType?: string,
+  isCallbackComplaint?: boolean
+): 'hot' | 'warm' | 'cold' {
+  // Commercial callers = hot (business customers are valuable)
+  if (callerType === 'commercial') return 'hot';
+  // Callback complaints = hot (service issues need immediate attention)
+  if (isCallbackComplaint) return 'hot';
+
   switch (status) {
     case 'abandoned':
     case 'callback_requested':
@@ -216,7 +234,7 @@ export async function POST(request: NextRequest) {
 
     if (shouldCreateLead) {
       // Create a Lead for non-booking calls
-      const priority = mapLeadStatusToPriority(leadStatus);
+      const priority = mapLeadStatusToPriority(leadStatus, body.caller_type, body.is_callback_complaint);
 
       const { data: lead, error: leadError } = await supabase
         .from('leads')
@@ -255,6 +273,14 @@ export async function POST(request: NextRequest) {
           original_call_id: body.call_id || null,
           // Preserve original end call reason for granular status display
           end_call_reason: body.end_call_reason || null,
+          // V3 Triage Engine fields
+          caller_type: body.caller_type || null,
+          primary_intent: body.primary_intent || null,
+          booking_status: body.booking_status || null,
+          is_callback_complaint: body.is_callback_complaint || false,
+          // V3 Status color and archive
+          status_color: body.status_color || 'blue',
+          is_archived: body.is_archived || false,
         })
         .select()
         .single();
@@ -353,6 +379,8 @@ export async function POST(request: NextRequest) {
         problem_onset: body.problem_onset || null,
         problem_pattern: body.problem_pattern || null,
         customer_attempted_fixes: body.customer_attempted_fixes || null,
+        // V3 Status color (jobs don't get archived)
+        status_color: body.status_color || null,
       })
       .select()
       .single();

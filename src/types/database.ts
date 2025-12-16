@@ -16,6 +16,16 @@ export type LeadStatus = 'callback_requested' | 'thinking' | 'voicemail_left' | 
 export type LeadPriority = 'hot' | 'warm' | 'cold';
 export type BookingReviewStatus = 'pending' | 'confirmed' | 'adjusted' | 'cancelled';
 
+// V4 Priority Color System
+// RED: Callback risk (customer frustrated, repeat issue, demanded manager)
+// GREEN: Commercial/high-value (commercial property, >$1000 job, replacement)
+// BLUE: Standard residential (default for valid leads)
+// GRAY: Spam/vendor (sales calls, solicitations)
+export type PriorityColor = 'red' | 'green' | 'blue' | 'gray';
+
+// V4 Callback Outcome (what happened after contractor called back)
+export type CallbackOutcome = 'booked' | 'resolved' | 'try_again' | 'no_answer';
+
 // Action Item types for the Today screen
 // - missed_call: Customer hung up (Lead status: abandoned) - TRUE missed call
 // - needs_callback: Customer requested callback (Lead status: callback_requested)
@@ -75,6 +85,9 @@ export interface Job {
   problem_onset: string | null;
   problem_pattern: string | null;
   customer_attempted_fixes: string | null;
+  // V4 Priority (retained from lead conversion)
+  priority_color: PriorityColor | null;
+  priority_reason: string | null;
 }
 
 // Equipment on file for a customer
@@ -146,6 +159,17 @@ export interface Lead {
   equipment_age: string | null;
   // Original call outcome (preserves granularity from backend)
   end_call_reason: EndCallReason | null;
+  // V4 Priority Color System
+  priority_color: PriorityColor;
+  priority_reason: string | null;
+  // V4 Outcome Tracking
+  callback_outcome: CallbackOutcome | null;
+  callback_outcome_at: string | null;
+  callback_outcome_note: string | null;
+  // V4 Call Tap Tracking (for outcome prompt)
+  last_call_tapped_at: string | null;
+  // V4 Time Preference (customer's stated preference)
+  time_preference: string | null;
 }
 
 export interface AIBookingReview {
