@@ -11,7 +11,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "CallLock Dashboard",
+  title: "CallSeal Dashboard",
   description: "Job inbox for service businesses - never miss a lead",
   manifest: "/manifest.json",
 };

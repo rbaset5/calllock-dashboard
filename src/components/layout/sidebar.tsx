@@ -67,7 +67,7 @@ export function Sidebar({ businessName }: SidebarProps) {
     <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-60 lg:border-r lg:border-navy-200 lg:bg-white">
       {/* Logo/Brand */}
       <div className="h-16 flex items-center px-6 border-b border-navy-200">
-        <span className="text-xl font-bold text-navy-700">CallLock</span>
+        <span className="text-xl font-bold text-navy-700">CallSeal</span>
       </div>
 
       {/* Primary Navigation */}
