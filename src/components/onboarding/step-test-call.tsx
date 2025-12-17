@@ -100,7 +100,7 @@ export function StepTestCall({
           </div>
           <h2 className="text-2xl font-bold text-navy-800">You&apos;re All Set!</h2>
           <p className="text-gray-600 mt-2">
-            CallLock is ready to handle your missed calls
+            CallSeal is ready to handle your missed calls
           </p>
         </div>
 
@@ -179,7 +179,7 @@ export function StepTestCall({
                 3
               </span>
               <span className="text-gray-700 pt-0.5">
-                The call should forward to CallLock
+                The call should forward to CallSeal
               </span>
             </li>
             <li className="flex gap-3 text-sm">
@@ -208,7 +208,7 @@ export function StepTestCall({
               <span className="font-medium text-amber-800">Calling your business phone...</span>
             </div>
             <p className="text-sm text-amber-700">
-              Don&apos;t answer! Let it ring and forward to CallLock.
+              Don&apos;t answer! Let it ring and forward to CallSeal.
             </p>
           </div>
         )}
@@ -224,7 +224,7 @@ export function StepTestCall({
               <p className="font-medium">Common issues:</p>
               <ul className="list-disc list-inside mt-1 space-y-1">
                 <li>Call forwarding not set up correctly</li>
-                <li>Wrong CallLock number in forwarding settings</li>
+                <li>Wrong CallSeal number in forwarding settings</li>
                 <li>Carrier requires additional activation</li>
               </ul>
             </div>

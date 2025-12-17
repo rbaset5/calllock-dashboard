@@ -113,7 +113,7 @@ export default function JobsPage() {
               ? 'No jobs need attention right now'
               : status
               ? `No jobs with status "${status}"`
-              : 'Jobs will appear here when booked by CallLock'}
+              : 'Jobs will appear here when booked by CallSeal'}
           </p>
         </div>
       ) : (

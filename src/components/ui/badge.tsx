@@ -7,7 +7,7 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        // Base variants using CallLock design tokens
+        // Base variants using CallSeal design tokens
         default: "border-transparent bg-navy-100 text-navy-700",
         secondary: "border-navy-200 bg-navy-50 text-navy-600",
         outline: "border-navy-300 text-navy-600 bg-white",

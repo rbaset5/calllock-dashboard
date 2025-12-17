@@ -214,8 +214,10 @@ export function LeadCardV4({
         {/* Main content area */}
         <div className="p-4">
           {/* Header: Name + Priority Badge + Time */}
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-2 flex-wrap pr-2">
+          {/* Header: Time + Name + Priority Badge */}
+          <div className="mb-2">
+            <div className="text-xs text-gray-400 mb-1">{timeAgo}</div>
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-gray-900 text-lg leading-tight">
                 {lead.customer_name}
               </h3>
@@ -230,7 +232,6 @@ export function LeadCardV4({
                 {priorityConfig.badge}
               </div>
             </div>
-            <span className="text-xs text-gray-400 whitespace-nowrap pt-1">{timeAgo}</span>
           </div>
 
           {/* Issue summary */}

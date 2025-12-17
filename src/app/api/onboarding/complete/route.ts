@@ -74,10 +74,10 @@ export async function POST() {
     // Send welcome SMS
     if (userData?.phone) {
       const welcomeMsg =
-        `Welcome to CallLock! 🎉\n\n` +
+        `Welcome to CallSeal! 🎉\n\n` +
         `Your AI receptionist is now active. When you miss a call, we'll handle it and text you.\n\n` +
         `Reply HELP anytime for commands.\n\n` +
-        `Good luck! - The CallLock Team`;
+        `Good luck! - The CallSeal Team`;
 
       try {
         await sendSMS(userData.phone, welcomeMsg);
@@ -100,7 +100,7 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      message: 'Onboarding complete! Welcome to CallLock.',
+      message: 'Onboarding complete! Welcome to CallSeal.',
     });
   } catch (error) {
     console.error('Onboarding complete error:', error);

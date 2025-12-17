@@ -1,6 +1,6 @@
 {
-  "name": "CallLock Dashboard",
-  "short_name": "CallLock",
+  "name": "CallSeal Dashboard",
+  "short_name": "CallSeal",
   "description": "Missed call recovery for trades businesses - never miss a lead",
   "start_url": "/action",
   "scope": "/",

@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* ===== CallLock Design System ===== */
+    /* ===== CallSeal Design System ===== */
 
     /* Navy (Primary - Trust/Reliability) */
     --cl-navy-50: 210 40% 98%;
@@ -55,7 +55,7 @@
     --cl-info-600: 221 83% 53%;
     --cl-info-700: 224 76% 48%;
 
-    /* shadcn/ui CSS Variables - mapped to CallLock colors */
+    /* shadcn/ui CSS Variables - mapped to CallSeal colors */
     --background: 0 0% 100%;
     --foreground: var(--cl-navy-800);
     --card: 0 0% 100%;

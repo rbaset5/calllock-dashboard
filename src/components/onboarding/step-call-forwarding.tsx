@@ -67,7 +67,7 @@ export function StepCallForwarding({
         </div>
         <h2 className="text-2xl font-bold text-navy-800">Set Up Call Forwarding</h2>
         <p className="text-gray-600 mt-2">
-          Forward missed calls from {formatPhoneDisplay(initialData.businessPhone)} to CallLock
+          Forward missed calls from {formatPhoneDisplay(initialData.businessPhone)} to CallSeal
         </p>
       </div>
 
@@ -175,9 +175,9 @@ export function StepCallForwarding({
               </div>
             </div>
 
-            {/* CallLock Number */}
+            {/* CallSeal Number */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800 mb-2">Your CallLock number:</p>
+              <p className="text-sm text-blue-800 mb-2">Your CallSeal number:</p>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-lg font-medium text-blue-900">
                   {formatPhoneDisplay(callLockNumber)}
@@ -229,7 +229,7 @@ export function StepCallForwarding({
 
       {!confirmed && !showCarrierSelect && (
         <p className="text-xs text-center text-gray-500">
-          You can set up call forwarding later, but CallLock won&apos;t receive calls until you do
+          You can set up call forwarding later, but CallSeal won&apos;t receive calls until you do
         </p>
       )}
     </div>

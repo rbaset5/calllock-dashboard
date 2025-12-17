@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     // In production, this would:
     // 1. Use Twilio to make an outbound call to businessPhone
     // 2. Let it ring for ~20 seconds
-    // 3. When forwarded to CallLock, the AI would answer with a test script
+    // 3. When forwarded to CallSeal, the AI would answer with a test script
     // 4. AI would mark the test as successful
 
     // For now, simulate success after a delay

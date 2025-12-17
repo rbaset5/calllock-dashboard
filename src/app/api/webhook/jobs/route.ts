@@ -47,7 +47,7 @@ interface IncomingJob {
   scheduled_at?: string; // ISO 8601
   call_transcript?: string;
   user_email: string; // To find the user
-  // Revenue estimation fields (from CallLock server)
+  // Revenue estimation fields (from CallSeal server)
   estimated_value?: number;
   estimated_revenue_low?: number;
   estimated_revenue_high?: number;
@@ -62,7 +62,7 @@ interface IncomingJob {
   equipment_type?: string;
   equipment_age?: string;
   sales_lead_notes?: string;
-  // Revenue tier classification (from CallLock server)
+  // Revenue tier classification (from CallSeal server)
   revenue_tier?: 'replacement' | 'major_repair' | 'standard_repair' | 'minor' | 'diagnostic';
   revenue_tier_label?: '$$$$' | '$$$' | '$$' | '$' | '$$?';
   revenue_tier_signals?: string[];

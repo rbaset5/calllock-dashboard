@@ -50,31 +50,31 @@ export const smsTemplates = {
 export const notificationTemplates = {
   // Same-day booking: urgent, needs confirmation
   sameDayBooking: (name: string, time: string, service: string, city: string) =>
-    `CALLLOCK: New booking TODAY\n${name} \u00B7 ${time}\n${service}${city ? ` \u00B7 ${city}` : ''}\nReply OK to confirm`,
+    `CALLSEAL: New booking TODAY\n${name} \u00B7 ${time}\n${service}${city ? ` \u00B7 ${city}` : ''}\nReply OK to confirm`,
 
   // Future booking: informational
   futureBooking: (name: string, date: string, time: string, service: string) =>
-    `CALLLOCK: Booking ${date}\n${name} \u00B7 ${time}\n${service}\nView in app`,
+    `CALLSEAL: Booking ${date}\n${name} \u00B7 ${time}\n${service}\nView in app`,
 
   // Callback request: customer waiting
   callbackRequest: (name: string, timeframe: string) =>
-    `CALLLOCK: Callback requested\n${name} wants callback ${timeframe}\nReply CALL for number`,
+    `CALLSEAL: Callback requested\n${name} wants callback ${timeframe}\nReply CALL for number`,
 
   // Schedule conflict: needs resolution
   scheduleConflict: (name: string, time: string, existingJob: string) =>
-    `CALLLOCK: Conflict!\n${name} at ${time}\nConflicts with ${existingJob}\nReview in app`,
+    `CALLSEAL: Conflict!\n${name} at ${time}\nConflicts with ${existingJob}\nReview in app`,
 
   // Same-day cancellation: slot freed up
   cancellation: (name: string, time: string) =>
-    `CALLLOCK: Cancel\n${name} \u00B7 ${time} slot open`,
+    `CALLSEAL: Cancel\n${name} \u00B7 ${time} slot open`,
 
   // Abandoned call: customer hung up - needs immediate callback
   abandonedCall: (name: string, phone: string) =>
-    `CALLLOCK: Hung up\n${name} \u00B7 ${phone}\nCall back ASAP`,
+    `CALLSEAL: Hung up\n${name} \u00B7 ${phone}\nCall back ASAP`,
 
   // Stale job alert: job sitting too long without action
   staleJobAlert: (name: string, hoursWaiting: number) =>
-    `CALLLOCK: Stale job!\n${name} waiting ${hoursWaiting}h\nNeeds attention`,
+    `CALLSEAL: Stale job!\n${name} waiting ${hoursWaiting}h\nNeeds attention`,
 
   // Reply confirmations
   confirmBooking: (name: string) => `Confirmed: ${name}. Good luck!`,

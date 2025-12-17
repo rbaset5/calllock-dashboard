@@ -502,7 +502,7 @@ async function seedDemo() {
 
 You were installing a mini-split from 11 AM to 3 PM. Your phone rang 8 times.
 Old world: 4 voicemails (2 hang-ups), maybe 1 callback converts.
-CallLock world: All captured. 3 auto-booked. Zero lost.
+CallSeal world: All captured. 3 auto-booked. Zero lost.
 
 📱 ACTION TAB (5 leads needing callback):
 

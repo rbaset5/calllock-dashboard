@@ -1,5 +1,5 @@
 /**
- * CallLock Service Worker
+ * CallSeal Service Worker
  *
  * Provides:
  * - Offline support with cache-first strategy for static assets
@@ -193,7 +193,7 @@ self.addEventListener('push', (event) => {
   console.log('[SW] Push notification received');
 
   let data = {
-    title: 'CallLock',
+    title: 'CallSeal',
     body: 'You have a new notification',
     icon: '/icon-192.png',
     badge: '/icon-96.png',
@@ -257,7 +257,7 @@ self.addEventListener('notificationclick', (event) => {
           }
         }
 
-        // Check if there's any CallLock window open
+        // Check if there's any CallSeal window open
         for (const client of windowClients) {
           if (client.url.includes(self.location.origin) && 'focus' in client) {
             return client.navigate(urlToOpen).then((client) => client?.focus());

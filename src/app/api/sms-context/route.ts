@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 /**
  * SMS Context API
  *
- * Called by the CallLock server after sending an SMS alert to save context.
+ * Called by the CallSeal server after sending an SMS alert to save context.
  * This allows the inbound SMS handler to match replies to the correct lead/job.
  */
 

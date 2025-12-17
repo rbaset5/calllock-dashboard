@@ -192,7 +192,7 @@ async function main() {
 
 function printMigrationSQL() {
   console.log(`
--- CallLock V4 Migration - Copy and run in Supabase SQL Editor
+-- CallSeal V4 Migration - Copy and run in Supabase SQL Editor
 -- ============================================================
 
 -- 1. Add enum values

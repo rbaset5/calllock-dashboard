@@ -13,7 +13,7 @@ const config: Config = {
         sans: ['var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
       },
       colors: {
-        // CallLock Navy (Primary - Trust/Reliability)
+        // CallSeal Navy (Primary - Trust/Reliability)
         navy: {
           50: 'hsl(var(--cl-navy-50))',
           100: 'hsl(var(--cl-navy-100))',
@@ -27,7 +27,7 @@ const config: Config = {
           900: 'hsl(var(--cl-navy-900))',
           DEFAULT: 'hsl(var(--cl-navy-600))',
         },
-        // CallLock Gold (Accent - Warmth/Action)
+        // CallSeal Gold (Accent - Warmth/Action)
         gold: {
           50: 'hsl(var(--cl-gold-50))',
           100: 'hsl(var(--cl-gold-100))',

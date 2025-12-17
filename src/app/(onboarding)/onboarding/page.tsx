@@ -46,8 +46,8 @@ const STEPS = [
   { id: 5, title: 'Test Call', shortTitle: 'Test' },
 ];
 
-// CallLock's designated number for this user (would come from backend)
-const CALLLOCK_NUMBER = process.env.NEXT_PUBLIC_CALLLOCK_NUMBER || '+18885551234';
+// CallSeal's designated number for this user (would come from backend)
+const CALLSEAL_NUMBER = process.env.NEXT_PUBLIC_CALLSEAL_NUMBER || '+18885551234';
 
 // ============================================
 // COMPONENT
@@ -168,7 +168,7 @@ export default function OnboardingPage() {
         <div className="max-w-lg mx-auto px-4 py-4">
           {/* Logo */}
           <div className="text-center mb-4">
-            <h1 className="text-xl font-bold text-navy-800">CallLock</h1>
+            <h1 className="text-xl font-bold text-navy-800">CallSeal</h1>
             <p className="text-sm text-gray-500">Setup Wizard</p>
           </div>
 
@@ -255,7 +255,7 @@ export default function OnboardingPage() {
                 carrier: data.carrier,
                 businessPhone: data.businessPhone,
               }}
-              callLockNumber={CALLLOCK_NUMBER}
+              callLockNumber={CALLSEAL_NUMBER}
               onNext={handleStep4Next}
               onBack={handleBack}
             />
@@ -264,7 +264,7 @@ export default function OnboardingPage() {
           {currentStep === 5 && (
             <StepTestCall
               businessPhone={data.businessPhone}
-              callLockNumber={CALLLOCK_NUMBER}
+              callLockNumber={CALLSEAL_NUMBER}
               onComplete={handleComplete}
               onBack={handleBack}
             />

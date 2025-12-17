@@ -1,4 +1,4 @@
-// Database types for CallLock Dashboard
+// Database types for CallSeal Dashboard
 // These match the schema in supabase/migrations/0001_initial_schema.sql
 // and 0002_mobile_first_schema.sql
 

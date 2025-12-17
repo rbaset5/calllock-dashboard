@@ -112,7 +112,7 @@ async function main() {
 
   // Write the migration to a temp file and execute via CLI
   const migrationSQL = `
--- CallLock V4 Migration
+-- CallSeal V4 Migration
 -- =====================
 
 -- 1. Add enum values

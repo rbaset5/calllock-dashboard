@@ -1,7 +1,7 @@
 /**
  * Push Notifications Library
  *
- * Handles Web Push API integration for CallLock:
+ * Handles Web Push API integration for CallSeal:
  * - Service worker registration
  * - Push subscription management
  * - Permission handling

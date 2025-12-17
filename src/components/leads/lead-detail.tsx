@@ -401,7 +401,7 @@ export function LeadDetail({ lead, onBookJob, onSnooze, onMarkLost }: LeadDetail
 
 /**
  * Derive revenue tier from estimated value
- * Based on CallLock pricing tiers:
+ * Based on CallSeal pricing tiers:
  * - $$$$ ($5k-$15k+): Replacement
  * - $$$ ($800-$3k): Major Repair
  * - $$ ($200-$800): Standard Repair

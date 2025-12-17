@@ -178,7 +178,7 @@ export default function CallsPage() {
           <p className="text-sm text-navy-400 mt-1">
             {hasFilters
               ? 'Try adjusting your filters'
-              : 'Call records will appear here when synced from CallLock'}
+              : 'Call records will appear here when synced from CallSeal'}
           </p>
         </div>
       ) : (

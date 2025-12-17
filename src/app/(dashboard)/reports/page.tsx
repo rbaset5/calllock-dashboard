@@ -150,10 +150,10 @@ export default async function ReportsPage() {
         </CardContent>
       </Card>
 
-      {/* CallLock ROI */}
+      {/* CallSeal ROI */}
       <Card className="bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200">
         <CardContent className="p-6 text-center">
-          <h3 className="text-lg font-semibold text-primary-900">CallLock ROI</h3>
+          <h3 className="text-lg font-semibold text-primary-900">CallSeal ROI</h3>
           <p className="text-4xl font-bold text-primary-600 mt-2">
             {formatCurrency(totalRevenue)}
           </p>
@@ -162,7 +162,7 @@ export default async function ReportsPage() {
           </p>
           <div className="mt-4 pt-4 border-t border-primary-200">
             <p className="text-sm text-primary-800">
-              At $199/month, CallLock has paid for itself{' '}
+              At $199/month, CallSeal has paid for itself{' '}
               <strong>{(totalRevenue / (199 * 6)).toFixed(1)}x</strong> over
             </p>
           </div>

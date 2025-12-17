@@ -68,7 +68,7 @@ export function StepPhoneNumbers({ initialData, onNext, onBack }: StepPhoneNumbe
         </div>
         <h2 className="text-2xl font-bold text-navy-800">Phone Numbers</h2>
         <p className="text-gray-600 mt-2">
-          We need two numbers to set up CallLock
+          We need two numbers to set up CallSeal
         </p>
       </div>
 

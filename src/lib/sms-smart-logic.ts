@@ -297,7 +297,7 @@ export async function consolidateBatch(
     ).length;
 
     const messageBody =
-      `CALLLOCK: ${leadCount} leads need attention` +
+      `CALLSEAL: ${leadCount} leads need attention` +
       (urgentCount > 0 ? `\n${urgentCount} urgent` : '') +
       '\nOpen app for details';
 
@@ -543,7 +543,7 @@ export async function generateDailyDigest(
   }
 
   const messageBody =
-    `CALLLOCK Daily:\n` +
+    `CALLSEAL Daily:\n` +
     `${totalLeads} leads today\n` +
     `${urgentLeads || 0} need callback\n` +
     `${bookedToday || 0} booked\n` +

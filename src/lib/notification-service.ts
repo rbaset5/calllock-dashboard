@@ -1,5 +1,5 @@
 /**
- * CallLock Notification Service
+ * CallSeal Notification Service
  *
  * Central service for handling operator SMS notifications.
  * Respects user preferences, quiet hours, and STOP compliance.
@@ -282,7 +282,7 @@ export function formatNotificationMessage(
       );
 
     default:
-      return `CALLLOCK: Update for ${data.customerName}`;
+      return `CALLSEAL: Update for ${data.customerName}`;
   }
 }
 

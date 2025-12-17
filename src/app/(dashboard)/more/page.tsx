@@ -164,7 +164,7 @@ export default function MorePage() {
 
       {/* App Version */}
       <p className="text-center text-xs text-gray-400">
-        CallLock Dashboard v1.0
+        CallSeal Dashboard v1.0
       </p>
     </div>
   );

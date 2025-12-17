@@ -323,22 +323,24 @@ export default function BookedPage() {
       />
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-4 gap-2 mb-6">
-        <div className="bg-navy-50 rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-navy-800">{counts.today}</div>
-          <div className="text-xs text-navy-500">Today</div>
-        </div>
-        <div className="bg-navy-50 rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-navy-800">{counts.tomorrow}</div>
-          <div className="text-xs text-navy-500">Tomorrow</div>
-        </div>
-        <div className="bg-navy-50 rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-navy-800">{counts.thisWeek}</div>
-          <div className="text-xs text-navy-500">This Week</div>
-        </div>
-        <div className="bg-gold-50 rounded-lg p-3 text-center">
-          <div className="text-xl font-bold text-gold-700">{counts.aiBooked}</div>
-          <div className="text-xs text-gold-600">AI Booked</div>
+      <div className="max-w-lg mx-auto mb-6">
+        <div className="grid grid-cols-4 gap-2">
+          <div className="bg-navy-50 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold text-navy-800">{counts.today}</div>
+            <div className="text-xs text-navy-500">Today</div>
+          </div>
+          <div className="bg-navy-50 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold text-navy-800">{counts.tomorrow}</div>
+            <div className="text-xs text-navy-500">Tomorrow</div>
+          </div>
+          <div className="bg-navy-50 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold text-navy-800">{counts.thisWeek}</div>
+            <div className="text-xs text-navy-500">This Week</div>
+          </div>
+          <div className="bg-gold-50 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold text-gold-700">{counts.aiBooked}</div>
+            <div className="text-xs text-gold-600">AI Booked</div>
+          </div>
         </div>
       </div>
 
@@ -346,7 +348,7 @@ export default function BookedPage() {
       {groups.length === 0 ? (
         <BookedEmptyState />
       ) : (
-        <div className="space-y-6">
+        <div className="max-w-lg mx-auto space-y-6">
           {groups.map((group) => (
             <div key={group.date}>
               {/* Day Header */}

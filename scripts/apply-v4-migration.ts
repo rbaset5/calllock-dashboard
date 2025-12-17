@@ -111,7 +111,7 @@ ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS priority_reason TEXT;
   console.log('\n📋 Quick SQL for copy/paste:\n');
 
   const fullSQL = `
--- CallLock V4 Migration - Run in Supabase SQL Editor
+-- CallSeal V4 Migration - Run in Supabase SQL Editor
 -- ===================================================
 
 -- 1. Add enum values (may show error if already exists - that's OK)
@@ -161,7 +161,7 @@ ON public.leads(user_id, priority_color);
 
   console.log('\n' + '='.repeat(60));
   console.log('\n🔗 Open Supabase Dashboard: https://supabase.com/dashboard');
-  console.log('   Project: xboybmqtwsxmdokgzclk (CallLock)');
+  console.log('   Project: xboybmqtwsxmdokgzclk (CallSeal)');
   console.log('   Go to: SQL Editor -> New Query -> Paste & Run');
   console.log('\nAfter running, execute:');
   console.log('  npx tsx scripts/check-and-apply-migrations.ts');

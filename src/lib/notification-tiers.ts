@@ -1,5 +1,5 @@
 /**
- * CallLock Notification Tiers (V4)
+ * CallSeal Notification Tiers (V4)
  *
  * SMS notification tier system that determines delivery behavior
  * based on message urgency and user preferences.
@@ -162,43 +162,43 @@ export function getBatchWindow(context: NotificationContext): number {
 export const V4_TEMPLATES = {
   // URGENT - Callback Risk (RED)
   callbackRisk: (name: string, phone: string, reason: string) =>
-    `CALLLOCK URGENT\n🔴 ${name}\n${phone}\n${reason}\nCall back NOW`,
+    `CALLSEAL URGENT\n🔴 ${name}\n${phone}\n${reason}\nCall back NOW`,
 
   // URGENT - Commercial Lead (GREEN)
   commercialLead: (name: string, phone: string, value?: string) =>
-    `CALLLOCK PRIORITY\n🟢 Commercial: ${name}\n${phone}${value ? `\nEst: ${value}` : ''}\nCall back ASAP`,
+    `CALLSEAL PRIORITY\n🟢 Commercial: ${name}\n${phone}${value ? `\nEst: ${value}` : ''}\nCall back ASAP`,
 
   // STANDARD - New Residential Lead (BLUE)
   newLead: (name: string, phone: string, issue: string) =>
-    `CALLLOCK: New lead\n${name} · ${phone}\n"${issue.substring(0, 50)}${issue.length > 50 ? '...' : ''}"\nReply 1=Called 4=Booked`,
+    `CALLSEAL: New lead\n${name} · ${phone}\n"${issue.substring(0, 50)}${issue.length > 50 ? '...' : ''}"\nReply 1=Called 4=Booked`,
 
   // STANDARD - Spam/Vendor (GRAY) - typically not sent, but template exists
   spamVendor: (name: string, reason: string) =>
-    `CALLLOCK: Likely spam\n${name}\n${reason}\nMarked as vendor call`,
+    `CALLSEAL: Likely spam\n${name}\n${reason}\nMarked as vendor call`,
 
   // BOOKED - Booking Confirmation
   bookingConfirm: (name: string, date: string, time: string) =>
-    `CALLLOCK: Booked!\n${name}\n${date} at ${time}\nAdded to calendar`,
+    `CALLSEAL: Booked!\n${name}\n${date} at ${time}\nAdded to calendar`,
 
   // BOOKED - Same Day Booking
   sameDayBooking: (name: string, time: string, service: string) =>
-    `CALLLOCK: TODAY\n${name} · ${time}\n${service}\nReply OK to confirm`,
+    `CALLSEAL: TODAY\n${name} · ${time}\n${service}\nReply OK to confirm`,
 
   // REMINDER - Follow Up
   followUp: (name: string, lastContact: string) =>
-    `CALLLOCK: Follow up\n${name}\nLast contact: ${lastContact}\nReply 1=Called 5=Lost`,
+    `CALLSEAL: Follow up\n${name}\nLast contact: ${lastContact}\nReply 1=Called 5=Lost`,
 
   // REMINDER - Snooze Expired
   snoozeExpired: (name: string, phone: string) =>
-    `CALLLOCK: Reminder\n${name} · ${phone}\nSnooze ended\nReply 1=Called 4=Booked`,
+    `CALLSEAL: Reminder\n${name} · ${phone}\nSnooze ended\nReply 1=Called 4=Booked`,
 
   // DIGEST - Daily Summary
   dailyDigest: (stats: { total: number; urgent: number; booked: number }) =>
-    `CALLLOCK Daily:\n${stats.total} leads today\n${stats.urgent} need callback\n${stats.booked} booked\nOpen app for details`,
+    `CALLSEAL Daily:\n${stats.total} leads today\n${stats.urgent} need callback\n${stats.booked} booked\nOpen app for details`,
 
   // DIGEST - Weekly Summary
   weeklySummary: (stats: { leads: number; converted: number; revenue: string }) =>
-    `CALLLOCK Weekly:\n${stats.leads} leads\n${stats.converted} converted (${Math.round((stats.converted / stats.leads) * 100)}%)\nEst. ${stats.revenue}\nGreat work!`,
+    `CALLSEAL Weekly:\n${stats.leads} leads\n${stats.converted} converted (${Math.round((stats.converted / stats.leads) * 100)}%)\nEst. ${stats.revenue}\nGreat work!`,
 };
 
 // ============================================

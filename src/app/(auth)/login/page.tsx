@@ -43,7 +43,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/jobs');
+      router.push('/action');
       router.refresh();
     } catch (err) {
       setError('Network error. Please try again.');
@@ -55,8 +55,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">CallLock</h1>
+          <div className="text-center mb-8 flex flex-col items-center">
+            <img
+              src="/callseal-logo.jpg"
+              alt="CallSeal Logo"
+              className="h-16 w-16 mb-4 rounded-full object-cover"
+            />
+            <h1 className="text-2xl font-bold text-gray-900">CallSeal</h1>
             <p className="text-gray-600 mt-2">Sign in to your dashboard</p>
           </div>
 
@@ -77,7 +82,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-navy-500 outline-none transition"
                 placeholder="you@example.com"
               />
             </div>
@@ -92,7 +97,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-500 focus:border-navy-500 outline-none transition"
                 placeholder="••••••••"
               />
             </div>
@@ -100,7 +105,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-end">
               <Link
                 href="/forgot-password"
-                className="text-sm text-primary-600 hover:text-primary-700"
+                className="text-sm text-navy-600 hover:text-navy-700"
               >
                 Forgot password?
               </Link>
@@ -109,7 +114,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="w-full bg-navy-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-navy-700 focus:ring-2 focus:ring-navy-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>

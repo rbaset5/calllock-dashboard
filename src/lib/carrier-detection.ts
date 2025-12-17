@@ -38,7 +38,7 @@ const CARRIER_FORWARDING: Record<Carrier, ForwardingInstructions> = {
     description: 'AT&T Conditional Call Forwarding (No Answer)',
     steps: [
       'Open your phone\'s dialer app',
-      'Dial *61*{number}# (replace {number} with your CallLock number)',
+      'Dial *61*{number}# (replace {number} with your CallSeal number)',
       'Press Call',
       'Wait for confirmation tone or message',
       'You should see "Call Forwarding Activated" or hear a confirmation',
@@ -52,7 +52,7 @@ const CARRIER_FORWARDING: Record<Carrier, ForwardingInstructions> = {
     description: 'Verizon Call Forwarding',
     steps: [
       'Open your phone\'s dialer app',
-      'Dial *71{number} (replace {number} with your CallLock number)',
+      'Dial *71{number} (replace {number} with your CallSeal number)',
       'Press Call',
       'Wait for confirmation tone',
       'You should hear two beeps confirming activation',
@@ -66,7 +66,7 @@ const CARRIER_FORWARDING: Record<Carrier, ForwardingInstructions> = {
     description: 'T-Mobile Conditional Call Forwarding (No Answer)',
     steps: [
       'Open your phone\'s dialer app',
-      'Dial **61*{number}# (replace {number} with your CallLock number)',
+      'Dial **61*{number}# (replace {number} with your CallSeal number)',
       'Press Call',
       'Wait for confirmation message',
       'You should see a success notification',
@@ -80,7 +80,7 @@ const CARRIER_FORWARDING: Record<Carrier, ForwardingInstructions> = {
     description: 'Sprint/T-Mobile Call Forwarding',
     steps: [
       'Open your phone\'s dialer app',
-      'Dial *28{number} (replace {number} with your CallLock number)',
+      'Dial *28{number} (replace {number} with your CallSeal number)',
       'Press Call',
       'Wait for confirmation',
     ],
@@ -93,7 +93,7 @@ const CARRIER_FORWARDING: Record<Carrier, ForwardingInstructions> = {
       'Log into your VoIP admin portal (RingCentral, Vonage, 8x8, etc.)',
       'Navigate to Call Handling or Call Forwarding settings',
       'Find "Forward when unanswered" or "No answer" option',
-      'Enter your CallLock number as the forwarding destination',
+      'Enter your CallSeal number as the forwarding destination',
       'Set the ring time (we recommend 15-20 seconds)',
       'Save your settings',
     ],
@@ -105,7 +105,7 @@ const CARRIER_FORWARDING: Record<Carrier, ForwardingInstructions> = {
     steps: [
       'Contact your phone carrier\'s customer service',
       'Ask them to enable "Conditional Call Forwarding" or "Forward when unanswered"',
-      'Provide your CallLock number as the forwarding destination',
+      'Provide your CallSeal number as the forwarding destination',
       'Request forwarding after 15-20 seconds of no answer',
     ],
     note: 'Most carriers can set this up for you over the phone in 5-10 minutes.',
@@ -176,7 +176,7 @@ export function getCarrierInfo(carrier: Carrier): CarrierInfo {
  * Format forwarding code with actual number
  */
 export function formatForwardingCode(code: string, callLockNumber: string): string {
-  // Remove non-digits from CallLock number
+  // Remove non-digits from CallSeal number
   const digits = callLockNumber.replace(/\D/g, '');
   return code.replace('{number}', digits);
 }
@@ -206,13 +206,13 @@ export async function verifyCallForwarding(
   // In production, this would:
   // 1. Initiate a test call to the business phone
   // 2. Let it ring (don't answer)
-  // 3. Check if it forwarded to CallLock number
+  // 3. Check if it forwarded to CallSeal number
   // 4. Have the AI answer and confirm forwarding worked
 
   // For now, return a placeholder
   return {
     success: true,
-    message: 'Call forwarding test initiated. Please check that the call was answered by CallLock.',
+    message: 'Call forwarding test initiated. Please check that the call was answered by CallSeal.',
   };
 }
 
