@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
           // Call tracking - links lead to original call record
           original_call_id: body.call_id || null,
           // Preserve original end call reason for granular status display
-          end_call_reason: body.end_call_reason || null,
+          // end_call_reason: body.end_call_reason || null,
           // V3 Triage Engine fields
           caller_type: body.caller_type || null,
           primary_intent: body.primary_intent || null,

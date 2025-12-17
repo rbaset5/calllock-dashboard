@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 
 interface AuthGuardProps {
@@ -43,6 +44,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">CallSeal</h1>
+            <Image
+              src="/callseal-logo.jpg"
+              alt="CallSeal Logo"
+              width={40}
+              height={40}
+              className="rounded"
+            />
+          </div>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-2 text-gray-600">Loading...</p>
         </div>

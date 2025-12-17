@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { LogOut, User } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -23,6 +24,13 @@ export function Header({ businessName }: HeaderProps) {
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-primary-600">CallSeal</h1>
+          <Image
+            src="/callseal-logo.jpg"
+            alt="CallSeal Logo"
+            width={32}
+            height={32}
+            className="rounded"
+          />
           {businessName && (
             <span className="text-sm text-gray-500 hidden sm:inline">
               {businessName}
