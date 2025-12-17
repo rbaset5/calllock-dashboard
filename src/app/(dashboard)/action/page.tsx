@@ -9,7 +9,8 @@ import { AddNoteModal } from '@/components/leads/add-note-modal';
 import { CallbackOutcome } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { PageTabs } from '@/components/ui/page-tabs';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs } from '@ark-ui/react/tabs';
+import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Clock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -245,40 +246,37 @@ export default function ActionPage() {
 
       {/* Priority Filter Pills - Always visible per PRD */}
       <div className="mb-4 overflow-x-auto pb-2 -mx-4 px-4">
-        <Tabs
+        <Tabs.Root
           value={activeFilter}
-          onValueChange={(e) => setActiveFilter(e.value as PriorityColor | 'all')}
+          onValueChange={(details) => setActiveFilter(details.value as PriorityColor | 'all')}
+          className="w-full max-w-lg mx-auto flex flex-col items-center"
         >
-          <TabsList variant="default" size="sm" className="min-w-max">
+          <Tabs.List className="mx-auto flex w-full max-w-full justify-between bg-transparent gap-0">
             {PRIORITY_FILTERS.map((filter) => {
-              const count =
-                filter.value === 'all'
-                  ? counts.total
-                  : counts[filter.value as PriorityColor];
+              const count = filter.value === 'all'
+                ? counts.total
+                : counts[filter.value as PriorityColor];
 
               return (
-                <TabsTrigger
+                <Tabs.Trigger
                   key={filter.value}
                   value={filter.value}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5',
-                    activeFilter === filter.value ? filter.color : ''
-                  )}
+                  className="group flex flex-1 flex-col items-center gap-2 p-3 text-sm font-medium text-gray-600 rounded-xl transition-all border border-gray-200 data-[selected]:border-black data-[selected]:bg-slate-200/60 data-[selected]:text-navy-900 data-[selected]:font-bold hover:bg-slate-100/50"
                 >
-                  {filter.label}
-                  <span
+                  <div
                     className={cn(
-                      'px-1.5 py-0.5 rounded-full text-xs',
-                      activeFilter === filter.value ? 'bg-white/50' : 'bg-gray-200'
+                      "flex items-center justify-center w-7 h-7 rounded-full text-white font-bold text-xs transition-colors",
+                      "bg-gray-400 group-data-[selected]:bg-navy-900"
                     )}
                   >
                     {count}
-                  </span>
-                </TabsTrigger>
+                  </div>
+                  {filter.label}
+                </Tabs.Trigger>
               );
             })}
-          </TabsList>
-        </Tabs>
+          </Tabs.List>
+        </Tabs.Root>
       </div>
 
       {/* Active filter clear button */}
@@ -315,6 +313,7 @@ export default function ActionPage() {
               onArchive={handleArchive}
               onAddNote={handleAddNote}
               onMarkSpam={handleMarkSpam}
+              className="max-w-lg mx-auto"
             />
           ))}
         </div>

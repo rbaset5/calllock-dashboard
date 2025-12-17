@@ -10,7 +10,8 @@
     "seed": "npx tsx scripts/seed.ts",
     "seed:clear": "npx tsx scripts/seed-clear.ts",
     "seed:comprehensive": "npx tsx scripts/seed-comprehensive.ts",
-    "seed:empty": "npx tsx scripts/seed-empty.ts"
+    "seed:empty": "npx tsx scripts/seed-empty.ts",
+    "seed:demo": "npx tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@ark-ui/react": "^5.30.0",
@@ -34,7 +35,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "date-fns-tz": "^3.1.3",
-    "framer-motion": "^12.23.25",
+    "framer-motion": "^12.23.26",
     "lucide-react": "^0.447.0",
     "motion": "^12.23.26",
     "next": "14.2.15",

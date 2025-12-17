@@ -36,6 +36,7 @@ interface LeadCardV4Props {
   onMarkSpam?: (lead: Lead) => void;
   onClick?: (lead: Lead) => void;
   showExpandedByDefault?: boolean;
+  className?: string;
 }
 
 /** Priority color configuration */
@@ -116,6 +117,7 @@ export function LeadCardV4({
   onMarkSpam,
   onClick,
   showExpandedByDefault = false,
+  className,
 }: LeadCardV4Props) {
   const [expanded, setExpanded] = useState(showExpandedByDefault);
 
@@ -203,7 +205,8 @@ export function LeadCardV4({
         'relative w-full overflow-hidden rounded-xl bg-card shadow-md transition-shadow duration-300 hover:shadow-2xl',
         'border-t-4',
         borderTopClasses[lead.priority_color] || "border-t-blue-500",
-        onClick && 'cursor-pointer'
+        onClick && 'cursor-pointer',
+        className
       )}
       onClick={handleCardClick}
     >
