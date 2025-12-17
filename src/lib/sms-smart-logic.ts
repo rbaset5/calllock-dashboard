@@ -160,8 +160,8 @@ function calculateSimilarity(a: string, b: string): number {
   const wordsA = new Set(a.split(' '));
   const wordsB = new Set(b.split(' '));
 
-  const intersection = new Set([...wordsA].filter((x) => wordsB.has(x)));
-  const union = new Set([...wordsA, ...wordsB]);
+  const intersection = new Set(Array.from(wordsA).filter((x) => wordsB.has(x)));
+  const union = new Set([...Array.from(wordsA), ...Array.from(wordsB)]);
 
   return intersection.size / union.size;
 }

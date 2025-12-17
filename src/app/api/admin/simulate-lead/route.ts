@@ -41,6 +41,11 @@ interface SimulateLeadRequest {
 
   // Time preference (for slot picker)
   time_preference?: string;
+
+  // Sales lead fields
+  equipment_type?: string;
+  equipment_age?: string;
+  sales_lead_notes?: string;
 }
 
 // Predefined test scenarios for quick testing
@@ -191,7 +196,7 @@ export async function POST(request: NextRequest) {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll() {},
+        setAll() { },
       },
     });
 

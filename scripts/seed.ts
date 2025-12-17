@@ -241,6 +241,10 @@ async function seed() {
     // Find matching job (if resolved and converted)
     const matchingJob = insertedJobs?.find(j => j.customer_phone === a.phone_number);
 
+    // Type assertion for optional Date fields that may be null in seed data
+    const callbackDeliveredAt = a.callback_delivered_at as Date | null;
+    const resolvedAt = a.resolved_at as Date | null;
+
     return {
       user_id: userId,
       alert_id: a.alert_id,
@@ -253,11 +257,11 @@ async function seed() {
       sms_sent_at: a.sms_sent_at.toISOString(),
       sms_message_sid: a.sms_message_sid,
       callback_promised_by: a.callback_promised_by.toISOString(),
-      callback_delivered_at: a.callback_delivered_at ? a.callback_delivered_at.toISOString() : null,
+      callback_delivered_at: callbackDeliveredAt ? callbackDeliveredAt.toISOString() : null,
       callback_status: a.callback_status,
-      resolved_at: a.resolved_at ? a.resolved_at.toISOString() : null,
+      resolved_at: resolvedAt ? resolvedAt.toISOString() : null,
       resolution_notes: a.resolution_notes,
-      converted_to_job_id: a.resolved_at ? matchingJob?.id : null,
+      converted_to_job_id: resolvedAt ? matchingJob?.id : null,
       synced_from_backend: true,
     };
   });

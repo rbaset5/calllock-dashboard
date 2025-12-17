@@ -255,8 +255,9 @@ export async function showLocalNotification(
       tag: payload.tag || 'calllock-notification',
       data: payload.data,
       requireInteraction: payload.requireInteraction || payload.priority === 'urgent',
-      actions: payload.actions,
-    });
+      // actions is part of Web Notifications API but not fully typed
+      ...(payload.actions ? { actions: payload.actions } : {}),
+    } as NotificationOptions);
   } catch (error) {
     console.error('Failed to show notification:', error);
   }
@@ -264,8 +265,9 @@ export async function showLocalNotification(
 
 /**
  * Convert VAPID key from base64 to Uint8Array
+ * Returns ArrayBuffer for compatibility with PushManager.subscribe
  */
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, '+')
@@ -278,7 +280,8 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
     outputArray[i] = rawData.charCodeAt(i);
   }
 
-  return outputArray;
+  // Return as ArrayBuffer for PushManager.subscribe compatibility
+  return outputArray.buffer.slice(0);
 }
 
 /**
