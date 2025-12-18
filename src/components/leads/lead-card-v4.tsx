@@ -219,7 +219,7 @@ export function LeadCardV4({
   return (
     <Card
       className={cn(
-        'relative w-full overflow-hidden rounded-xl bg-card shadow-md transition-shadow duration-300 hover:shadow-2xl border-x-0 border-b-0',
+        'relative w-full overflow-hidden rounded-xl bg-white shadow-md transition-shadow duration-300 hover:shadow-2xl border-x-0 border-b-0',
         'border-t-4',
         // Use distinctive priority colors for borders
         borderTopClasses[lead.priority_color] || "border-t-[#808BC5]",
@@ -234,7 +234,25 @@ export function LeadCardV4({
           {/* Header: Name + Priority Badge + Time */}
           {/* Header: Time + Name + Priority Badge */}
           <div className="mb-2">
-            <div className="text-xs text-gray-400 mb-1">{timeAgo}</div>
+            <div
+              className={cn(
+                "text-xs text-gray-400",
+                (() => {
+                  if (!lead.created_at) return false;
+                  const date = new Date(lead.created_at);
+                  const now = new Date();
+                  return (
+                    date.getFullYear() === now.getFullYear() &&
+                    date.getMonth() === now.getMonth() &&
+                    date.getDate() === now.getDate()
+                  );
+                })()
+                  ? "mb-3 text-center"
+                  : "mb-1"
+              )}
+            >
+              {timeAgo}
+            </div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-gray-900 text-lg leading-tight">
                 {lead.customer_name}
@@ -301,7 +319,7 @@ export function LeadCardV4({
 
         {/* Expandable details - Clean row-based layout with grey background */}
         {expanded && (
-          <div className="bg-gray-50 border border-stone-200 rounded-3xl overflow-hidden">
+          <div className="bg-[#FDFDFC] border border-stone-200 rounded-3xl overflow-hidden">
             <div className="px-4 py-4 lg:px-5 lg:py-5 space-y-4">
               {/* Priority row */}
               {lead.priority_reason && (

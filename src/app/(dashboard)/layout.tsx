@@ -36,7 +36,7 @@ export default function DashboardLayout({
       {/* Demo mode banner */}
       <DemoBanner />
 
-      <div className="min-h-screen bg-[#F9FAFB]">
+      <div className="min-h-screen">
         {/* Desktop sidebar */}
         <Sidebar businessName={businessName} />
 

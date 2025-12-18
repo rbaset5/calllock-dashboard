@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Plus_Jakarta_Sans, Permanent_Marker, Space_Grotesk } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/pwa";
+import { Component as Background } from "@/components/ui/background-components";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
