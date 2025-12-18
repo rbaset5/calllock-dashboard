@@ -3,13 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Lead, PriorityColor } from '@/types/database';
 import { ActionResponse } from '@/app/api/action/route';
-import { LeadCardV4, ActionEmptyState, OutcomePrompt } from '@/components/leads';
+import { LeadCardV4, ActionEmptyState, OutcomePrompt, ActionTimeline } from '@/components/leads';
 import { BookJobModal } from '@/components/leads/book-job-modal';
 import { AddNoteModal } from '@/components/leads/add-note-modal';
 import { CallbackOutcome } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { PageTabs } from '@/components/ui/page-tabs';
-import { Tabs } from '@ark-ui/react/tabs';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Clock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -246,37 +245,37 @@ export default function ActionPage() {
 
       {/* Priority Filter Pills - Always visible per PRD */}
       <div className="mb-4 overflow-x-auto pb-2 -mx-4 px-4">
-        <Tabs.Root
-          value={activeFilter}
-          onValueChange={(details) => setActiveFilter(details.value as PriorityColor | 'all')}
-          className="w-full max-w-lg mx-auto flex flex-col items-center"
-        >
-          <Tabs.List className="mx-auto flex w-full max-w-full justify-between bg-transparent gap-0">
-            {PRIORITY_FILTERS.map((filter) => {
-              const count = filter.value === 'all'
-                ? counts.total
-                : counts[filter.value as PriorityColor];
+        <div className="w-full max-w-lg mx-auto flex items-center justify-between gap-2">
+          {PRIORITY_FILTERS.map((filter) => {
+            const count = filter.value === 'all'
+              ? counts.total
+              : counts[filter.value as PriorityColor];
 
-              return (
-                <Tabs.Trigger
-                  key={filter.value}
-                  value={filter.value}
-                  className="group flex flex-1 flex-col items-center gap-2 p-3 text-sm font-medium text-gray-600 rounded-xl transition-all border border-gray-200 data-[selected]:border-black data-[selected]:bg-slate-200/60 data-[selected]:text-navy-900 data-[selected]:font-bold hover:bg-slate-100/50"
-                >
-                  <div
-                    className={cn(
-                      "flex items-center justify-center w-7 h-7 rounded-full text-white font-bold text-xs transition-colors",
-                      "bg-gray-400 group-data-[selected]:bg-navy-900"
-                    )}
-                  >
-                    {count}
-                  </div>
-                  {filter.label}
-                </Tabs.Trigger>
-              );
-            })}
-          </Tabs.List>
-        </Tabs.Root>
+            const isActive = activeFilter === filter.value;
+
+            return (
+              <Button
+                key={filter.value}
+                variant={isActive ? "default" : "outline"}
+                className={cn(
+                  "flex-1 h-auto py-2 px-3 flex flex-col gap-1 items-center justify-center rounded-xl border transition-all",
+                  isActive
+                    ? "border-navy-900 bg-navy-50 text-navy-900 hover:bg-navy-100 shadow-sm"
+                    : "border-gray-200 text-gray-600 hover:bg-slate-50 hover:text-navy-700"
+                )}
+                onClick={() => setActiveFilter(filter.value as PriorityColor | 'all')}
+              >
+                <span className={cn(
+                  "flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold transition-colors",
+                  isActive ? "bg-navy-900 text-white" : "bg-gray-200 text-gray-600 group-hover:bg-gray-300"
+                )}>
+                  {count}
+                </span>
+                <span className="text-xs font-medium">{filter.label}</span>
+              </Button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Active filter clear button */}
@@ -303,20 +302,15 @@ export default function ActionPage() {
           aiBooked={todayStats.ai_booked}
         />
       ) : (
-        <div className="space-y-3">
-          {filteredLeads.map((lead) => (
-            <LeadCardV4
-              key={lead.id}
-              lead={lead}
-              onCall={handleCall}
-              onBook={handleBook}
-              onArchive={handleArchive}
-              onAddNote={handleAddNote}
-              onMarkSpam={handleMarkSpam}
-              className="max-w-lg mx-auto"
-            />
-          ))}
-        </div>
+        <ActionTimeline
+          leads={filteredLeads}
+          onCall={handleCall}
+          onBook={handleBook}
+          onArchive={handleArchive}
+          onAddNote={handleAddNote}
+          onMarkSpam={handleMarkSpam}
+          hidePriorityBadge={activeFilter !== 'all'}
+        />
       )}
 
       {/* Book Job Modal */}

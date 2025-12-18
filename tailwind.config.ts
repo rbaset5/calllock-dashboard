@@ -11,6 +11,8 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ['var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
+        marker: ['var(--font-rock-salt)', 'cursive'],
+        sharpie: ['var(--font-permanent-marker)', 'cursive'],
       },
       colors: {
         // CallSeal Navy (Primary - Trust/Reliability)

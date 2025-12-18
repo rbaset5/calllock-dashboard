@@ -1,12 +1,26 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Rock_Salt, Permanent_Marker } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/pwa";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-plus-jakarta",
+  display: "swap",
+});
+
+const rockSalt = Rock_Salt({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-rock-salt",
+  display: "swap",
+});
+
+const permanentMarker = Permanent_Marker({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-permanent-marker",
   display: "swap",
 });
 
@@ -40,7 +54,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className={`${plusJakartaSans.variable} font-sans antialiased`}>
+      <body className={`${plusJakartaSans.variable} ${rockSalt.variable} ${permanentMarker.variable} font-sans antialiased`}>
         <ServiceWorkerRegistration />
         {children}
       </body>

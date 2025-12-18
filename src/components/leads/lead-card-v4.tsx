@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { MoreMenu } from './more-menu';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 interface LeadCardV4Props {
   lead: LeadWithNotes;
@@ -36,6 +36,7 @@ interface LeadCardV4Props {
   onMarkSpam?: (lead: Lead) => void;
   onClick?: (lead: Lead) => void;
   showExpandedByDefault?: boolean;
+  hidePriorityBadge?: boolean; // If true, the priority badge (e.g., COMMERCIAL $$$, NEW LEAD) will be hidden
   className?: string;
 }
 
@@ -57,7 +58,7 @@ const PRIORITY_CONFIG: Record<PriorityColor, {
     icon: AlertTriangle,
   },
   green: {
-    badge: 'COMMERCIAL $$$',
+    badge: 'COMMERCIAL',
     label: 'Commercial',
     bgColor: 'bg-emerald-100',
     textColor: 'text-emerald-700',
@@ -73,7 +74,7 @@ const PRIORITY_CONFIG: Record<PriorityColor, {
     icon: User,
   },
   gray: {
-    badge: 'SPAM/VENDOR',
+    badge: 'SPAM',
     label: 'Spam',
     bgColor: 'bg-gray-100',
     textColor: 'text-gray-500',
@@ -82,11 +83,26 @@ const PRIORITY_CONFIG: Record<PriorityColor, {
   },
 };
 
-/** Format time ago */
+/** Format time ago - shows relative time for today, actual time for past days */
 function formatTimeAgo(dateStr: string | null): string {
   if (!dateStr) return '';
   try {
-    return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+    const date = new Date(dateStr);
+    const now = new Date();
+
+    // Check if same day (today)
+    const isToday =
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+
+    if (isToday) {
+      // Show relative time for today's items (e.g., "2 hours ago")
+      return formatDistanceToNow(date, { addSuffix: true });
+    } else {
+      // Show actual time for past days (e.g., "9:30 AM")
+      return format(date, 'h:mm a');
+    }
   } catch {
     return '';
   }
@@ -117,12 +133,13 @@ export function LeadCardV4({
   onMarkSpam,
   onClick,
   showExpandedByDefault = false,
+  hidePriorityBadge = false,
   className,
 }: LeadCardV4Props) {
   const [expanded, setExpanded] = useState(showExpandedByDefault);
 
   const priorityConfig = PRIORITY_CONFIG[lead.priority_color] || PRIORITY_CONFIG.blue;
-  const PriorityIcon = priorityConfig.icon;
+
   const timeAgo = formatTimeAgo(lead.created_at);
 
   const handleCall = (e: React.MouseEvent) => {
@@ -202,7 +219,7 @@ export function LeadCardV4({
   return (
     <Card
       className={cn(
-        'relative w-full overflow-hidden rounded-xl bg-card shadow-md transition-shadow duration-300 hover:shadow-2xl',
+        'relative w-full overflow-hidden rounded-xl bg-card shadow-md transition-shadow duration-300 hover:shadow-2xl border-x-0 border-b-0',
         'border-t-4',
         borderTopClasses[lead.priority_color] || "border-t-blue-500",
         onClick && 'cursor-pointer',
@@ -210,9 +227,9 @@ export function LeadCardV4({
       )}
       onClick={handleCardClick}
     >
-      <CardContent className="p-0">
+      <CardContent className="p-0 lg:p-0">
         {/* Main content area */}
-        <div className="p-4">
+        <div className="p-4 lg:p-5">
           {/* Header: Name + Priority Badge + Time */}
           {/* Header: Time + Name + Priority Badge */}
           <div className="mb-2">
@@ -221,16 +238,28 @@ export function LeadCardV4({
               <h3 className="font-semibold text-gray-900 text-lg leading-tight">
                 {lead.customer_name}
               </h3>
-              <div
-                className={cn(
-                  'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold shrink-0',
-                  priorityConfig.bgColor,
-                  priorityConfig.textColor
-                )}
-              >
-                <PriorityIcon className="w-3 h-3" />
-                {priorityConfig.badge}
-              </div>
+              {!hidePriorityBadge && (
+                <div
+                  className={cn(
+                    'inline-flex items-center shrink-0',
+                    'bg-yellow-100/60 text-gray-800',
+                    'transform font-sharpie tracking-wide',
+                    // Uniform sizing (slightly smaller), different rotations
+                    'px-3 py-1 text-[11px]',
+                    lead.priority_color === 'red' && '-rotate-1',
+                    lead.priority_color === 'green' && 'rotate-1',
+                    lead.priority_color === 'blue' && '-rotate-1',
+                    lead.priority_color === 'gray' && 'rotate-0.5'
+                  )}
+                  style={{
+                    boxShadow: 'none',
+                    filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))',
+                    clipPath: 'polygon(0% 0%, 100% 0%, 96% 10%, 100% 20%, 96% 30%, 100% 40%, 96% 50%, 100% 60%, 96% 70%, 100% 80%, 96% 90%, 100% 100%, 0% 100%, 4% 90%, 0% 80%, 4% 70%, 0% 60%, 4% 50%, 0% 40%, 4% 30%, 0% 20%, 4% 10%)'
+                  }}
+                >
+                  {priorityConfig.badge}
+                </div>
+              )}
             </div>
           </div>
 
@@ -269,102 +298,84 @@ export function LeadCardV4({
           )}
         </div>
 
-        {/* Expandable details - PRD layout */}
+        {/* Expandable details - Clean row-based layout with grey background */}
         {expanded && (
-          <div className="px-4 pb-3 pt-0 border-t border-gray-100">
-            <div className="pt-3 space-y-3 text-sm">
-              {/* Priority reason */}
+          <div className="bg-gray-50 border border-stone-200 rounded-3xl overflow-hidden">
+            <div className="px-4 py-4 lg:px-5 lg:py-5 space-y-4">
+              {/* Priority row */}
               {lead.priority_reason && (
-                <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                  <span className="text-amber-800 font-medium">Priority: </span>
-                  <span className="text-amber-700">{lead.priority_reason}</span>
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-500 text-sm w-32 flex-shrink-0">Priority</span>
+                  <span className="text-gray-900 text-sm flex-1">{lead.priority_reason}</span>
                 </div>
               )}
 
-              {/* Full AI summary */}
-              {lead.ai_summary && (
-                <div>
-                  <p className="text-xs font-medium text-gray-400 mb-1">AI Summary</p>
-                  <p className="text-gray-700 text-sm leading-relaxed">{lead.ai_summary}</p>
-                </div>
-              )}
-
-              {/* Full address with maps link */}
+              {/* Address row */}
               {lead.customer_address && (
                 <button
                   onClick={openInMaps}
-                  className="flex items-start gap-2 w-full text-left p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-start gap-3 w-full text-left group"
                 >
                   <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <span className="text-gray-700">{lead.customer_address}</span>
-                    <span className="text-blue-600 text-xs ml-2 inline-flex items-center gap-1">
-                      Open in Maps <ExternalLink className="w-3 h-3" />
-                    </span>
-                  </div>
+                  <span className="text-gray-500 text-sm w-32 flex-shrink-0">Address</span>
+                  <span className="text-gray-900 text-sm flex-1 group-hover:text-blue-600">
+                    {lead.customer_address}
+                  </span>
                 </button>
               )}
 
-              {/* Phone with call link */}
+              {/* Tel row */}
               <button
                 onClick={handleCall}
-                className="flex items-center gap-2 w-full text-left p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-start gap-3 w-full text-left group"
               >
-                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span className="text-gray-700">{lead.customer_phone}</span>
-                <span className="text-blue-600 text-xs ml-2">Call Customer</span>
+                <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <span className="text-gray-500 text-sm w-32 flex-shrink-0">Tel</span>
+                <span className="text-gray-900 text-sm flex-1 group-hover:text-blue-600">
+                  {lead.customer_phone}
+                </span>
               </button>
 
-              {/* Time preference (highlighted if present) */}
+              {/* Customer Preference row */}
               {lead.time_preference && (
-                <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                  <Clock className="w-4 h-4 text-blue-600" />
-                  <span className="text-blue-800 font-medium">Customer preference: </span>
-                  <span className="text-blue-700">{lead.time_preference}</span>
+                <div className="flex items-start gap-3">
+                  <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-500 text-sm w-32 flex-shrink-0">Customer Preference</span>
+                  <span className="text-gray-900 text-sm flex-1">{lead.time_preference}</span>
                 </div>
               )}
 
-              {/* Problem details */}
-              {(lead.problem_duration || lead.problem_pattern) && (
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {lead.problem_duration && (
-                    <div>
-                      <span className="text-gray-400 font-medium">Duration: </span>
-                      <span className="text-gray-600">{lead.problem_duration}</span>
-                    </div>
-                  )}
-                  {lead.problem_pattern && (
-                    <div>
-                      <span className="text-gray-400 font-medium">Pattern: </span>
-                      <span className="text-gray-600">{lead.problem_pattern}</span>
-                    </div>
-                  )}
+              {/* Duration row */}
+              {lead.problem_duration && (
+                <div className="flex items-start gap-3">
+                  <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-500 text-sm w-32 flex-shrink-0">Duration</span>
+                  <span className="text-gray-900 text-sm flex-1">{lead.problem_duration}</span>
                 </div>
               )}
 
-              {/* Why not booked */}
-              {lead.why_not_booked && (
-                <div className="p-2 bg-gray-50 rounded-lg text-xs">
-                  <span className="text-gray-400 font-medium">Note: </span>
-                  <span className="text-gray-600 italic">{lead.why_not_booked}</span>
+              {/* Notes row - combines why_not_booked and operator notes */}
+              {(lead.why_not_booked || (lead.notes && lead.notes.length > 0)) && (
+                <div className="flex items-start gap-3">
+                  <StickyNote className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-500 text-sm w-32 flex-shrink-0">Notes</span>
+                  <div className="text-gray-900 text-sm flex-1 space-y-2">
+                    {lead.why_not_booked && (
+                      <p>{lead.why_not_booked}</p>
+                    )}
+                    {lead.notes?.map((note) => (
+                      <p key={note.id}>{note.note_text}</p>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* Operator Notes */}
-              {lead.notes && lead.notes.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-gray-400 flex items-center gap-1">
-                    <StickyNote className="w-3 h-3" />
-                    Notes ({lead.notes.length})
-                  </p>
-                  {lead.notes.map((note) => (
-                    <div key={note.id} className="p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
-                      <p className="text-gray-700">{note.note_text}</p>
-                      <p className="text-gray-400 text-xs mt-1">
-                        {note.created_by} · {formatTimeAgo(note.created_at)}
-                      </p>
-                    </div>
-                  ))}
+              {/* AI Summary - Description style at bottom */}
+              {lead.ai_summary && (
+                <div className="pt-2 border-t border-gray-100">
+                  <p className="text-gray-500 text-sm mb-1">AI Summary</p>
+                  <p className="text-gray-700 text-sm leading-relaxed">{lead.ai_summary}</p>
                 </div>
               )}
             </div>
@@ -372,9 +383,8 @@ export function LeadCardV4({
         )}
 
         {/* Action buttons - PRD: [Call] [Book] [...] */}
-        {/* Action buttons - PRD: [Call] [Book] [...] */}
         {/* Hide Call/Book for SPAM (gray) - they should only be convertible/archivable */}
-        <div className="flex items-center border-t border-gray-200">
+        <div className={cn("flex items-center", !expanded && "border-t border-gray-200")}>
           {lead.priority_color !== 'gray' && (
             <>
               {/* Call button */}
