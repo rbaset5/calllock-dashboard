@@ -11,7 +11,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ['var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
-        marker: ['var(--font-rock-salt)', 'cursive'],
+        display: ['var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
         sharpie: ['var(--font-permanent-marker)', 'cursive'],
       },
       colors: {

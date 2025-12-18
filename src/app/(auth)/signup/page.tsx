@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { Logo } from '@/components/brand';
 
 const TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time' },
@@ -77,8 +78,8 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">CallSeal</h1>
+          <div className="text-center mb-8 flex flex-col items-center">
+            <Logo size="xl" showImage={false} className="mb-2" />
             <p className="text-gray-600 mt-2">Create your account</p>
           </div>
 

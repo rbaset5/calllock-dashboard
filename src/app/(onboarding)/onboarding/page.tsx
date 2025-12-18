@@ -12,6 +12,7 @@ import {
 import { Carrier } from '@/lib/carrier-detection';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/brand';
 
 // ============================================
 // TYPES
@@ -167,9 +168,9 @@ export default function OnboardingPage() {
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4">
           {/* Logo */}
-          <div className="text-center mb-4">
-            <h1 className="text-xl font-bold text-navy-800">CallSeal</h1>
-            <p className="text-sm text-gray-500">Setup Wizard</p>
+          <div className="text-center mb-4 flex flex-col items-center">
+            <Logo size="md" showImage={false} />
+            <p className="text-sm text-gray-500 mt-1">Setup Wizard</p>
           </div>
 
           {/* Progress Steps */}

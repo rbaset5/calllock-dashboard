@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Plus_Jakarta_Sans, Rock_Salt, Permanent_Marker } from "next/font/google";
+import { Plus_Jakarta_Sans, Permanent_Marker, Space_Grotesk } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/pwa";
 import "./globals.css";
 
@@ -10,11 +10,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const rockSalt = Rock_Salt({
-  weight: "400",
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-rock-salt",
+  variable: "--font-space-grotesk",
   display: "swap",
+  weight: ["500", "600", "700"],
 });
 
 const permanentMarker = Permanent_Marker({
@@ -54,7 +54,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className={`${plusJakartaSans.variable} ${rockSalt.variable} ${permanentMarker.variable} font-sans antialiased`}>
+      <body className={`${plusJakartaSans.variable} ${spaceGrotesk.variable} ${permanentMarker.variable} font-sans antialiased`}>
         <ServiceWorkerRegistration />
         {children}
       </body>

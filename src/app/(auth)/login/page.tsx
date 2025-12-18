@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { Logo } from '@/components/brand';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -56,12 +57,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="text-center mb-8 flex flex-col items-center">
-            <img
-              src="/callseal-logo.jpg"
-              alt="CallSeal Logo"
-              className="h-16 w-16 mb-4 rounded-full object-cover"
-            />
-            <h1 className="text-2xl font-bold text-gray-900">CallSeal</h1>
+            <Logo size="xl" className="mb-4" />
             <p className="text-gray-600 mt-2">Sign in to your dashboard</p>
           </div>
 

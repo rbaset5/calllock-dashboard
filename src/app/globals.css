@@ -135,25 +135,51 @@
     @apply p-4 lg:p-6 pb-24 lg:pb-8 max-w-2xl mx-auto;
   }
 
-  /* Heading styles */
+  /* ============================================
+   * TYPOGRAPHY SYSTEM
+   * ============================================ */
+
+  /* Page Level */
   .cl-heading-page {
     @apply text-xl font-semibold text-foreground leading-tight;
   }
 
+  /* Section Level */
   .cl-heading-section {
     @apply text-sm font-semibold text-muted-foreground uppercase tracking-wide;
   }
 
+  /* Card Level */
   .cl-heading-card {
     @apply text-lg font-semibold text-foreground leading-snug;
   }
 
-  /* Stat display */
+  /* Customer Name (consistent across all cards) */
+  .cl-customer-name {
+    @apply text-base font-semibold text-gray-900;
+  }
+
+  /* Metadata (timestamps, addresses) */
+  .cl-meta {
+    @apply text-xs text-gray-500;
+  }
+
+  /* Body text in cards */
+  .cl-body {
+    @apply text-sm text-gray-600 leading-relaxed;
+  }
+
+  /* Statistics */
   .cl-stat-large {
     @apply text-3xl font-bold tracking-tight;
   }
 
   .cl-stat-medium {
     @apply text-2xl font-bold tracking-tight;
+  }
+
+  /* Logo text (Space Grotesk) */
+  .cl-logo {
+    @apply font-display font-semibold text-primary-600 tracking-tight;
   }
 }

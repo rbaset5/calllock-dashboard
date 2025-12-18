@@ -43,7 +43,7 @@ export default function DashboardLayout({
         {/* Main content area - offset for sidebar on desktop */}
         <div className="lg:pl-60">
           {/* Header - hidden on desktop since sidebar has branding */}
-          <div className="lg:hidden">
+          <div className="lg:hidden sticky top-0 z-40">
             <Header businessName={businessName} />
           </div>
 

@@ -212,7 +212,7 @@ export function LeadCardV4({
   const borderTopClasses: Record<PriorityColor, string> = {
     red: "border-t-[#C63F3E]",    // Red Passion
     green: "border-t-[#EAC119]",  // Mustard Yellow
-    blue: "border-t-[#245E55]",   // Tea
+    blue: "border-t-[#808BC5]",   // Lavender
     gray: "border-t-[#1D1D1B]",   // Muted Black
   };
 
@@ -222,7 +222,7 @@ export function LeadCardV4({
         'relative w-full overflow-hidden rounded-xl bg-card shadow-md transition-shadow duration-300 hover:shadow-2xl border-x-0 border-b-0',
         'border-t-4',
         // Use distinctive priority colors for borders
-        borderTopClasses[lead.priority_color] || "border-t-[#245E55]",
+        borderTopClasses[lead.priority_color] || "border-t-[#808BC5]",
         onClick && 'cursor-pointer',
         className
       )}

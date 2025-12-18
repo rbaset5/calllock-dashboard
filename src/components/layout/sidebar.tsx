@@ -1,12 +1,12 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { AlertCircle, Calendar, Clock, Settings, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import { Logo } from '@/components/brand';
 
 // V4 Primary navigation - ACTION/BOOKED model
 const navItems = [
@@ -67,15 +67,8 @@ export function Sidebar({ businessName }: SidebarProps) {
   return (
     <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-60 lg:border-r lg:border-navy-200 lg:bg-white">
       {/* Logo/Brand */}
-      <div className="h-16 flex items-center px-6 border-b border-navy-200 gap-2">
-        <span className="text-xl font-bold text-navy-700">CallSeal</span>
-        <Image
-          src="/callseal-logo.jpg"
-          alt="CallSeal Logo"
-          width={32}
-          height={32}
-          className="rounded"
-        />
+      <div className="h-16 flex items-center px-6 border-b border-navy-200">
+        <Logo size="md" />
       </div>
 
       {/* Primary Navigation */}
