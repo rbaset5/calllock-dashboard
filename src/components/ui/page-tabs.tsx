@@ -49,7 +49,7 @@ export function PageTabs({ activeTab, actionCount = 0, bookedCount = 0 }: PageTa
         Booked
         {bookedCount > 0 && (
           <Badge
-            variant="primary"
+            variant="default"
             className={cn(
               'min-w-[20px] h-5 px-1.5 text-xs font-bold',
               activeTab !== 'booked' && 'opacity-60'

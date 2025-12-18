@@ -160,12 +160,9 @@ export default function TodayPage() {
 
     return allJobs.map(job => ({
       id: job.id,
-      problemType: extractProblemType(job.ai_summary),
+      title: extractProblemType(job.ai_summary),
       customerName: job.customer_name || '',
-      phone: job.customer_phone || '',
-      neighborhood: extractNeighborhood(job.customer_address),
       scheduledTime: job.scheduled_at ? parseISO(job.scheduled_at) : new Date(),
-      // Keep for backwards compat
       address: job.customer_address || '',
     }));
   }, [data, upcomingData]);

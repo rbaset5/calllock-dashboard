@@ -54,12 +54,12 @@ export const ActionTimeline: React.FC<ActionTimelineProps> = ({
     onMarkSpam,
     hidePriorityBadge = false,
 }) => {
+    // Group leads by their created_at date (must be called before any returns per Rules of Hooks)
+    const dateGroups = React.useMemo(() => groupLeadsByDate(leads), [leads]);
+
     if (leads.length === 0) {
         return null;
     }
-
-    // Group leads by their created_at date
-    const dateGroups = React.useMemo(() => groupLeadsByDate(leads), [leads]);
 
     return (
         <div className="space-y-6">

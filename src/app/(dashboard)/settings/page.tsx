@@ -587,11 +587,11 @@ export default function SettingsPage() {
                   variant="ghost"
                   size="sm"
                   onClick={disconnectCalendar}
-                  loading={disconnecting}
+                  disabled={disconnecting}
                   className="text-error-600 hover:text-error-700 hover:bg-error-50"
                 >
                   <X className="w-4 h-4 mr-2" />
-                  Disconnect Calendar
+                  {disconnecting ? 'Disconnecting...' : 'Disconnect Calendar'}
                 </Button>
               </div>
             ) : (
@@ -787,11 +787,11 @@ export default function SettingsPage() {
                 type="button"
                 variant="ghost"
                 onClick={handleSignOut}
-                loading={signingOut}
+                disabled={signingOut}
                 className="text-error-600 hover:text-error-700 hover:bg-error-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+                {signingOut ? 'Signing Out...' : 'Sign Out'}
               </Button>
             </div>
           </CardContent>
@@ -805,9 +805,9 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <Button type="submit" size="lg" className="w-full" loading={saving}>
+        <Button type="submit" size="lg" className="w-full" disabled={saving}>
           <Save className="w-5 h-5 mr-2" />
-          Save Changes
+          {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </form>
     </div>

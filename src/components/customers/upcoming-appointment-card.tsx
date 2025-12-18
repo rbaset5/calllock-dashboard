@@ -50,7 +50,7 @@ export function UpcomingAppointmentCard({ job, timezone }: UpcomingAppointmentCa
         {/* Actions */}
         <div className="pt-2">
           <Link href={`/jobs/${job.id}`}>
-            <Button variant="primary" size="sm" className="w-full">
+            <Button variant="default" size="sm" className="w-full">
               View Job Details
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>

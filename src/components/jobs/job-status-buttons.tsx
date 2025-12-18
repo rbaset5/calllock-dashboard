@@ -131,12 +131,12 @@ export function JobStatusButtons({ jobId, currentStatus, needsAction }: JobStatu
               />
             </div>
             <Button
-              variant="primary"
+              variant="default"
               size="lg"
               onClick={submitCompletion}
-              loading={loading === 'complete'}
+              disabled={loading === 'complete'}
             >
-              Done
+              {loading === 'complete' ? 'Saving...' : 'Done'}
             </Button>
             <Button
               variant="ghost"
@@ -160,14 +160,14 @@ export function JobStatusButtons({ jobId, currentStatus, needsAction }: JobStatu
             return (
               <Button
                 key={next}
-                variant="primary"
+                variant="default"
                 size="lg"
-                loading={loading === next}
+                disabled={loading === next}
                 onClick={() => isComplete ? handleComplete() : updateStatus(next)}
                 className="w-full"
               >
                 <Icon className="w-5 h-5 mr-2" />
-                {label}
+                {loading === next ? 'Updating...' : label}
               </Button>
             );
           })}
@@ -179,11 +179,11 @@ export function JobStatusButtons({ jobId, currentStatus, needsAction }: JobStatu
         variant={needsAction ? 'destructive' : 'outline'}
         size="lg"
         className="w-full"
-        loading={loading === 'needs_action'}
+        disabled={loading === 'needs_action'}
         onClick={toggleNeedsAction}
       >
         <AlertTriangle className="w-5 h-5 mr-2" />
-        {needsAction ? 'Clear Needs Action' : 'Flag Needs Action'}
+        {loading === 'needs_action' ? 'Updating...' : (needsAction ? 'Clear Needs Action' : 'Flag Needs Action')}
       </Button>
     </div>
   );

@@ -181,9 +181,9 @@ export default function KnowledgebasePage() {
       )}
 
       {/* Save Button */}
-      <Button onClick={handleSave} size="lg" className="w-full" loading={saving}>
+      <Button onClick={handleSave} size="lg" className="w-full" disabled={saving}>
         <Save className="w-5 h-5 mr-2" />
-        Save
+        {saving ? 'Saving...' : 'Save'}
       </Button>
     </div>
   );

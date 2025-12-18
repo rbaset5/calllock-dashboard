@@ -34,7 +34,7 @@ export function MapLink({ address, children, className }: MapLinkProps) {
   return (
     <div className={cn('flex gap-2', className)}>
       <Button
-        variant="primary"
+        variant="default"
         size="lg"
         className="flex-1"
         onClick={openMaps}

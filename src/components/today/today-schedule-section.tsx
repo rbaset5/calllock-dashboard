@@ -71,10 +71,8 @@ export function TodayScheduleSection({ jobs, timezone, jobCounts = {} }: TodaySc
       : new Date();
     return {
       id: job.id,
-      problemType: extractProblemType(job.ai_summary),
+      title: extractProblemType(job.ai_summary),
       customerName: job.customer_name,
-      phone: job.customer_phone || '',
-      neighborhood: extractNeighborhood(job.customer_address),
       scheduledTime,
       address: job.customer_address || '',
     };
@@ -144,8 +142,6 @@ export function TodayScheduleSection({ jobs, timezone, jobCounts = {} }: TodaySc
         jobs={timelineJobs}
         selectedDate={selectedDate}
         onJobClick={handleJobClick}
-        startHour={8}
-        endHour={18}
       />
     </div>
   );
