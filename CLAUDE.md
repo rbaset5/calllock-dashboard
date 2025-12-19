@@ -350,10 +350,24 @@ V2 Backend (calllock-server.onrender.com)
 Dashboard Webhook Handler
     ↓ Validate secret
     ↓ Find user by email
-    ↓ Dedup by backend_call_id
-    ↓ Insert/Update in Supabase
-    ↓ Return {success: true, id: ...}
+    ↓ Dedup by call_id (original_call_id column)
+    ↓ Insert new OR Update existing record
+    ↓ Return {success: true, id: ..., action: "created" | "updated"}
 ```
+
+### Webhook Deduplication
+
+The jobs webhook (`/api/webhook/jobs`) implements idempotent handling:
+
+1. **On first call**: Creates new lead/job, returns `action: "created"`
+2. **On retry (same call_id)**: Updates existing record, returns `action: "updated"`
+
+This prevents duplicate leads when the V2 backend retries failed webhook calls.
+
+**Deduplication columns:**
+- `leads.original_call_id` - Links lead to Retell call
+- `jobs.original_call_id` - Links job to Retell call
+- `calls.backend_call_id` - Links call record to Retell call
 
 ### Required Backend Configuration (Render)
 
@@ -382,6 +396,7 @@ Key migrations for webhook support:
 - `0014_transcript_object.sql` - Adds transcript_object JSONB column
 - `0015_v3_triage_fields.sql` - Adds caller_type, status_color columns
 - `0016_v4_action_booked_model.sql` - Adds priority_color, callback_outcome
+- `0020_jobs_original_call_id.sql` - Adds original_call_id for webhook deduplication
 
 ## Error Handling
 
@@ -431,3 +446,38 @@ WHERE priority_color IS NULL;
 | AI book rate | >30% |
 | Week 1 retention | >95% |
 | Time to action | <10 seconds |
+
+## Testing Webhooks
+
+### Manual Webhook Test
+
+To test the dashboard webhook without making a real call:
+
+```bash
+curl -X POST https://calllock-dashboard-2.vercel.app/api/webhook/jobs \
+  -H "Content-Type: application/json" \
+  -H "X-Webhook-Secret: YOUR_WEBHOOK_SECRET" \
+  -d '{
+    "call_id": "call_test_123",
+    "customer_name": "Test Customer",
+    "customer_phone": "555-123-4567",
+    "customer_address": "123 Test St",
+    "service_type": "hvac",
+    "urgency": "high",
+    "end_call_reason": "callback_later",
+    "ai_summary": "Test lead - heater not working",
+    "user_email": "your-email@example.com"
+  }'
+```
+
+### Important: Chat Simulations vs Real Calls
+
+**Retell chat simulations** (in the Retell dashboard) do NOT trigger dashboard sync because:
+- They test AI conversation flow only
+- They do NOT fire the `call-ended` webhook
+- No data is sent to the V2 backend or dashboard
+
+**Only real phone calls** trigger the full data flow:
+```
+Real Call → Retell → call ends → call-ended webhook → V2 Backend → Dashboard
+```

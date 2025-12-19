@@ -128,16 +128,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
     }
 
-    // Sort the list results by priority color (RED first) then by created_at
-    const sortedLeads = (leads || []).sort((a, b) => {
-      const aPriority = PRIORITY_ORDER[a.priority_color as PriorityColor] || 5;
-      const bPriority = PRIORITY_ORDER[b.priority_color as PriorityColor] || 5;
-
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
-      }
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
+    // Leads already sorted by created_at desc from DB query (most recent first)
+    const sortedLeads = leads || [];
 
     // Check for pending outcome (lead with recent call tap)
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();

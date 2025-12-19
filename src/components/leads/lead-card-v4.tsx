@@ -83,7 +83,7 @@ const PRIORITY_CONFIG: Record<PriorityColor, {
   },
 };
 
-/** Format time ago - shows relative time for today, actual time for past days */
+/** Format time ago - shows elapsed time for today, full datetime for past days */
 function formatTimeAgo(dateStr: string | null): string {
   if (!dateStr) return '';
   try {
@@ -97,11 +97,25 @@ function formatTimeAgo(dateStr: string | null): string {
       date.getDate() === now.getDate();
 
     if (isToday) {
-      // Show relative time for today's items (e.g., "2 hours ago")
-      return formatDistanceToNow(date, { addSuffix: true });
+      // Calculate elapsed time in minutes
+      const diffMs = Math.abs(now.getTime() - date.getTime());
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMinutes / 60);
+      const remainingMinutes = diffMinutes % 60;
+
+      if (diffHours === 0) {
+        if (diffMinutes <= 1) return 'just now';
+        return `${diffMinutes} minutes ago`;
+      } else if (diffHours === 1) {
+        return remainingMinutes > 0
+          ? `about 1 hour ago`
+          : '1 hour ago';
+      } else {
+        return `about ${diffHours} hours ago`;
+      }
     } else {
-      // Show actual time for past days (e.g., "9:30 AM")
-      return format(date, 'h:mm a');
+      // Show full datetime for past days (e.g., "Dec 18, 2024 at 9:30 AM")
+      return format(date, "MMM d, yyyy 'at' h:mm a");
     }
   } catch {
     return '';

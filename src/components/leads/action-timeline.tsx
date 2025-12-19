@@ -40,9 +40,18 @@ const groupLeadsByDate = (leads: LeadWithNotes[]): DateGroup[] => {
     });
 
     // Sort groups by date (most recent first)
-    return Array.from(groups.values()).sort(
+    const sortedGroups = Array.from(groups.values()).sort(
         (a, b) => b.date.getTime() - a.date.getTime()
     );
+
+    // Sort leads within each group by created_at descending (most recent first)
+    sortedGroups.forEach(group => {
+        group.leads.sort((a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+    });
+
+    return sortedGroups;
 };
 
 export const ActionTimeline: React.FC<ActionTimelineProps> = ({
