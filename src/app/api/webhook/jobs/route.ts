@@ -236,6 +236,57 @@ export async function POST(request: NextRequest) {
       // Create a Lead for non-booking calls
       const priority = mapLeadStatusToPriority(leadStatus, body.caller_type, body.is_callback_complaint);
 
+      // Check for existing lead with same call_id (deduplication)
+      if (body.call_id) {
+        const { data: existingLead } = await supabase
+          .from('leads')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('original_call_id', body.call_id)
+          .single();
+
+        if (existingLead) {
+          // Update existing lead instead of creating duplicate
+          const { data: updatedLead, error: updateError } = await supabase
+            .from('leads')
+            .update({
+              customer_name: body.customer_name,
+              customer_phone: body.customer_phone,
+              customer_address: body.customer_address,
+              status: leadStatus,
+              priority,
+              why_not_booked: body.ai_summary || null,
+              issue_description: body.issue_description || body.ai_summary || null,
+              ai_summary: body.ai_summary || null,
+              call_transcript: body.call_transcript || null,
+              revenue_tier: body.revenue_tier || null,
+              revenue_tier_label: body.revenue_tier_label || null,
+              revenue_tier_signals: body.revenue_tier_signals || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingLead.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('Error updating existing lead:', updateError);
+            return NextResponse.json(
+              { error: 'Failed to update lead' },
+              { status: 500 }
+            );
+          }
+
+          console.log(`Updated existing lead ${existingLead.id} for call ${body.call_id}`);
+          return NextResponse.json({
+            success: true,
+            lead_id: updatedLead!.id,
+            type: 'lead',
+            status: leadStatus,
+            action: 'updated',
+          });
+        }
+      }
+
       const { data: lead, error: leadError } = await supabase
         .from('leads')
         .insert({
@@ -347,6 +398,60 @@ export async function POST(request: NextRequest) {
       needsActionNote = `Schedule conflict with ${conflictingJob.customer_name} at ${conflictTime}`;
     }
 
+    // Check for existing job with same call_id (deduplication)
+    // Note: original_call_id column must exist in jobs table (migration 0020)
+    if (body.call_id) {
+      try {
+        const { data: existingJob } = await supabase
+          .from('jobs')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('original_call_id', body.call_id)
+          .single();
+
+        if (existingJob) {
+          // Update existing job instead of creating duplicate
+          const { data: updatedJob, error: updateError } = await supabase
+            .from('jobs')
+            .update({
+              customer_name: body.customer_name,
+              customer_phone: body.customer_phone,
+              customer_address: body.customer_address,
+              ai_summary: body.ai_summary || null,
+              scheduled_at: body.scheduled_at || null,
+              call_transcript: body.call_transcript || null,
+              revenue_tier: body.revenue_tier || null,
+              revenue_tier_label: body.revenue_tier_label || null,
+              revenue_tier_signals: body.revenue_tier_signals || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingJob.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('Error updating existing job:', updateError);
+            return NextResponse.json(
+              { error: 'Failed to update job' },
+              { status: 500 }
+            );
+          }
+
+          console.log(`Updated existing job ${existingJob.id} for call ${body.call_id}`);
+          return NextResponse.json({
+            success: true,
+            job_id: updatedJob!.id,
+            type: 'job',
+            action: 'updated',
+            conflict_detected: hasConflict,
+          });
+        }
+      } catch {
+        // original_call_id column may not exist yet - proceed with insert
+        console.log('Job deduplication skipped - column may not exist yet');
+      }
+    }
+
     // Create the job
     const { data: job, error: jobError } = await supabase
       .from('jobs')
@@ -381,6 +486,8 @@ export async function POST(request: NextRequest) {
         customer_attempted_fixes: body.customer_attempted_fixes || null,
         // V3 Status color (jobs don't get archived)
         status_color: body.status_color || null,
+        // Call tracking for deduplication (migration 0020)
+        original_call_id: body.call_id || null,
       })
       .select()
       .single();
