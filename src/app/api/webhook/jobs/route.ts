@@ -386,9 +386,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (jobError || !job) {
-      console.error('Error creating job:', jobError);
+      console.error('Error creating job:', JSON.stringify(jobError, null, 2));
       return NextResponse.json(
-        { error: 'Failed to create job' },
+        { error: 'Failed to create job', details: jobError?.message },
         { status: 500 }
       );
     }

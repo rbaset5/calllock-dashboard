@@ -69,36 +69,66 @@ export async function GET(request: NextRequest) {
     const adminClient = createAdminClient();
     const now = new Date().toISOString();
 
-    // Build query for ACTION leads
-    // ACTION = leads NOT in 'converted' or 'lost' status
-    let query = adminClient
+    // 1. Base query for ALL action leads (for counts)
+    let baseQuery = adminClient
+      .from('leads')
+      .select('priority_color') // Only need color for counts
+      .eq('user_id', user.id)
+      .not('status', 'in', '("converted","lost")');
+
+    // Apply snooze filter to base query if needed
+    if (!includeSnoozed) {
+      baseQuery = baseQuery.or(`remind_at.is.null,remind_at.lte.${now}`);
+    }
+
+    // Execute base query to get counts
+    const { data: allLeadsForCounts, error: countsError } = await baseQuery;
+
+    if (countsError) {
+      console.error('Error fetching leads for counts:', countsError);
+      return NextResponse.json({ error: 'Failed to fetch lead counts' }, { status: 500 });
+    }
+
+    // Calculate counts from the full set
+    const redCount = allLeadsForCounts?.filter((l: any) => l.priority_color === 'red').length || 0;
+    const greenCount = allLeadsForCounts?.filter((l: any) => l.priority_color === 'green').length || 0;
+    const blueCount = allLeadsForCounts?.filter((l: any) => l.priority_color === 'blue').length || 0;
+    const grayCount = allLeadsForCounts?.filter((l: any) => l.priority_color === 'gray').length || 0;
+
+    const counts = {
+      total: redCount + greenCount + blueCount + grayCount,
+      red: redCount,
+      green: greenCount,
+      blue: blueCount,
+      gray: grayCount,
+    };
+
+    // 2. Filtered query for the actual list
+    let listQuery = adminClient
       .from('leads')
       .select('*')
       .eq('user_id', user.id)
       .not('status', 'in', '("converted","lost")');
 
-    // Exclude snoozed leads unless requested
     if (!includeSnoozed) {
-      query = query.or(`remind_at.is.null,remind_at.lte.${now}`);
+      listQuery = listQuery.or(`remind_at.is.null,remind_at.lte.${now}`);
     }
 
-    // Filter by priority color if specified
     if (priorityColor) {
-      query = query.eq('priority_color', priorityColor);
+      listQuery = listQuery.eq('priority_color', priorityColor);
     }
 
-    // Order by priority_color (need custom ordering), then by created_at desc
-    // Note: Supabase doesn't support custom sort order, so we'll sort in JS
-    query = query.order('created_at', { ascending: false });
+    // Order by created_at desc (we'll do custom sort in JS)
+    listQuery = listQuery.order('created_at', { ascending: false });
 
-    const { data: leads, error: leadsError } = await query;
+    const { data: leads, error: leadsError } = await listQuery;
 
     if (leadsError) {
       console.error('Error fetching action leads:', leadsError);
       return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
     }
 
-    // Sort by priority color (RED first) then by created_at (newest first)
+    // Sort the list results by priority color (RED first) then by created_at
     const sortedLeads = (leads || []).sort((a, b) => {
       const aPriority = PRIORITY_ORDER[a.priority_color as PriorityColor] || 5;
       const bPriority = PRIORITY_ORDER[b.priority_color as PriorityColor] || 5;
@@ -106,19 +136,8 @@ export async function GET(request: NextRequest) {
       if (aPriority !== bPriority) {
         return aPriority - bPriority;
       }
-
-      // Same priority - sort by created_at descending
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-
-    // Get counts by priority color
-    const counts = {
-      total: sortedLeads.length,
-      red: sortedLeads.filter(l => l.priority_color === 'red').length,
-      green: sortedLeads.filter(l => l.priority_color === 'green').length,
-      blue: sortedLeads.filter(l => l.priority_color === 'blue').length,
-      gray: sortedLeads.filter(l => l.priority_color === 'gray').length,
-    };
 
     // Check for pending outcome (lead with recent call tap)
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();

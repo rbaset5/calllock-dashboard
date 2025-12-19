@@ -143,9 +143,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (callError || !call) {
-      console.error('Error creating call:', callError);
+      console.error('Error creating call:', JSON.stringify(callError, null, 2));
+      console.error('Insert payload:', JSON.stringify({
+        user_id: user.id,
+        call_id: body.call_id,
+        phone_number: body.phone_number,
+      }, null, 2));
       return NextResponse.json(
-        { error: 'Failed to create call' },
+        { error: 'Failed to create call', details: callError?.message },
         { status: 500 }
       );
     }

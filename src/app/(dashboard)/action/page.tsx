@@ -278,22 +278,7 @@ export default function ActionPage() {
         </div>
       </div>
 
-      {/* Active filter clear button */}
-      {activeFilter !== 'all' && (
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-sm text-gray-500">Filtered by:</span>
-          <button
-            onClick={() => setActiveFilter('all')}
-            className={cn(
-              'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
-              PRIORITY_FILTERS.find((f) => f.value === activeFilter)?.color
-            )}
-          >
-            {PRIORITY_FILTERS.find((f) => f.value === activeFilter)?.label}
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      )}
+
 
       {/* Lead Cards */}
       {filteredLeads.length === 0 ? (
