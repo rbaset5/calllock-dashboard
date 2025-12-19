@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     const { data: jobs, error } = await adminClient
       .from('jobs')
-      .select('id, customer_name, scheduled_at, service_type, status, address')
+      .select('id, customer_name, scheduled_at, service_type, status, customer_address')
       .or(`customer_phone.ilike.%${normalizedPhone}%`)
       .gte('scheduled_at', now) // Only future appointments
       .order('scheduled_at', { ascending: true })
