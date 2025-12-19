@@ -299,9 +299,9 @@ npm run simulate:webhook
 
 ```env
 # Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_URL=https://xboybmqtwsxmdokgzclk.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
 
 # Cal.com
 CAL_COM_API_KEY=
@@ -313,10 +313,75 @@ TWILIO_AUTH_TOKEN=
 TWILIO_PHONE_NUMBER=
 
 # App
-NEXT_PUBLIC_APP_URL=
+NEXT_PUBLIC_APP_URL=https://calllock-dashboard-2.vercel.app
 NEXT_PUBLIC_ENV=staging|production
-WEBHOOK_SECRET=
+
+# Webhook Security (REQUIRED - must match backend DASHBOARD_WEBHOOK_SECRET)
+WEBHOOK_SECRET=<generate with: openssl rand -hex 32>
 ```
+
+## Backend Webhook Integration
+
+The V2 backend (Render) sends call data to this dashboard via webhooks.
+
+### Webhook Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/webhook/jobs` | POST | Creates leads (non-bookings) or jobs (bookings) |
+| `/api/webhook/calls` | POST | Syncs call records with transcripts |
+| `/api/webhook/emergency-alerts` | POST | Creates Tier 2 urgent alerts |
+
+### Authentication
+
+All webhooks require `X-Webhook-Secret` header matching `WEBHOOK_SECRET` env var.
+
+### Webhook Handler Files
+
+- `src/app/api/webhook/jobs/route.ts` - Lead/job creation
+- `src/app/api/webhook/calls/route.ts` - Call record sync
+- `src/app/api/webhook/emergency-alerts/route.ts` - Alert creation
+
+### Data Flow
+
+```
+V2 Backend (calllock-server.onrender.com)
+    ↓ POST with X-Webhook-Secret header
+Dashboard Webhook Handler
+    ↓ Validate secret
+    ↓ Find user by email
+    ↓ Dedup by backend_call_id
+    ↓ Insert/Update in Supabase
+    ↓ Return {success: true, id: ...}
+```
+
+### Required Backend Configuration (Render)
+
+The backend must have these env vars set to enable sync:
+
+| Variable | Value |
+|----------|-------|
+| `DASHBOARD_WEBHOOK_URL` | `https://calllock-dashboard-2.vercel.app/api/webhook/jobs` |
+| `DASHBOARD_WEBHOOK_SECRET` | Same value as dashboard `WEBHOOK_SECRET` |
+| `DASHBOARD_USER_EMAIL` | Email of user to sync data to |
+
+### Database Migrations
+
+Run migrations via Supabase SQL Editor or `supabase db push`:
+
+```bash
+# Check migration files
+ls supabase/migrations/*.sql
+
+# Apply all migrations (requires Supabase CLI linked)
+supabase db push
+```
+
+Key migrations for webhook support:
+- `0012_calls_and_emergency_alerts.sql` - Creates calls/alerts tables
+- `0014_transcript_object.sql` - Adds transcript_object JSONB column
+- `0015_v3_triage_fields.sql` - Adds caller_type, status_color columns
+- `0016_v4_action_booked_model.sql` - Adds priority_color, callback_outcome
 
 ## Error Handling
 
