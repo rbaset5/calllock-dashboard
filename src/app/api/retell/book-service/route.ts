@@ -57,10 +57,11 @@ interface CalComSlotsResponse {
 interface CalComBookingResponse {
   status: string;
   data: {
+    id: number;
     uid: string;
     title: string;
-    startTime: string;
-    endTime: string;
+    start: string;  // Cal.com v2 API uses 'start' not 'startTime'
+    end: string;    // Cal.com v2 API uses 'end' not 'endTime'
   };
 }
 
@@ -378,12 +379,12 @@ export async function POST(request: NextRequest) {
       issue_description
     );
 
-    const appointmentDate = new Date(booking.data.startTime);
+    const appointmentDate = new Date(booking.data.start);
     const { date: dateStr, time: timeStr } = formatDateForSpeech(appointmentDate);
 
     console.log('Booking created:', {
       uid: booking.data.uid,
-      startTime: booking.data.startTime,
+      start: booking.data.start,
       customerName: customer_name,
     });
 
@@ -418,7 +419,7 @@ export async function POST(request: NextRequest) {
           await supabase
             .from('jobs')
             .update({
-              scheduled_at: booking.data.startTime,
+              scheduled_at: booking.data.start,
               customer_name: customer_name,
               customer_phone: customer_phone,
               customer_address: service_address,
@@ -439,7 +440,7 @@ export async function POST(request: NextRequest) {
               customer_address: service_address,
               service_type: 'hvac',
               urgency: 'medium',
-              scheduled_at: booking.data.startTime,
+              scheduled_at: booking.data.start,
               is_ai_booked: true,
               status: 'new',
               original_call_id: callId || null,
