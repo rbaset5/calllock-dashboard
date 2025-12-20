@@ -22,6 +22,7 @@ import {
   Check,
   ArrowRight,
   StickyNote,
+  Wrench,
 } from 'lucide-react';
 import { MoreMenu } from './more-menu';
 import { cn } from '@/lib/utils';
@@ -335,6 +336,35 @@ export function LeadCardV4({
         {expanded && (
           <div className="bg-[#FDFDFC] border border-stone-200 rounded-3xl overflow-hidden">
             <div className="px-4 py-4 lg:px-5 lg:py-5 space-y-4">
+              {/* Equipment/Issue badges - MOST IMPORTANT at top */}
+              {(lead.equipment_type || lead.urgency) && (
+                <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-100">
+                  {lead.equipment_type && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                      <Wrench className="w-3.5 h-3.5" />
+                      {lead.equipment_type}
+                    </span>
+                  )}
+                  {lead.urgency && (
+                    <span className={cn(
+                      "inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium",
+                      lead.urgency === 'emergency' && "bg-red-100 text-red-700",
+                      lead.urgency === 'high' && "bg-orange-100 text-orange-700",
+                      lead.urgency === 'medium' && "bg-yellow-100 text-yellow-700",
+                      lead.urgency === 'low' && "bg-green-100 text-green-700",
+                      !['emergency', 'high', 'medium', 'low'].includes(lead.urgency) && "bg-gray-100 text-gray-700"
+                    )}>
+                      {lead.urgency}
+                    </span>
+                  )}
+                  {lead.equipment_age && (
+                    <span className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm">
+                      ~{lead.equipment_age}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {/* Priority row */}
               {lead.priority_reason && (
                 <div className="flex items-start gap-3">
@@ -404,8 +434,8 @@ export function LeadCardV4({
                 </div>
               )}
 
-              {/* AI Summary - Description style at bottom */}
-              {lead.ai_summary && (
+              {/* AI Summary - Only show if different from Notes content */}
+              {lead.ai_summary && lead.ai_summary !== lead.why_not_booked && (
                 <div className="pt-2 border-t border-gray-100">
                   <p className="text-gray-500 text-sm mb-1">AI Summary</p>
                   <p className="text-gray-700 text-sm leading-relaxed">{lead.ai_summary}</p>
