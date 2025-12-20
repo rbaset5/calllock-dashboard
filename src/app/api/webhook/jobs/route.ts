@@ -91,7 +91,9 @@ interface IncomingJob {
  * Determines what type of lead to create based on how the call ended
  */
 function mapEndCallReasonToLeadStatus(reason?: EndCallReason): LeadStatus | null {
-  if (!reason) return null;
+  // If no explicit reason, treat as abandoned (early exit, audio issues, etc.)
+  // This ensures we capture leads from calls that ended unexpectedly
+  if (!reason) return 'abandoned';
 
   switch (reason) {
     case 'customer_hangup':
