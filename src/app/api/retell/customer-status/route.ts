@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
       .from('jobs')
       .select('id, customer_name, scheduled_at, service_type, status, customer_address')
       .or(`customer_phone.ilike.%${normalizedPhone}%`)
+      .not('scheduled_at', 'is', null) // Filter out jobs without scheduled time
       .gte('scheduled_at', now) // Only future appointments
       .order('scheduled_at', { ascending: true })
       .limit(1);
@@ -141,11 +142,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Customer status lookup error:', error);
+    // Return 200 with found: false instead of 500 to prevent agent confusion
     const response: AppointmentInfo = {
       found: false,
-      message: 'An error occurred while looking up appointments',
+      message: 'Unable to look up appointments at this time. Would you like to schedule a new one?',
     };
-    return NextResponse.json(response, { status: 500 });
+    return NextResponse.json(response);
   }
 }
 

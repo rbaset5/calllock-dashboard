@@ -166,6 +166,51 @@ interface Job {
 | POST | `/api/leads/[id]/track-call` | Track call tap for outcome prompt |
 | POST | `/api/twilio/inbound` | Handle SMS replies |
 
+### Retell AI Integration Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/api/retell/book-service` | Combined availability check + booking (Retell custom tool) |
+| GET | `/api/retell/book-service` | Health check |
+
+#### book-service Endpoint
+
+This is a Retell custom function tool that combines checking Cal.com availability and booking in one step. Called by the voice agent during calls.
+
+**Request:**
+```json
+{
+  "call": { "call_id": "call_xxx", "agent_id": "agent_xxx" },
+  "args": {
+    "customer_name": "John Smith",
+    "customer_phone": "+12345678900",
+    "service_address": "123 Main St",
+    "preferred_time": "Monday at 9am",
+    "issue_description": "AC not cooling"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "booked": true,
+  "appointment_date": "Monday, December 23",
+  "appointment_time": "9:00 AM",
+  "message": "You're all set for Monday, December 23 at 9:00 AM..."
+}
+```
+
+**What it does:**
+1. Parses natural language time (e.g., "tomorrow morning", "Monday 9am")
+2. Fetches available slots from Cal.com API
+3. Books the appointment on Cal.com
+4. Creates a Job in Supabase with `scheduled_at` and `is_ai_booked: true`
+5. Returns formatted response for agent to speak
+
+**Important:** Requires `CAL_COM_API_KEY` env var. Without it, returns mock bookings without creating real Cal.com appointments or Supabase jobs.
+
 ## File Structure
 
 ```
@@ -303,9 +348,9 @@ NEXT_PUBLIC_SUPABASE_URL=https://xboybmqtwsxmdokgzclk.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
 
-# Cal.com
-CAL_COM_API_KEY=
-CAL_COM_EVENT_TYPE_ID=
+# Cal.com (REQUIRED for booking)
+CAL_COM_API_KEY=cal_live_...  # Get from https://app.cal.com/settings/developer/api-keys
+CAL_COM_EVENT_TYPE_ID=3877847  # Get from Cal.com event type URL
 
 # Twilio
 TWILIO_ACCOUNT_SID=
@@ -315,10 +360,27 @@ TWILIO_PHONE_NUMBER=
 # App
 NEXT_PUBLIC_APP_URL=https://calllock-dashboard-2.vercel.app
 NEXT_PUBLIC_ENV=staging|production
+DASHBOARD_USER_EMAIL=rashid.baset@gmail.com  # User to assign AI-booked jobs to
 
 # Webhook Security (REQUIRED - must match backend DASHBOARD_WEBHOOK_SECRET)
 WEBHOOK_SECRET=<generate with: openssl rand -hex 32>
+
+# Retell (for API interactions)
+RETELL_API_KEY=key_...
 ```
+
+### Vercel Production Environment (as of Dec 2025)
+
+| Variable | Status | Notes |
+|----------|--------|-------|
+| NEXT_PUBLIC_SUPABASE_URL | ✅ Set | Supabase project URL |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | ✅ Set | Supabase anon key |
+| SUPABASE_SERVICE_ROLE_KEY | ✅ Set | For server-side DB operations |
+| WEBHOOK_SECRET | ✅ Set | Matches backend DASHBOARD_WEBHOOK_SECRET |
+| CAL_COM_API_KEY | ✅ Set | Required for real Cal.com bookings |
+| CAL_COM_EVENT_TYPE_ID | ✅ Set | 3877847 |
+| RETELL_API_KEY | ✅ Set | For Retell API calls |
+| TWILIO_PHONE_NUMBER | ✅ Set | For SMS features |
 
 ## Backend Webhook Integration
 
