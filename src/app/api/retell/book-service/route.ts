@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const CAL_COM_API_KEY = process.env.CAL_COM_API_KEY;
+const DASHBOARD_USER_EMAIL = process.env.DASHBOARD_USER_EMAIL || 'rashid.baset@gmail.com';
 const CAL_COM_EVENT_TYPE_ID = process.env.CAL_COM_EVENT_TYPE_ID || '3877847';
 const CAL_API_BASE = 'https://api.cal.com/v2';
 
@@ -384,6 +386,81 @@ export async function POST(request: NextRequest) {
       startTime: booking.data.startTime,
       customerName: customer_name,
     });
+
+    // Create job in Supabase for dashboard display
+    try {
+      const supabase = createAdminClient();
+
+      // Find user by email
+      const { data: user } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', DASHBOARD_USER_EMAIL)
+        .single();
+
+      if (user) {
+        // Check for existing job with same call_id (deduplication)
+        const callId = body.call?.call_id;
+        let existingJob = null;
+
+        if (callId) {
+          const { data: existing } = await supabase
+            .from('jobs')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('original_call_id', callId)
+            .single();
+          existingJob = existing;
+        }
+
+        if (existingJob) {
+          // Update existing job
+          await supabase
+            .from('jobs')
+            .update({
+              scheduled_at: booking.data.startTime,
+              customer_name: customer_name,
+              customer_phone: customer_phone,
+              customer_address: service_address,
+              ai_summary: issue_description,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingJob.id);
+
+          console.log('Updated existing job:', existingJob.id);
+        } else {
+          // Create new job
+          const { data: job, error: jobError } = await supabase
+            .from('jobs')
+            .insert({
+              user_id: user.id,
+              customer_name: customer_name,
+              customer_phone: customer_phone,
+              customer_address: service_address,
+              service_type: 'hvac',
+              urgency: 'medium',
+              scheduled_at: booking.data.startTime,
+              is_ai_booked: true,
+              status: 'new',
+              original_call_id: callId || null,
+              ai_summary: issue_description,
+            })
+            .select('id')
+            .single();
+
+          if (jobError) {
+            console.error('Failed to create job in Supabase:', jobError);
+          } else {
+            console.log('Job created in Supabase:', job?.id);
+          }
+        }
+      } else {
+        console.warn('User not found for email:', DASHBOARD_USER_EMAIL);
+      }
+    } catch (dbError) {
+      // Don't fail the booking if database insert fails
+      console.error('Database error (non-fatal):', dbError);
+    }
 
     const response: BookServiceResponse = {
       success: true,
