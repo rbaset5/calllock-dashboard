@@ -137,6 +137,9 @@ export const jobsWebhookSchema = z.object({
   equipment_age_bracket: equipmentAgeBracketSchema.optional(),
   is_decision_maker: z.boolean().optional(),
   decision_maker_contact: z.string().optional(),
+
+  // V6 HVAC Smart Tag Taxonomy (117 tags from V2 backend)
+  tags: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export type JobsWebhookPayload = z.infer<typeof jobsWebhookSchema>;

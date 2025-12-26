@@ -655,18 +655,18 @@ export function buildInlineNarrative(
 }
 
 /**
- * Get the appropriate expanded section label for an archetype.
+ * Get appropriate expanded section label for an archetype.
  */
 export function getExpandedLabel(archetype: VelocityArchetype): string {
   switch (archetype) {
     case 'HAZARD':
-      return 'Safety Brief';
+      return 'Hazard Assessment';
     case 'REVENUE':
-      return 'Equipment Profile';
+      return 'Job Intelligence';
     case 'RECOVERY':
-      return 'Timeline & Sentiment';
+      return 'Follow-Up Info';
     case 'LOGISTICS':
-      return 'Site Access';
+      return 'Service Details';
     default:
       return 'Details';
   }

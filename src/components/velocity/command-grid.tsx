@@ -3,31 +3,33 @@
 /**
  * Command Grid Component
  *
- * 3-column expanded section layout for velocity cards.
- * Columns: THE ASSET | THE HISTORY | THE INTELLIGENCE
+ * 2-column expanded section layout for velocity cards.
+ * Archetype-specific column configurations:
+ * - HAZARD: Equipment | Risk Factors
+ * - RECOVERY: Callback Context | Risk Level
+ * - REVENUE: Equipment Profile | Revenue Signals
+ * - LOGISTICS: Work Request | Logistics
  */
 
 import {
   Wrench,
-  History,
-  Brain,
-  MapPin,
-  Thermometer,
-  Calendar,
-  DollarSign,
-  User,
-  Clock,
   AlertTriangle,
-  Shield,
+  Phone,
+  DollarSign,
   Key,
-  Dog,
-  Flame,
+  Home,
+  Clock,
+  Heart,
+  TrendingUp,
+  Calendar,
+  Info,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Lead, Job, VelocityArchetype } from '@/types/database';
 import { extractSignals, isEquipmentOld, getRefrigerantStatus, getHazardLabel } from '@/lib/extract-signals';
 import { formatDollarEstimate } from '@/lib/velocity';
-import { useCustomerHistory, summarizeHistory } from '@/hooks/use-customer-history';
 import { differenceInDays, format } from 'date-fns';
 
 // ============================================================================
@@ -39,6 +41,7 @@ interface GridItem {
   value: string | number | null;
   highlight?: 'danger' | 'warning' | 'success' | 'muted';
   bold?: boolean;
+  icon?: React.ElementType; // Lucide icon component for special rendering
 }
 
 interface GridColumn {
@@ -69,7 +72,7 @@ function getTranscriptText(item: VelocityItem): string {
 }
 
 // ============================================================================
-// COLUMN BUILDERS
+// COLUMN BUILDERS (2-COLUMN)
 // ============================================================================
 
 function buildHazardColumns(item: VelocityItem): GridColumn[] {
@@ -77,17 +80,17 @@ function buildHazardColumns(item: VelocityItem): GridColumn[] {
   const signals = extractSignals(text);
   const lead = item as Lead;
 
-  // THE ASSET
-  const assetItems: GridItem[] = [
+  // EQUIPMENT COLUMN
+  const equipmentItems: GridItem[] = [
     {
       label: 'Location',
-      value: signals.unitLocation || 'Unknown',
+      value: signals.unitLocation || lead.property_type || 'Unknown',
     },
     {
       label: 'Fuel Type',
-      value: signals.hazardType === 'gas' ? 'Natural Gas'
+      value: signals.hazardType === 'gas' ? 'Gas'
         : signals.hazardType === 'electrical' ? 'Electric'
-          : signals.hazardType === 'water' ? 'Plumbing'
+          : signals.hazardType === 'water' ? 'Water'
             : 'Unknown',
     },
     {
@@ -97,60 +100,124 @@ function buildHazardColumns(item: VelocityItem): GridColumn[] {
     },
   ];
 
-  // THE HISTORY (would need customer history hook in real implementation)
-  const historyItems: GridItem[] = [
-    {
-      label: 'Last Tech',
-      value: 'Unknown', // Would come from customer history
-    },
-    {
-      label: 'Last Visit',
-      value: 'Unknown', // Would come from customer history
-    },
-    {
-      label: 'Safety Notes',
-      value: signals.accessNotes[0] || 'None on file',
-    },
-  ];
-
-  // THE INTELLIGENCE
-  const intelligenceItems: GridItem[] = [];
+  // RISK FACTORS COLUMN
+  const riskItems: GridItem[] = [];
 
   if (signals.evacuationNeeded) {
-    intelligenceItems.push({
+    riskItems.push({
       label: 'Recommendation',
-      value: 'Advise evacuation',
+      value: 'Evacuate immediately',
       highlight: 'danger',
       bold: true,
+      icon: AlertTriangle,
     });
   }
 
   if (signals.occupants.length > 0) {
-    intelligenceItems.push({
+    riskItems.push({
       label: 'Occupants',
       value: signals.occupants.join(', '),
       highlight: 'warning',
+      icon: Home,
     });
   }
 
   if (signals.urgencyKeywords.length > 0) {
-    intelligenceItems.push({
+    riskItems.push({
       label: 'Detected',
       value: `"${signals.urgencyKeywords[0]}"`,
     });
   }
 
-  if (intelligenceItems.length === 0) {
-    intelligenceItems.push({
+  if (signals.hazardType) {
+    riskItems.push({
+      label: 'Hazard Type',
+      value: getHazardLabel(signals.hazardType),
+      highlight: 'danger',
+    });
+  }
+
+  if (riskItems.length === 0 && lead.ai_summary) {
+    riskItems.push({
       label: 'AI Note',
-      value: lead.ai_summary ? lead.ai_summary.slice(0, 50) + '...' : 'No AI notes',
+      value: lead.ai_summary.slice(0, 50) + '...',
     });
   }
 
   return [
-    { title: 'The Asset', icon: Wrench, items: assetItems },
-    { title: 'The History', icon: History, items: historyItems },
-    { title: 'The Intel', icon: Brain, items: intelligenceItems },
+    { title: 'Equipment', icon: Wrench, items: equipmentItems },
+    { title: 'Risk Factors', icon: AlertTriangle, items: riskItems },
+  ];
+}
+
+function buildRecoveryColumns(item: VelocityItem): GridColumn[] {
+  const text = getTranscriptText(item);
+  const signals = extractSignals(text);
+  const lead = item as Lead;
+
+  const daysSinceCreated = differenceInDays(new Date(), new Date(item.created_at));
+
+  // CALLBACK CONTEXT COLUMN
+  const contextItems: GridItem[] = [
+    {
+      label: 'Original Service',
+      value: lead.issue_description || lead.priority_reason || 'Unknown',
+    },
+    {
+      label: 'Original Tech',
+      value: 'Unknown',
+    },
+    {
+      label: 'Warranty',
+      value: /warranty/i.test(text) ? 'May apply' : 'Check status',
+      highlight: /warranty/i.test(text) ? 'warning' : undefined,
+    },
+  ];
+
+  // RISK LEVEL COLUMN
+  const riskItems: GridItem[] = [];
+
+  const sentimentScore = lead.sentiment_score;
+  if (sentimentScore !== null && sentimentScore !== undefined) {
+    riskItems.push({
+      label: 'Sentiment',
+      value: `${sentimentScore}/5`,
+      highlight: sentimentScore <= 2 ? 'danger' : sentimentScore === 3 ? 'warning' : 'success',
+      bold: sentimentScore <= 2,
+      icon: Heart,
+    });
+  }
+
+  if (signals.customerQuotes.length > 0) {
+    riskItems.push({
+      label: 'Quote',
+      value: `"${signals.customerQuotes[0].slice(0, 40)}..."`,
+    });
+  }
+
+  if (signals.sentimentKeywords.length > 0) {
+    riskItems.push({
+      label: 'Mood',
+      value: signals.sentimentKeywords[0],
+      highlight: ['angry', 'frustrated', 'furious'].includes(signals.sentimentKeywords[0]) ? 'danger' : 'warning',
+    });
+  }
+
+  riskItems.push({
+    label: 'Callback #',
+    value: '1st',
+  });
+
+  if (riskItems.length === 0) {
+    riskItems.push({
+      label: 'Risk',
+      value: lead.priority_reason || 'Assess on call',
+    });
+  }
+
+  return [
+    { title: 'Callback Context', icon: Phone, items: contextItems },
+    { title: 'Risk Level', icon: AlertCircle, items: riskItems },
   ];
 }
 
@@ -162,11 +229,11 @@ function buildRevenueColumns(item: VelocityItem): GridColumn[] {
   const age = signals.equipmentAge || (lead.equipment_age ? parseInt(lead.equipment_age, 10) : null);
   const refrigerantStatus = getRefrigerantStatus(signals.refrigerantType);
 
-  // THE ASSET
-  const assetItems: GridItem[] = [
+  // EQUIPMENT PROFILE COLUMN
+  const equipmentItems: GridItem[] = [
     {
       label: 'Make/Model',
-      value: signals.equipmentMake || lead.equipment_type || 'Unknown',
+      value: signals.equipmentMake || lead.equipment_type || lead.equipment_age_bracket || 'Unknown',
     },
     {
       label: 'Age',
@@ -181,143 +248,55 @@ function buildRevenueColumns(item: VelocityItem): GridColumn[] {
     },
   ];
 
-  // THE HISTORY
-  const historyItems: GridItem[] = [
-    {
-      label: 'Repairs (L12M)',
-      value: 'Unknown', // Would come from customer history
-    },
-    {
-      label: 'Total Spent',
-      value: 'Unknown', // Would come from customer history
-    },
-    {
-      label: 'Membership',
-      value: 'Unknown', // Would come from customer data
-    },
-  ];
-
-  // THE INTELLIGENCE
-  const intelligenceItems: GridItem[] = [];
+  // REVENUE SIGNALS COLUMN
+  const revenueItems: GridItem[] = [];
 
   if (signals.financingMentioned) {
-    intelligenceItems.push({
+    revenueItems.push({
       label: 'Signal',
       value: 'Financing interest',
       highlight: 'success',
+      icon: TrendingUp,
     });
   }
 
   if (signals.replacementMentioned) {
-    intelligenceItems.push({
+    revenueItems.push({
       label: 'Signal',
-      value: 'Replacement mention',
+      value: 'Replacement ready',
       highlight: 'success',
+      icon: CheckCircle2,
     });
   }
 
-  if (signals.competitorMentioned) {
-    intelligenceItems.push({
-      label: 'Competitor',
-      value: signals.competitorMentioned,
-      highlight: 'warning',
+  if (lead.revenue_tier) {
+    revenueItems.push({
+      label: 'Tier',
+      value: lead.revenue_tier.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      highlight: lead.revenue_tier === 'replacement' ? 'warning' : undefined,
     });
   }
 
-  if (intelligenceItems.length === 0 && lead.ai_summary) {
-    intelligenceItems.push({
+  const dollarEstimate = formatDollarEstimate(item.estimated_value, item.revenue_tier);
+  if (dollarEstimate.display) {
+    revenueItems.push({
+      label: 'Est. Value',
+      value: dollarEstimate.display,
+      highlight: 'success',
+      icon: DollarSign,
+    });
+  }
+
+  if (revenueItems.length === 0 && lead.ai_summary) {
+    revenueItems.push({
       label: 'AI Note',
       value: lead.ai_summary.slice(0, 60) + (lead.ai_summary.length > 60 ? '...' : ''),
     });
   }
 
   return [
-    { title: 'The Asset', icon: Wrench, items: assetItems },
-    { title: 'The History', icon: History, items: historyItems },
-    { title: 'The Intel', icon: Brain, items: intelligenceItems },
-  ];
-}
-
-function buildRecoveryColumns(item: VelocityItem): GridColumn[] {
-  const text = getTranscriptText(item);
-  const signals = extractSignals(text);
-  const lead = item as Lead;
-
-  const daysSinceCreated = differenceInDays(new Date(), new Date(item.created_at));
-
-  // THE ASSET
-  const assetItems: GridItem[] = [
-    {
-      label: 'Original Service',
-      value: lead.issue_description || 'Unknown',
-    },
-    {
-      label: 'Original Tech',
-      value: 'Unknown', // Would come from related job
-    },
-    {
-      label: 'Warranty',
-      value: /warranty/i.test(text) ? 'May apply' : 'Check status',
-      highlight: /warranty/i.test(text) ? 'warning' : undefined,
-    },
-  ];
-
-  // THE HISTORY
-  const historyItems: GridItem[] = [
-    {
-      label: 'Days Since',
-      value: `${daysSinceCreated} days`,
-      highlight: daysSinceCreated <= 7 ? 'danger' : daysSinceCreated <= 30 ? 'warning' : undefined,
-    },
-    {
-      label: 'Callback #',
-      value: '1st', // Would track callback attempts
-    },
-    {
-      label: 'Resolution',
-      value: lead.callback_outcome || 'Pending',
-    },
-  ];
-
-  // THE INTELLIGENCE
-  const intelligenceItems: GridItem[] = [];
-
-  const sentimentScore = lead.sentiment_score;
-  if (sentimentScore !== null && sentimentScore !== undefined) {
-    intelligenceItems.push({
-      label: 'Sentiment',
-      value: `${sentimentScore}/5`,
-      highlight: sentimentScore <= 2 ? 'danger' : sentimentScore === 3 ? 'warning' : 'success',
-      bold: sentimentScore <= 2,
-    });
-  }
-
-  if (signals.customerQuotes.length > 0) {
-    intelligenceItems.push({
-      label: 'Quote',
-      value: `"${signals.customerQuotes[0].slice(0, 40)}..."`,
-    });
-  }
-
-  if (signals.sentimentKeywords.length > 0) {
-    intelligenceItems.push({
-      label: 'Mood',
-      value: signals.sentimentKeywords[0],
-      highlight: ['angry', 'frustrated', 'furious'].includes(signals.sentimentKeywords[0]) ? 'danger' : 'warning',
-    });
-  }
-
-  if (intelligenceItems.length === 0) {
-    intelligenceItems.push({
-      label: 'Risk',
-      value: lead.priority_reason || 'Assess on call',
-    });
-  }
-
-  return [
-    { title: 'The Asset', icon: Shield, items: assetItems },
-    { title: 'The History', icon: History, items: historyItems },
-    { title: 'The Intel', icon: Brain, items: intelligenceItems },
+    { title: 'Equipment Profile', icon: Wrench, items: equipmentItems },
+    { title: 'Revenue Signals', icon: DollarSign, items: revenueItems },
   ];
 }
 
@@ -326,8 +305,8 @@ function buildLogisticsColumns(item: VelocityItem): GridColumn[] {
   const signals = extractSignals(text);
   const lead = item as Lead;
 
-  // THE ASSET
-  const assetItems: GridItem[] = [
+  // WORK REQUEST COLUMN
+  const workItems: GridItem[] = [
     {
       label: 'Service Type',
       value: lead.issue_description || lead.service_type || 'General',
@@ -345,68 +324,87 @@ function buildLogisticsColumns(item: VelocityItem): GridColumn[] {
     },
   ];
 
-  // THE HISTORY
-  const historyItems: GridItem[] = [
-    {
-      label: 'Last Visit',
-      value: 'Unknown', // Would come from customer history
-    },
-    {
-      label: 'Customer Tier',
-      value: /member|vip|gold/i.test(text) ? 'Member' : 'Standard',
-    },
-    {
-      label: 'Preferred Time',
-      value: lead.time_preference || 'Flexible',
-    },
-  ];
-
-  // THE INTELLIGENCE
-  const intelligenceItems: GridItem[] = [];
+  // LOGISTICS COLUMN
+  const logisticsItems: GridItem[] = [];
 
   if (signals.gateCode) {
-    intelligenceItems.push({
+    logisticsItems.push({
       label: 'Gate Code',
       value: signals.gateCode,
       highlight: 'success',
+      icon: Key,
     });
   }
 
   if (signals.petWarning) {
-    intelligenceItems.push({
+    logisticsItems.push({
       label: 'Pet Warning',
       value: signals.petWarning,
       highlight: 'warning',
+      icon: Info,
     });
   }
 
   if (signals.keyLocation) {
-    intelligenceItems.push({
+    logisticsItems.push({
       label: 'Key',
       value: signals.keyLocation,
     });
   }
 
-  if (signals.accessNotes.length > 0) {
-    intelligenceItems.push({
-      label: 'Access',
-      value: signals.accessNotes[0],
-      highlight: 'warning',
+  if (lead.time_preference) {
+    logisticsItems.push({
+      label: 'Time Pref',
+      value: lead.time_preference,
+      icon: Clock,
     });
   }
 
-  if (intelligenceItems.length === 0) {
-    intelligenceItems.push({
+  if (logisticsItems.length === 0) {
+    logisticsItems.push({
       label: 'Notes',
       value: lead.ai_summary ? lead.ai_summary.slice(0, 50) + '...' : 'No special notes',
     });
   }
 
   return [
-    { title: 'The Asset', icon: Wrench, items: assetItems },
-    { title: 'The History', icon: History, items: historyItems },
-    { title: 'Site Access', icon: Key, items: intelligenceItems },
+    { title: 'Work Request', icon: Calendar, items: workItems },
+    { title: 'Logistics', icon: Key, items: logisticsItems },
   ];
+}
+
+// ============================================================================
+// COLUMN HEADER COLORS BY ARCHETYPE
+// ============================================================================
+
+function getColumnHeaderColors(archetype: VelocityArchetype): { bg: string; text: string } {
+  switch (archetype) {
+    case 'HAZARD':
+      return { bg: 'bg-red-50', text: 'text-red-700' };
+    case 'RECOVERY':
+      return { bg: 'bg-slate-50', text: 'text-slate-700' };
+    case 'REVENUE':
+      return { bg: 'bg-amber-50', text: 'text-amber-700' };
+    case 'LOGISTICS':
+      return { bg: 'bg-blue-50', text: 'text-blue-700' };
+    default:
+      return { bg: 'bg-gray-50', text: 'text-gray-700' };
+  }
+}
+
+function getBorderClass(archetype: VelocityArchetype): string {
+  switch (archetype) {
+    case 'HAZARD':
+      return 'border-red-200';
+    case 'RECOVERY':
+      return 'border-slate-200';
+    case 'REVENUE':
+      return 'border-amber-200';
+    case 'LOGISTICS':
+      return 'border-blue-200';
+    default:
+      return 'border-gray-200';
+  }
 }
 
 // ============================================================================
@@ -438,45 +436,72 @@ export function CommandGrid({ data, archetype, className }: CommandGridProps) {
       break;
   }
 
+  const headerColors = getColumnHeaderColors(archetype);
+  const borderClass = getBorderClass(archetype);
+
   return (
     <div
       className={cn(
-        'grid grid-cols-3 gap-3 p-4 rounded-lg',
-        'bg-gray-50 dark:bg-gray-800/50',
-        'border border-gray-100 dark:border-gray-700/50',
+        'grid grid-cols-2 gap-3 p-4 rounded-xl min-h-[180px]',
+        'bg-white',
+        `border ${borderClass}`,
+        'shadow-md',
         className
       )}
     >
       {columns.map((column) => (
         <div key={column.title} className="min-w-0">
           {/* Column Header */}
-          <div className="flex items-center gap-1.5 mb-2">
-            <column.icon className="h-3 w-3 text-gray-400 flex-shrink-0" />
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">
+          <div
+            className={cn(
+              'flex items-center gap-1.5 mb-3 px-2.5 py-1.5 rounded-lg',
+              headerColors.bg,
+              headerColors.text
+            )}
+          >
+            <column.icon className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="text-[11px] font-bold uppercase tracking-wider truncate">
               {column.title}
             </span>
           </div>
 
           {/* Column Items */}
-          <div className="space-y-1.5">
+          <div className="space-y-2 px-0.5">
             {column.items.map((item, idx) => (
               <div key={`${column.title}-${idx}`} className="text-xs">
-                <span className="text-gray-500 dark:text-gray-400">
+                <span className="text-gray-500">
                   {item.label}:{' '}
                 </span>
-                <span
-                  className={cn(
-                    'font-medium',
-                    item.bold && 'font-bold',
-                    item.highlight === 'danger' && 'text-red-600 dark:text-red-400',
-                    item.highlight === 'warning' && 'text-amber-600 dark:text-amber-400',
-                    item.highlight === 'success' && 'text-emerald-600 dark:text-emerald-400',
-                    item.highlight === 'muted' && 'text-gray-400 dark:text-gray-500',
-                    !item.highlight && 'text-gray-900 dark:text-white'
-                  )}
-                >
-                  {formatValue(item)}
-                </span>
+                {item.icon ? (
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 font-medium',
+                      item.bold && 'font-bold',
+                      item.highlight === 'danger' && 'text-red-600 dark:text-red-400',
+                      item.highlight === 'warning' && 'text-amber-600 dark:text-amber-400',
+                      item.highlight === 'success' && 'text-emerald-600 dark:text-emerald-400',
+                      item.highlight === 'muted' && 'text-gray-400 dark:text-gray-500',
+                      !item.highlight && 'text-gray-900 dark:text-white'
+                    )}
+                  >
+                    <item.icon className="h-3 w-3 flex-shrink-0" />
+                    {formatValue(item)}
+                  </span>
+                ) : (
+                  <span
+                    className={cn(
+                      'font-medium',
+                      item.bold && 'font-bold',
+                      item.highlight === 'danger' && 'text-red-600 dark:text-red-400',
+                      item.highlight === 'warning' && 'text-amber-600 dark:text-amber-400',
+                      item.highlight === 'success' && 'text-emerald-600 dark:text-emerald-400',
+                      item.highlight === 'muted' && 'text-gray-400 dark:text-gray-500',
+                      !item.highlight && 'text-gray-900 dark:text-white'
+                    )}
+                  >
+                    {formatValue(item)}
+                  </span>
+                )}
               </div>
             ))}
           </div>

@@ -114,6 +114,8 @@ export interface Job {
   equipment_age_bracket: EquipmentAgeBracket | null;
   is_decision_maker: boolean | null;
   decision_maker_contact: string | null;
+  // V6 HVAC Smart Tag Taxonomy
+  tags: Record<string, any> | null;
 }
 
 // Equipment on file for a customer
@@ -205,6 +207,8 @@ export interface Lead {
   equipment_age_bracket: EquipmentAgeBracket | null;
   is_decision_maker: boolean | null;
   decision_maker_contact: string | null;
+  // V6 HVAC Smart Tag Taxonomy
+  tags: Record<string, any> | null;
 }
 
 export interface AIBookingReview {

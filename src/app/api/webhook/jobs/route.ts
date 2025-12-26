@@ -294,6 +294,8 @@ export async function POST(request: NextRequest) {
               equipment_age_bracket: body.equipment_age_bracket ?? undefined,
               is_decision_maker: body.is_decision_maker ?? undefined,
               decision_maker_contact: body.decision_maker_contact ?? undefined,
+              // V6 HVAC Smart Tag Taxonomy
+              tags: body.tags ?? undefined,
               updated_at: new Date().toISOString(),
             })
             .eq('id', existingLead.id)
@@ -376,6 +378,8 @@ export async function POST(request: NextRequest) {
           equipment_age_bracket: body.equipment_age_bracket ?? null,
           is_decision_maker: body.is_decision_maker ?? null,
           decision_maker_contact: body.decision_maker_contact ?? null,
+          // V6 HVAC Smart Tag Taxonomy
+          tags: body.tags ?? null,
         })
         .select()
         .single();
@@ -497,6 +501,8 @@ export async function POST(request: NextRequest) {
               equipment_age_bracket: body.equipment_age_bracket ?? undefined,
               is_decision_maker: body.is_decision_maker ?? undefined,
               decision_maker_contact: body.decision_maker_contact ?? undefined,
+              // V6 HVAC Smart Tag Taxonomy
+              tags: body.tags ?? undefined,
               updated_at: new Date().toISOString(),
             })
             .eq('id', existingJob.id)
@@ -574,6 +580,8 @@ export async function POST(request: NextRequest) {
         equipment_age_bracket: body.equipment_age_bracket ?? null,
         is_decision_maker: body.is_decision_maker ?? null,
         decision_maker_contact: body.decision_maker_contact ?? null,
+        // V6 HVAC Smart Tag Taxonomy
+        tags: body.tags ?? null,
       })
       .select()
       .single();

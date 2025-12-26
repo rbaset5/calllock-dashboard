@@ -3,12 +3,16 @@
  *
  * Generates dynamic, derived tags for velocity cards based on
  * transcript analysis and data signals.
+ *
+ * V6: Now prioritizes taxonomy tags from V2 backend (when available)
+ * over transcript-based extraction for consistency.
  */
 
 import type { Lead, Job, VelocityArchetype } from '@/types/database';
 import { extractSignals, getRefrigerantStatus, isEquipmentOld } from './extract-signals';
 import { formatDollarEstimate } from './velocity';
 import { differenceInDays } from 'date-fns';
+import { mapToDisplayTags as mapTaxonomyTags, TaxonomyTags } from './tag-taxonomy-mapper';
 
 // ============================================================================
 // TYPES
@@ -333,11 +337,29 @@ function addLocationTag(tags: SmartTag[], item: VelocityItem): SmartTag[] {
 /**
  * Build smart tags for a velocity card based on archetype.
  * Returns up to 4 tags, sorted by priority.
+ *
+ * V6: Prioritizes taxonomy tags from V2 backend when available,
+ * falling back to transcript-based extraction for backwards compatibility.
  */
 export function buildSmartTags(
   item: VelocityItem,
   archetype: VelocityArchetype
 ): SmartTag[] {
+  // V6: Use taxonomy tags from backend if available
+  if (item.tags && Object.keys(item.tags as TaxonomyTags).length > 0) {
+    const taxonomyTags = mapTaxonomyTags(item, archetype);
+    const smartTags: SmartTag[] = taxonomyTags.map(t => ({
+      label: t.label,
+      variant: t.variant,
+      priority: 0, // Taxonomy tags are already prioritized
+      icon: t.icon,
+    }));
+
+    // Add location tag if there's room
+    return addLocationTag(smartTags, item);
+  }
+
+  // Fallback: Legacy transcript-based tag extraction
   let tags: SmartTag[];
 
   switch (archetype) {

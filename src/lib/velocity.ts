@@ -28,8 +28,9 @@ type ItemWithRevenueTier = { revenue_tier?: RevenueTier | null };
 type ItemWithCreatedAt = { created_at: string };
 type ItemWithEstimatedValue = { estimated_value?: number | null };
 type ItemWithSentimentScore = { sentiment_score?: number | null };
+type ItemWithTags = { tags?: Record<string, any> | null };
 
-export type VelocityItem = (Lead | Job) & ItemWithCreatedAt;
+export type VelocityItem = (Lead | Job) & ItemWithCreatedAt & ItemWithTags;
 
 /**
  * Determine the velocity archetype for a lead or job.
