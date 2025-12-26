@@ -1,46 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { validateWebhookAuth } from '@/lib/middleware/webhook-auth';
+import {
+  emergencyAlertsWebhookSchema,
+  emergencyAlertsPatchSchema,
+} from '@/lib/schemas/webhook-schemas';
 
 /**
  * Webhook to sync emergency alerts from backend
  * Called when Tier 2 urgent alerts are sent via SMS
  */
 
-interface IncomingAlert {
-  alert_id?: string;
-  call_id?: string;
-  phone_number: string;
-  customer_name?: string;
-  customer_address?: string;
-  urgency_tier?: string;
-  problem_description: string;
-  sms_sent_at: string;
-  sms_message_sid?: string;
-  callback_promised_minutes: number; // Minutes until promised callback
-  user_email: string; // To find the user
-}
-
 export async function POST(request: NextRequest) {
-  // Validate webhook secret
-  const webhookSecret = request.headers.get('X-Webhook-Secret');
-  if (webhookSecret !== process.env.WEBHOOK_SECRET) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
+  // Validate webhook secret using middleware
+  const authError = validateWebhookAuth(request);
+  if (authError) return authError;
 
   try {
-    const body: IncomingAlert = await request.json();
+    const rawBody = await request.json();
 
-    // Validate required fields
-    if (!body.phone_number || !body.problem_description || !body.user_email || !body.sms_sent_at) {
+    // Validate payload with Zod schema
+    const parseResult = emergencyAlertsWebhookSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      console.error('Validation failed:', parseResult.error.issues);
       return NextResponse.json(
-        { error: 'Missing required fields: phone_number, problem_description, user_email, sms_sent_at' },
+        {
+          error: 'Validation failed',
+          details: parseResult.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
+        },
         { status: 400 }
       );
     }
 
+    const body = parseResult.data;
     const supabase = createAdminClient();
 
     // Find user by email
@@ -156,25 +151,30 @@ export async function POST(request: NextRequest) {
  * PATCH - Update alert status (callback delivered, resolved, etc.)
  */
 export async function PATCH(request: NextRequest) {
-  // Validate webhook secret
-  const webhookSecret = request.headers.get('X-Webhook-Secret');
-  if (webhookSecret !== process.env.WEBHOOK_SECRET) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
+  // Validate webhook secret using middleware
+  const authError = validateWebhookAuth(request);
+  if (authError) return authError;
 
   try {
-    const body = await request.json();
+    const rawBody = await request.json();
 
-    if (!body.alert_id && !body.backend_alert_id) {
+    // Validate payload with Zod schema
+    const parseResult = emergencyAlertsPatchSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      console.error('Validation failed:', parseResult.error.issues);
       return NextResponse.json(
-        { error: 'Missing alert_id or backend_alert_id' },
+        {
+          error: 'Validation failed',
+          details: parseResult.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
+        },
         { status: 400 }
       );
     }
 
+    const body = parseResult.data;
     const supabase = createAdminClient();
 
     const updates: Record<string, unknown> = {};

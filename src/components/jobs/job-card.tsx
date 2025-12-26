@@ -6,6 +6,7 @@ import { RevenueTierBadge } from '@/components/ui/revenue-tier-badge';
 import { MoreHorizontal } from 'lucide-react';
 import { getOrderedSignals, isCriticalSignal } from '@/lib/revenue-signals';
 import { CriticalSignalBadge, SignalBadge } from '@/components/ui/critical-signal-badge';
+import { QuickScanBar } from '@/components/ui/quick-scan-bar';
 import type { Job } from '@/types/database';
 
 interface JobCardProps {
@@ -62,6 +63,20 @@ export const JobCard = React.forwardRef<HTMLDivElement, JobCardProps>(
               </button>
             )}
           </div>
+
+          {/* Quick-Scan Bar (HVAC Must-Have Info) */}
+          {(job.property_type || job.system_status || job.equipment_age_bracket) && (
+            <div className="mb-2">
+              <QuickScanBar
+                propertyType={job.property_type}
+                systemStatus={job.system_status}
+                equipmentAgeBracket={job.equipment_age_bracket}
+                isDecisionMaker={job.is_decision_maker}
+                decisionMakerContact={job.decision_maker_contact}
+                compact
+              />
+            </div>
+          )}
 
           {/* Address */}
           <p className="text-sm text-gray-500 mb-3">

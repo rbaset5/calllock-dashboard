@@ -3,14 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { AlertCircle, Calendar, Clock, MoreHorizontal } from 'lucide-react';
+import { AlertCircle, Inbox, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// V4 Navigation - ACTION/BOOKED model
+// V5 Velocity Navigation - ACTION/INBOX model
 const navItems = [
   { href: '/action', label: 'Action', icon: AlertCircle, hasBadge: true },
-  { href: '/booked', label: 'Booked', icon: Calendar },
-  { href: '/history', label: 'History', icon: Clock },
+  { href: '/inbox', label: 'Inbox', icon: Inbox },
   { href: '/more', label: 'More', icon: MoreHorizontal },
 ];
 
@@ -18,15 +17,17 @@ export function MobileNav() {
   const pathname = usePathname();
   const [actionCount, setActionCount] = useState(0);
 
-  // Fetch action count for badge (leads needing attention)
+  // Fetch action count for badge (Velocity API)
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const response = await fetch('/api/action');
+        const response = await fetch('/api/velocity');
         if (response.ok) {
           const data = await response.json();
-          // Use total count from action API
-          setActionCount(data.counts?.total || 0);
+          // Sum all archetype counts
+          const counts: Record<string, number> = data.counts || { HAZARD: 0, RECOVERY: 0, REVENUE: 0, LOGISTICS: 0 };
+          const total = Object.values(counts).reduce((a, b) => a + b, 0);
+          setActionCount(total);
         }
       } catch (error) {
         console.error('Error fetching action count:', error);

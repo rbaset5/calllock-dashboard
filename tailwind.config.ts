@@ -10,8 +10,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-inter)', 'var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-inter)', 'sans-serif'],
         sharpie: ['var(--font-permanent-marker)', 'cursive'],
       },
       colors: {
@@ -117,6 +118,13 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        // Talent Drop design tokens
+        "background-light": "#F3F4F6",
+        "background-dark": "#111827",
+        "surface-light": "#FFFFFF",
+        "surface-dark": "#1F2937",
+        "secondary-text-light": "#6B7280",
+        "secondary-text-dark": "#9CA3AF",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -124,6 +132,10 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
+        "3xl": "2rem",
+      },
+      boxShadow: {
+        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
       },
     },
   },

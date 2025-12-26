@@ -1,58 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { validateWebhookAuth } from '@/lib/middleware/webhook-auth';
+import { callsWebhookSchema } from '@/lib/schemas/webhook-schemas';
 
 /**
  * Webhook to sync call records from backend
  * Called after each call ends to sync call history to dashboard
  */
 
-interface TranscriptMessage {
-  role: 'agent' | 'user';
-  content: string;
-}
-
-interface IncomingCall {
-  call_id: string;
-  retell_call_id?: string;
-  phone_number: string;
-  customer_name?: string;
-  started_at: string;
-  ended_at?: string;
-  duration_seconds?: number;
-  direction?: 'inbound' | 'outbound';
-  outcome?: string;
-  hvac_issue_type?: string;
-  urgency_tier?: string;
-  problem_description?: string;
-  revenue_tier_label?: string;
-  revenue_tier_signals?: string[];
-  transcript_object?: TranscriptMessage[];  // Structured transcript with speaker labels
-  job_id?: string;
-  lead_id?: string;
-  user_email: string; // To find the user
-}
-
 export async function POST(request: NextRequest) {
-  // Validate webhook secret
-  const webhookSecret = request.headers.get('X-Webhook-Secret');
-  if (webhookSecret !== process.env.WEBHOOK_SECRET) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
+  // Validate webhook secret using middleware
+  const authError = validateWebhookAuth(request);
+  if (authError) return authError;
 
   try {
-    const body: IncomingCall = await request.json();
+    const rawBody = await request.json();
 
-    // Validate required fields
-    if (!body.call_id || !body.phone_number || !body.user_email || !body.started_at) {
+    // Validate payload with Zod schema
+    const parseResult = callsWebhookSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      console.error('Validation failed:', parseResult.error.issues);
       return NextResponse.json(
-        { error: 'Missing required fields: call_id, phone_number, user_email, started_at' },
+        {
+          error: 'Validation failed',
+          details: parseResult.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
+        },
         { status: 400 }
       );
     }
 
+    const body = parseResult.data;
     const supabase = createAdminClient();
 
     // Find user by email

@@ -101,6 +101,10 @@ export function useRealtimeLeads(options: UseRealtimeLeadsOptions = {}) {
     // Initial fetch
     fetchLeads();
 
+    // Track if realtime connected before timeout
+    let realtimeConnected = false;
+    let fallbackTimeout: NodeJS.Timeout | null = null;
+
     // Set up realtime subscription
     const channel = supabase
       .channel('leads-realtime-v4')
@@ -179,7 +183,13 @@ export function useRealtimeLeads(options: UseRealtimeLeadsOptions = {}) {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
+          realtimeConnected = true;
           setRealtimeConnected(true);
+          // Clear fallback timeout since realtime connected
+          if (fallbackTimeout) {
+            clearTimeout(fallbackTimeout);
+            fallbackTimeout = null;
+          }
           stopPolling();
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           setRealtimeConnected(false);
@@ -188,10 +198,17 @@ export function useRealtimeLeads(options: UseRealtimeLeadsOptions = {}) {
         }
       });
 
-    // Start polling as fallback until realtime connects
-    startPolling();
+    // Only start polling as fallback if realtime doesn't connect within 5 seconds
+    fallbackTimeout = setTimeout(() => {
+      if (!realtimeConnected) {
+        startPolling();
+      }
+    }, 5000);
 
     return () => {
+      if (fallbackTimeout) {
+        clearTimeout(fallbackTimeout);
+      }
       supabase.removeChannel(channel);
       stopPolling();
     };

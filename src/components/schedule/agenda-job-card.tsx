@@ -79,7 +79,7 @@ function formatDuration(ms: number): string {
   return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 }
 
-export const AgendaJobCard = React.forwardRef<HTMLDivElement, AgendaJobCardProps>(
+export const AgendaJobCard = React.memo(React.forwardRef<HTMLDivElement, AgendaJobCardProps>(
   ({ job, timezone, onClick }, ref) => {
     // Calculate duration if job has started
     const duration = job.started_at
@@ -169,6 +169,6 @@ export const AgendaJobCard = React.forwardRef<HTMLDivElement, AgendaJobCardProps
       </Card>
     );
   }
-);
+));
 
 AgendaJobCard.displayName = 'AgendaJobCard';

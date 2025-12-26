@@ -1,105 +1,160 @@
 'use client';
 
+/**
+ * INBOX Page - Archive View
+ *
+ * Displays ALL items (leads, jobs, calls) with filtering tabs.
+ * This is the "archive" complement to the ACTION page.
+ *
+ * Tabs: All | Booked | Missed | Spam
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { RefreshCw, CheckCircle, Phone, Calendar, Clock, AlertTriangle, ChevronRight } from 'lucide-react';
-import { Lead } from '@/types/database';
+import {
+  RefreshCw,
+  CheckCircle,
+  Phone,
+  Calendar,
+  Clock,
+  AlertTriangle,
+  ChevronRight,
+  Inbox,
+  CalendarCheck,
+  PhoneMissed,
+  Ban,
+} from 'lucide-react';
+import { Lead, Job, Call } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { BookJobModal } from '@/components/leads';
 import { cn } from '@/lib/utils';
-import { InboxItem, InboxResponse } from '@/app/api/inbox/route';
+import { format, isToday, isYesterday } from 'date-fns';
 
-type FilterType = 'all' | 'stale' | 'callbacks' | 'quotes' | 'alerts';
+type FilterType = 'all' | 'booked' | 'missed' | 'spam';
 
-const filters: { label: string; type: FilterType; countKey: keyof InboxResponse['counts'] }[] = [
-  { label: 'All', type: 'all', countKey: 'total' },
-  { label: 'Stale', type: 'stale', countKey: 'stale' },
-  { label: 'Callbacks', type: 'callbacks', countKey: 'callbacks' },
-  { label: 'Quotes', type: 'quotes', countKey: 'quotes' },
-  { label: 'Alerts', type: 'alerts', countKey: 'alerts' },
+interface InboxItem {
+  id: string;
+  type: 'lead' | 'job' | 'call';
+  customer_name: string;
+  customer_phone: string;
+  description: string | null;
+  created_at: string;
+  // Lead-specific
+  lead?: Lead;
+  priority_color?: string;
+  status?: string;
+  // Job-specific
+  job?: Job;
+  scheduled_at?: string | null;
+  is_ai_booked?: boolean;
+  // Call-specific
+  call?: Call;
+  outcome?: string;
+  duration_seconds?: number;
+}
+
+interface InboxData {
+  items: InboxItem[];
+  counts: {
+    all: number;
+    booked: number;
+    missed: number;
+    spam: number;
+  };
+}
+
+const filters: { label: string; type: FilterType; icon: any }[] = [
+  { label: 'All', type: 'all', icon: Inbox },
+  { label: 'Booked', type: 'booked', icon: CalendarCheck },
+  { label: 'Missed', type: 'missed', icon: PhoneMissed },
+  { label: 'Spam', type: 'spam', icon: Ban },
 ];
 
-function formatAgeDays(days: number): string {
-  if (days === 0) return 'Today';
-  if (days === 1) return '1d ago';
-  return `${days}d ago`;
+function formatTime(dateStr: string | null): string {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    if (isToday(date)) return format(date, 'h:mm a');
+    if (isYesterday(date)) return 'Yesterday';
+    return format(date, 'MMM d');
+  } catch {
+    return '';
+  }
+}
+
+function formatDuration(seconds: number | null | undefined): string {
+  if (!seconds) return '';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 }
 
 function InboxItemCard({
   item,
   onCall,
   onBook,
-  onSnooze,
   onViewDetails,
 }: {
   item: InboxItem;
   onCall: () => void;
   onBook: () => void;
-  onSnooze: () => void;
-  onDismiss: () => void;
   onViewDetails: () => void;
 }) {
   const isLead = item.type === 'lead';
+  const isJob = item.type === 'job';
+  const isCall = item.type === 'call';
 
-  // Status strip color (left border) - V3 Triage-aware
-  const getStatusColor = (): string => {
-    // Use V3 status_color if available
-    if (item.status_color === 'red') return 'border-l-error-500';
-    if (item.status_color === 'green') return 'border-l-success-500';
-    if (item.status_color === 'yellow') return 'border-l-gold-500';
-    // Fallback: callback complaints = red
-    if (item.is_callback_complaint) return 'border-l-error-500';
-    // Commercial = green (money)
-    if (item.caller_type === 'commercial') return 'border-l-success-500';
-    // Legacy fallbacks
-    if (item.status === 'callback_requested' || item.urgency === 'high') return 'border-l-error-500';
-    if (item.estimated_value) return 'border-l-success-500';
-    // Default = blue
-    return 'border-l-navy-500';
+  // Get type badge
+  const getTypeBadge = () => {
+    if (isJob) {
+      return (
+        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+          BOOKED
+        </span>
+      );
+    }
+    if (isCall) {
+      const isMissed =
+        item.outcome === 'customer_hangup' || item.outcome === 'abandoned';
+      return (
+        <span
+          className={cn(
+            'text-xs font-bold px-2 py-0.5 rounded',
+            isMissed
+              ? 'text-red-600 bg-red-50'
+              : 'text-blue-600 bg-blue-50'
+          )}
+        >
+          {isMissed ? 'MISSED' : 'CALL'}
+        </span>
+      );
+    }
+    if (isLead && item.priority_color === 'gray') {
+      return (
+        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+          SPAM
+        </span>
+      );
+    }
+    return (
+      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+        LEAD
+      </span>
+    );
   };
 
-  // Request type label (header) - V3 Triage hierarchy
-  const getRequestLabel = (): string => {
-    // TIER 1: Critical Flags (RED)
-    if (item.is_callback_complaint) return 'CALLBACK RISK';
-    if (item.caller_type === 'commercial') return 'COMMERCIAL';
-    // TIER 2: Intents
-    if (item.primary_intent === 'active_job_issue') return 'JOB ISSUE';
-    if (item.primary_intent === 'solicitation') return 'SPAM/VENDOR';
-    // TIER 3: Value (GREEN)
-    if (item.estimated_value && item.estimated_value > 0) return 'OPEN QUOTE';
-    // Legacy status fallbacks
-    if (item.status === 'callback_requested') return 'CALLBACK';
-    if (item.status === 'voicemail_left') return 'VOICEMAIL';
-    if (item.type === 'alert') return item.alert_type === 'emergency' ? 'EMERGENCY' : 'SMS ALERT';
-    return 'NEW LEAD';
-  };
-
-  // Header text color (matches status strip) - V3 Triage-aware
-  const getHeaderColor = (): string => {
-    // V3 status_color takes precedence
-    if (item.status_color === 'red' || item.is_callback_complaint) return 'text-error-600';
-    if (item.status_color === 'green' || item.caller_type === 'commercial') return 'text-success-600';
-    if (item.status_color === 'yellow') return 'text-gold-600';
-    // Legacy fallbacks
-    if (item.estimated_value) return 'text-success-600';
-    if (item.status === 'callback_requested' || item.urgency === 'high') return 'text-error-600';
-    return 'text-navy-500';
-  };
-
-  // Format age with hours/minutes precision for urgency
-  const formatAge = (): string => {
-    const created = new Date(item.created_at);
-    const now = new Date();
-    const diffMs = now.getTime() - created.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    if (diffDays === 1) return '1d ago';
-    return `${diffDays}d ago`;
+  // Get status color for left border
+  const getBorderColor = () => {
+    if (isJob) return 'border-l-emerald-500';
+    if (isCall) {
+      const isMissed =
+        item.outcome === 'customer_hangup' || item.outcome === 'abandoned';
+      return isMissed ? 'border-l-red-500' : 'border-l-blue-500';
+    }
+    if (item.priority_color === 'red') return 'border-l-red-500';
+    if (item.priority_color === 'green') return 'border-l-emerald-500';
+    if (item.priority_color === 'gray') return 'border-l-gray-300';
+    return 'border-l-blue-500';
   };
 
   return (
@@ -107,76 +162,69 @@ function InboxItemCard({
       className={cn(
         'bg-white rounded-r-xl rounded-l-sm border shadow-sm transition-all duration-200',
         'border-l-4',
-        getStatusColor(),
-        item.is_stale && 'ring-1 ring-gold-200'
+        getBorderColor()
       )}
     >
-      {/* Stale Warning Banner */}
-      {item.is_stale && (
-        <div className="px-4 py-1.5 bg-gold-100 border-b border-gold-200 flex items-center gap-2">
-          <AlertTriangle className="w-3.5 h-3.5 text-gold-600" />
-          <span className="text-xs font-medium text-gold-800">
-            {item.age_days}+ days old
-          </span>
-        </div>
-      )}
-
-      {/* Card Content */}
       <div className="p-3">
-        {/* Header: Type + Age */}
+        {/* Header: Type + Time */}
         <div className="flex items-center justify-between mb-2">
-          <span className={cn('text-xs font-bold tracking-wide', getHeaderColor())}>
-            {getRequestLabel()}
+          {getTypeBadge()}
+          <span className="text-xs text-slate-400">
+            {isJob && item.scheduled_at
+              ? `Scheduled: ${formatTime(item.scheduled_at)}`
+              : formatTime(item.created_at)}
           </span>
-          <span className="text-xs text-navy-400">{formatAge()}</span>
         </div>
 
         {/* Name */}
-        <h3 className="font-semibold text-navy-800 truncate">{item.customer_name}</h3>
+        <h3 className="font-semibold text-slate-800 truncate">
+          {item.customer_name}
+        </h3>
 
-        {/* Issue (no gray box) */}
+        {/* Description */}
         {item.description && (
-          <p className="text-sm text-navy-500 line-clamp-2 mt-1">
-            &ldquo;{item.description}&rdquo;
+          <p className="text-sm text-slate-500 line-clamp-2 mt-1">
+            {item.description}
           </p>
         )}
 
-        {/* Value */}
-        {item.estimated_value && (
-          <p className="text-sm font-bold text-gold-600 mt-2">
-            ${item.estimated_value.toLocaleString()} Potential
+        {/* Call duration */}
+        {isCall && item.duration_seconds && (
+          <p className="text-xs text-slate-400 mt-1">
+            Duration: {formatDuration(item.duration_seconds)}
           </p>
+        )}
+
+        {/* AI Booked badge */}
+        {isJob && item.is_ai_booked && (
+          <span className="inline-flex items-center gap-1 text-xs text-amber-600 mt-2">
+            <CalendarCheck className="w-3 h-3" />
+            AI Booked
+          </span>
         )}
       </div>
 
-      {/* Action Bar (compact - icons only) */}
-      <div className="flex border-t border-navy-200 divide-x divide-navy-200">
+      {/* Action Bar */}
+      <div className="flex border-t border-slate-100 divide-x divide-slate-100">
         <button
           onClick={onCall}
-          className="flex-1 py-2 min-h-[40px] text-navy-600 hover:bg-navy-50 flex items-center justify-center transition-colors"
+          className="flex-1 py-2 min-h-[40px] text-slate-600 hover:bg-slate-50 flex items-center justify-center transition-colors"
           aria-label={`Call ${item.customer_name}`}
         >
           <Phone className="w-4 h-4" />
         </button>
-        {isLead && (
+        {(isLead || isJob) && (
           <button
             onClick={onBook}
-            className="flex-1 py-2 min-h-[40px] text-navy-600 hover:bg-navy-50 flex items-center justify-center transition-colors"
-            aria-label={`Book job for ${item.customer_name}`}
+            className="flex-1 py-2 min-h-[40px] text-slate-600 hover:bg-slate-50 flex items-center justify-center transition-colors"
+            aria-label={`Book for ${item.customer_name}`}
           >
             <Calendar className="w-4 h-4" />
           </button>
         )}
         <button
-          onClick={onSnooze}
-          className="flex-1 py-2 min-h-[40px] text-navy-600 hover:bg-navy-50 flex items-center justify-center transition-colors"
-          aria-label={`Snooze ${item.customer_name}`}
-        >
-          <Clock className="w-4 h-4" />
-        </button>
-        <button
           onClick={onViewDetails}
-          className="py-2 px-3 min-h-[40px] text-navy-300 hover:bg-navy-50 hover:text-navy-600 flex items-center justify-center transition-colors"
+          className="py-2 px-3 min-h-[40px] text-slate-300 hover:bg-slate-50 hover:text-slate-600 flex items-center justify-center transition-colors"
           aria-label={`View details for ${item.customer_name}`}
         >
           <ChevronRight className="w-5 h-5" />
@@ -189,22 +237,116 @@ function InboxItemCard({
 export default function InboxPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [data, setData] = useState<InboxResponse | null>(null);
+  const [data, setData] = useState<InboxData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
   const [bookingLead, setBookingLead] = useState<Lead | null>(null);
-  const [snoozeItem, setSnoozeItem] = useState<InboxItem | null>(null);
 
   const fetchData = useCallback(async (showRefresh = false) => {
     try {
       if (showRefresh) setRefreshing(true);
 
-      const response = await fetch(`/api/inbox?filter=${selectedFilter}`);
-      if (!response.ok) throw new Error('Failed to fetch data');
+      // Fetch all data types in parallel
+      const [leadsRes, jobsRes, callsRes] = await Promise.all([
+        fetch('/api/inbox?filter=all'),
+        fetch('/api/booked'),
+        fetch('/api/calls?limit=50'),
+      ]);
 
-      const inboxData: InboxResponse = await response.json();
-      setData(inboxData);
+      const leadsData = leadsRes.ok ? await leadsRes.json() : { items: [] };
+      const jobsData = jobsRes.ok ? await jobsRes.json() : { groups: [] };
+      const callsData = callsRes.ok ? await callsRes.json() : { calls: [] };
+
+      // Convert leads to inbox items
+      const leadItems: InboxItem[] = (leadsData.items || []).map(
+        (item: any) => ({
+          id: item.id,
+          type: 'lead' as const,
+          customer_name: item.customer_name,
+          customer_phone: item.customer_phone,
+          description: item.description || item.issue_description,
+          created_at: item.created_at,
+          lead: item.lead,
+          priority_color: item.priority_color,
+          status: item.status,
+        })
+      );
+
+      // Convert jobs to inbox items
+      const jobItems: InboxItem[] = [];
+      for (const group of jobsData.groups || []) {
+        for (const job of group.jobs || []) {
+          jobItems.push({
+            id: job.id,
+            type: 'job' as const,
+            customer_name: job.customer_name,
+            customer_phone: job.customer_phone,
+            description: job.ai_summary || job.issue_description,
+            created_at: job.created_at,
+            job: job,
+            scheduled_at: job.scheduled_at,
+            is_ai_booked: job.is_ai_booked,
+          });
+        }
+      }
+
+      // Convert calls to inbox items
+      const callItems: InboxItem[] = (callsData.calls || []).map(
+        (call: Call) => ({
+          id: call.id,
+          type: 'call' as const,
+          customer_name: call.customer_name || 'Unknown',
+          customer_phone: call.phone_number,
+          description: call.problem_description,
+          created_at: call.started_at,
+          call: call,
+          outcome: call.outcome,
+          duration_seconds: call.duration_seconds,
+        })
+      );
+
+      // Combine all items
+      const allItems = [...leadItems, ...jobItems, ...callItems];
+
+      // Sort by created_at descending
+      allItems.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      // Calculate counts
+      const bookedCount = jobItems.length;
+      const missedCount = callItems.filter(
+        (c) =>
+          c.outcome === 'customer_hangup' || c.outcome === 'abandoned'
+      ).length;
+      const spamCount = leadItems.filter(
+        (l) => l.priority_color === 'gray'
+      ).length;
+
+      // Filter items based on selected filter
+      let filteredItems = allItems;
+      if (selectedFilter === 'booked') {
+        filteredItems = jobItems;
+      } else if (selectedFilter === 'missed') {
+        filteredItems = callItems.filter(
+          (c) =>
+            c.outcome === 'customer_hangup' || c.outcome === 'abandoned'
+        );
+      } else if (selectedFilter === 'spam') {
+        filteredItems = leadItems.filter((l) => l.priority_color === 'gray');
+      }
+
+      setData({
+        items: filteredItems,
+        counts: {
+          all: allItems.length,
+          booked: bookedCount,
+          missed: missedCount,
+          spam: spamCount,
+        },
+      });
     } catch (error) {
       console.error('Error fetching inbox:', error);
     } finally {
@@ -253,44 +395,13 @@ export default function InboxPage() {
     }
   };
 
-  const handleSnooze = (item: InboxItem) => {
-    setSnoozeItem(item);
-  };
-
-  const handleDismiss = async (item: InboxItem) => {
-    if (item.type === 'lead' && item.lead) {
-      try {
-        await fetch(`/api/leads/${item.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'lost' }),
-        });
-        fetchData();
-      } catch (error) {
-        console.error('Error dismissing item:', error);
-      }
-    }
-  };
-
   const handleViewDetails = (item: InboxItem) => {
     if (item.type === 'lead') {
       router.push(`/leads/${item.id}?from=/inbox`);
-    }
-  };
-
-  const handleSetReminder = async (remindAt: string) => {
-    if (!snoozeItem || snoozeItem.type !== 'lead') return;
-
-    try {
-      await fetch(`/api/leads/${snoozeItem.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ remind_at: remindAt }),
-      });
-      fetchData();
-      setSnoozeItem(null);
-    } catch (error) {
-      console.error('Error setting reminder:', error);
+    } else if (item.type === 'job') {
+      router.push(`/jobs/${item.id}?from=/inbox`);
+    } else if (item.type === 'call') {
+      router.push(`/calls/${item.id}?from=/inbox`);
     }
   };
 
@@ -309,10 +420,10 @@ export default function InboxPage() {
     return (
       <div className="cl-page-container">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-navy-100 rounded w-32" />
-          <div className="h-10 bg-navy-100 rounded" />
-          <div className="h-32 bg-navy-100 rounded" />
-          <div className="h-32 bg-navy-100 rounded" />
+          <div className="h-8 bg-slate-100 rounded w-32" />
+          <div className="h-10 bg-slate-100 rounded" />
+          <div className="h-32 bg-slate-100 rounded" />
+          <div className="h-32 bg-slate-100 rounded" />
         </div>
       </div>
     );
@@ -321,16 +432,15 @@ export default function InboxPage() {
   if (!data) return null;
 
   const hasItems = data.items.length > 0;
-  const staleCount = data.counts.stale;
 
   return (
-    <div className="cl-page-container space-y-4">
+    <div className="cl-page-container space-y-4 pb-24">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="cl-heading-page">Inbox</h1>
-          <p className="text-sm text-navy-400">
-            {data.counts.total} item{data.counts.total !== 1 ? 's' : ''} needing attention
+          <h1 className="text-xl font-bold text-slate-900">Inbox</h1>
+          <p className="text-sm text-slate-500">
+            {data.counts.all} total items
           </p>
         </div>
         <Button
@@ -340,32 +450,18 @@ export default function InboxPage() {
           disabled={refreshing}
           aria-label="Refresh inbox"
         >
-          <RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />
+          <RefreshCw
+            className={cn('w-4 h-4', refreshing && 'animate-spin')}
+          />
         </Button>
       </div>
-
-      {/* Stale Items Alert Banner */}
-      {staleCount > 0 && selectedFilter !== 'stale' && (
-        <button
-          onClick={() => setSelectedFilter('stale')}
-          className="w-full flex items-center justify-between p-3 bg-gold-50 border border-gold-200 rounded-lg hover:bg-gold-100 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-gold-600" />
-            <span className="text-sm font-medium text-gold-800">
-              {staleCount} stale item{staleCount !== 1 ? 's' : ''} (3+ days old)
-            </span>
-          </div>
-          <ChevronRight className="w-5 h-5 text-gold-600" />
-        </button>
-      )}
 
       {/* Filter Pills */}
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
         {filters.map((filter) => {
           const isSelected = selectedFilter === filter.type;
-          const count = data.counts[filter.countKey];
-          const isStale = filter.type === 'stale';
+          const count = data.counts[filter.type];
+          const Icon = filter.icon;
 
           return (
             <button
@@ -374,22 +470,21 @@ export default function InboxPage() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
                 isSelected
-                  ? isStale
-                    ? 'bg-gold-100 text-gold-800 border border-gold-300'
-                    : 'bg-navy-100 text-navy-700 border border-navy-200'
-                  : 'bg-navy-50 text-navy-500 hover:bg-navy-100'
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               )}
             >
+              <Icon className="w-3.5 h-3.5" />
               {filter.label}
               {count > 0 && (
-                <span className={cn(
-                  'text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
-                  isSelected
-                    ? isStale
-                      ? 'bg-gold-200 text-gold-900'
-                      : 'bg-navy-200 text-navy-800'
-                    : 'bg-navy-200 text-navy-600'
-                )}>
+                <span
+                  className={cn(
+                    'text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center',
+                    isSelected
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-200 text-slate-600'
+                  )}
+                >
                   {count}
                 </span>
               )}
@@ -401,84 +496,29 @@ export default function InboxPage() {
       {/* Items List */}
       {hasItems ? (
         <div className="space-y-3">
-          {/* Stale Section Header */}
-          {data.stale.length > 0 && selectedFilter === 'all' && (
-            <div className="flex items-center gap-2 pt-2">
-              <AlertTriangle className="w-4 h-4 text-gold-600" />
-              <h2 className="cl-heading-section text-gold-800">
-                Stale ({data.stale.length})
-              </h2>
-            </div>
-          )}
-
           {data.items.map((item) => (
             <InboxItemCard
               key={`${item.type}-${item.id}`}
               item={item}
               onCall={() => handleCall(item)}
               onBook={() => handleBook(item)}
-              onSnooze={() => handleSnooze(item)}
-              onDismiss={() => handleDismiss(item)}
               onViewDetails={() => handleViewDetails(item)}
             />
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-navy-200 p-8 text-center">
-          <CheckCircle className="w-12 h-12 text-success-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-navy-800 mb-2">
-            All caught up!
-          </h3>
-          <p className="text-navy-400">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
+          <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-800 mb-2">
             {selectedFilter === 'all'
-              ? 'No items need your attention right now'
-              : `No ${filters.find(f => f.type === selectedFilter)?.label.toLowerCase()} items`}
+              ? 'Inbox is empty'
+              : `No ${selectedFilter} items`}
+          </h3>
+          <p className="text-slate-400">
+            {selectedFilter === 'all'
+              ? 'No items to display'
+              : `No ${filters.find((f) => f.type === selectedFilter)?.label.toLowerCase()} items found`}
           </p>
-        </div>
-      )}
-
-      {/* Snooze Modal */}
-      {snoozeItem && (
-        <div className="fixed inset-0 bg-navy-900/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-lg font-semibold text-navy-800 mb-4">Snooze Reminder</h3>
-            <p className="text-sm text-navy-500 mb-4">
-              When would you like to be reminded about {snoozeItem.customer_name}?
-            </p>
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  const tomorrow = new Date();
-                  tomorrow.setDate(tomorrow.getDate() + 1);
-                  tomorrow.setHours(9, 0, 0, 0);
-                  handleSetReminder(tomorrow.toISOString());
-                }}
-              >
-                Tomorrow morning
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  const nextWeek = new Date();
-                  nextWeek.setDate(nextWeek.getDate() + 7);
-                  nextWeek.setHours(9, 0, 0, 0);
-                  handleSetReminder(nextWeek.toISOString());
-                }}
-              >
-                Next week
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() => setSnoozeItem(null)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
         </div>
       )}
 

@@ -3,16 +3,15 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { AlertCircle, Calendar, Clock, Settings, LogOut } from 'lucide-react';
+import { AlertCircle, Inbox, Settings, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { Logo } from '@/components/brand';
 
-// V4 Primary navigation - ACTION/BOOKED model
+// V5 Velocity navigation - ACTION/INBOX model
 const navItems = [
   { href: '/action', label: 'Action', icon: AlertCircle, hasBadge: true },
-  { href: '/booked', label: 'Booked', icon: Calendar },
-  { href: '/history', label: 'History', icon: Clock },
+  { href: '/inbox', label: 'Inbox', icon: Inbox },
 ];
 
 // Secondary navigation - Settings only per V4 PRD
@@ -38,14 +37,17 @@ export function Sidebar({ businessName }: SidebarProps) {
   const router = useRouter();
   const [actionCount, setActionCount] = useState(0);
 
-  // Fetch action count for badge (V4)
+  // Fetch action count for badge (Velocity API)
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const response = await fetch('/api/action');
+        const response = await fetch('/api/velocity');
         if (response.ok) {
           const data = await response.json();
-          setActionCount(data.counts?.total || 0);
+          // Sum all archetype counts
+          const counts: Record<string, number> = data.counts || { HAZARD: 0, RECOVERY: 0, REVENUE: 0, LOGISTICS: 0 };
+          const total = Object.values(counts).reduce((a, b) => a + b, 0);
+          setActionCount(total);
         }
       } catch (error) {
         console.error('Error fetching action count:', error);

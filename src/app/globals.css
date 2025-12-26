@@ -184,4 +184,17 @@
   .cl-logo {
     @apply font-display font-semibold text-primary-600 tracking-tight;
   }
+
+  /* Material Symbols Base Configuration */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 22px;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+  }
 }

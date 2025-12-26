@@ -14,6 +14,7 @@ interface ActionTimelineProps {
     onAddNote?: (lead: Lead) => void;
     onMarkSpam?: (lead: Lead) => void;
     hidePriorityBadge?: boolean;
+    hideFirstDateHeader?: boolean;
 }
 
 /** Group leads by date */
@@ -62,6 +63,7 @@ export const ActionTimeline: React.FC<ActionTimelineProps> = ({
     onAddNote,
     onMarkSpam,
     hidePriorityBadge = false,
+    hideFirstDateHeader = false,
 }) => {
     // Group leads by their created_at date (must be called before any returns per Rules of Hooks)
     const dateGroups = React.useMemo(() => groupLeadsByDate(leads), [leads]);
@@ -71,16 +73,18 @@ export const ActionTimeline: React.FC<ActionTimelineProps> = ({
     }
 
     return (
-        <div className="space-y-6">
-            {dateGroups.map((group) => (
-                <div key={format(group.date, "yyyy-MM-dd")} className="space-y-3">
+        <div className="space-y-10">
+            {dateGroups.map((group, index) => (
+                <div key={format(group.date, "yyyy-MM-dd")} className="space-y-6">
                     {/* Date header */}
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider max-w-lg mx-auto">
-                        {format(group.date, "EEEE, MMMM d")}
-                    </h3>
+                    {!(hideFirstDateHeader && index === 0) && (
+                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider max-w-lg mx-auto px-1">
+                            {format(group.date, "EEEE, MMMM d").toUpperCase()}
+                        </h3>
+                    )}
 
                     {/* Lead cards for this date */}
-                    <div className="space-y-3">
+                    <div className="space-y-6">
                         {group.leads.map((lead) => (
                             <LeadCardV4
                                 key={lead.id}

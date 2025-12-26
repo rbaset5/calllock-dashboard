@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Lead } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,117 +8,38 @@ import {
   X,
   Calendar,
   Clock,
-  User,
-  Phone,
-  MapPin,
-  AlertTriangle,
   Loader2,
-  DollarSign,
   Zap,
   CheckCircle2,
   Sparkles,
 } from 'lucide-react';
-import { format, addDays, startOfDay, isSameDay, isToday, isTomorrow, getHours } from 'date-fns';
-import { cn } from '@/lib/utils';
-
-interface TimeSlot {
-  time: string;
-  label: string;
-  isoDateTime: string;
-}
+import { format } from 'date-fns';
+import { DatePicker, TimeSlotGrid, CustomerSummary } from '@/components/scheduling';
+import { useCalendarSlotsWithDate } from '@/hooks/use-calendar-slots';
+import {
+  parseTimePreference,
+  sortSlotsByPreference,
+  generateDateRange,
+} from '@/lib/scheduling';
+import type { TimeSlot } from '@/lib/scheduling';
 
 interface BookJobModalProps {
   lead: Lead;
   onClose: () => void;
   onBooked?: (jobId: string) => void;
-  onSuccess?: () => void; // Alternative callback for outcome flow
-}
-
-// Time preference patterns to detect and highlight
-type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'asap' | null;
-
-function parseTimePreference(preference: string | null | undefined): {
-  timeOfDay: TimeOfDay;
-  specificDay: string | null;
-  displayText: string | null;
-} {
-  if (!preference) return { timeOfDay: null, specificDay: null, displayText: null };
-
-  const lower = preference.toLowerCase();
-
-  // Check for urgency/ASAP
-  if (
-    lower.includes('asap') ||
-    lower.includes('soon') ||
-    lower.includes('emergency') ||
-    lower.includes('urgent') ||
-    lower.includes('today') ||
-    lower.includes('right away')
-  ) {
-    return { timeOfDay: 'asap', specificDay: 'today', displayText: preference };
-  }
-
-  // Check for time of day
-  let timeOfDay: TimeOfDay = null;
-  if (lower.includes('morning') || lower.includes('am')) {
-    timeOfDay = 'morning';
-  } else if (lower.includes('afternoon')) {
-    timeOfDay = 'afternoon';
-  } else if (lower.includes('evening') || lower.includes('pm') || lower.includes('after work')) {
-    timeOfDay = 'evening';
-  }
-
-  // Check for specific day
-  let specificDay: string | null = null;
-  if (lower.includes('tomorrow')) {
-    specificDay = 'tomorrow';
-  } else if (lower.includes('monday')) {
-    specificDay = 'monday';
-  } else if (lower.includes('tuesday')) {
-    specificDay = 'tuesday';
-  } else if (lower.includes('wednesday')) {
-    specificDay = 'wednesday';
-  } else if (lower.includes('thursday')) {
-    specificDay = 'thursday';
-  } else if (lower.includes('friday')) {
-    specificDay = 'friday';
-  } else if (lower.includes('saturday')) {
-    specificDay = 'saturday';
-  } else if (lower.includes('sunday')) {
-    specificDay = 'sunday';
-  } else if (lower.includes('weekend')) {
-    specificDay = 'weekend';
-  }
-
-  return { timeOfDay, specificDay, displayText: preference };
-}
-
-function isSlotPreferred(slot: TimeSlot, preference: { timeOfDay: TimeOfDay }): boolean {
-  if (!preference.timeOfDay || preference.timeOfDay === 'asap') return false;
-
-  const hour = getHours(new Date(slot.isoDateTime));
-
-  switch (preference.timeOfDay) {
-    case 'morning':
-      return hour >= 7 && hour < 12;
-    case 'afternoon':
-      return hour >= 12 && hour < 17;
-    case 'evening':
-      return hour >= 17 && hour < 21;
-    default:
-      return false;
-  }
+  onSuccess?: () => void;
 }
 
 export function BookJobModal({ lead, onClose, onBooked, onSuccess }: BookJobModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [slots, setSlots] = useState<TimeSlot[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
   const [booking, setBooking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [loadingAsap, setLoadingAsap] = useState(false);
+
+  // Use shared hook for slot management
+  const { slots, loading: loadingSlots, error: slotsError, selectedSlot, setSelectedSlot } =
+    useCalendarSlotsWithDate(selectedDate);
 
   // Parse customer's time preference
   const timePreference = useMemo(
@@ -126,70 +47,20 @@ export function BookJobModal({ lead, onClose, onBooked, onSuccess }: BookJobModa
     [lead.time_preference]
   );
 
-  // Generate next 7 days for date picker
-  const today = startOfDay(new Date());
-  const dates = Array.from({ length: 7 }, (_, i) => addDays(today, i));
-
-  // Sort slots: preferred times first, then chronologically
+  // Sort slots by preference
   const sortedSlots = useMemo(() => {
     if (!timePreference.timeOfDay) return slots;
-
-    return [...slots].sort((a, b) => {
-      const aPreferred = isSlotPreferred(a, timePreference);
-      const bPreferred = isSlotPreferred(b, timePreference);
-
-      if (aPreferred && !bPreferred) return -1;
-      if (!aPreferred && bPreferred) return 1;
-      return 0; // Keep original order otherwise
-    });
+    return sortSlotsByPreference(slots, timePreference);
   }, [slots, timePreference]);
-
-  // Fetch slots when date changes
-  useEffect(() => {
-    if (!selectedDate) {
-      setSlots([]);
-      setSelectedSlot(null);
-      return;
-    }
-
-    const fetchSlots = async () => {
-      setLoadingSlots(true);
-      setError(null);
-      setSelectedSlot(null);
-
-      try {
-        const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const response = await fetch(`/api/calendar/availability?date=${dateStr}`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch availability');
-        }
-
-        const data = await response.json();
-        setSlots(data.slots || []);
-
-        if (data.slots?.length === 0) {
-          setError('No available slots for this date. Try another day.');
-        }
-      } catch (err) {
-        console.error('Error fetching slots:', err);
-        setError('Failed to load available times. Please try again.');
-        setSlots([]);
-      } finally {
-        setLoadingSlots(false);
-      }
-    };
-
-    fetchSlots();
-  }, [selectedDate]);
 
   // Handle ASAP booking - finds first available slot
   const handleAsapBook = async () => {
     setLoadingAsap(true);
-    setError(null);
+    setBookingError(null);
 
     try {
-      // Try today first, then tomorrow, etc.
+      const dates = generateDateRange(7);
+
       for (const date of dates) {
         const dateStr = format(date, 'yyyy-MM-dd');
         const response = await fetch(`/api/calendar/availability?date=${dateStr}`);
@@ -198,22 +69,19 @@ export function BookJobModal({ lead, onClose, onBooked, onSuccess }: BookJobModa
 
         const data = await response.json();
         if (data.slots?.length > 0) {
-          // Found a slot! Book the first one
           const firstSlot = data.slots[0];
           setSelectedDate(date);
           setSelectedSlot(firstSlot);
           setLoadingAsap(false);
-          // Auto-book it
           await handleBookSlot(firstSlot);
           return;
         }
       }
 
-      // No slots found in the next 7 days
-      setError('No available slots in the next 7 days. Please try manual selection.');
+      setBookingError('No available slots in the next 7 days. Please try manual selection.');
     } catch (err) {
       console.error('ASAP booking error:', err);
-      setError('Failed to find available slots. Please try again.');
+      setBookingError('Failed to find available slots. Please try again.');
     } finally {
       setLoadingAsap(false);
     }
@@ -222,7 +90,7 @@ export function BookJobModal({ lead, onClose, onBooked, onSuccess }: BookJobModa
   // Book a specific slot
   const handleBookSlot = async (slot: TimeSlot) => {
     setBooking(true);
-    setError(null);
+    setBookingError(null);
 
     try {
       // Step 1: Create Cal.com booking
@@ -279,7 +147,7 @@ export function BookJobModal({ lead, onClose, onBooked, onSuccess }: BookJobModa
       }, 1500);
     } catch (err) {
       console.error('Booking error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to book job. Please try again.');
+      setBookingError(err instanceof Error ? err.message : 'Failed to book job. Please try again.');
       setBooking(false);
     }
   };
@@ -287,12 +155,6 @@ export function BookJobModal({ lead, onClose, onBooked, onSuccess }: BookJobModa
   const handleBook = async () => {
     if (!selectedSlot) return;
     await handleBookSlot(selectedSlot);
-  };
-
-  const formatDateLabel = (date: Date): string => {
-    if (isToday(date)) return 'Today';
-    if (isTomorrow(date)) return 'Tomorrow';
-    return format(date, 'EEE');
   };
 
   // Success state - show animation and auto-close
@@ -323,6 +185,8 @@ export function BookJobModal({ lead, onClose, onBooked, onSuccess }: BookJobModa
       </div>
     );
   }
+
+  const error = bookingError || slotsError;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
@@ -380,126 +244,40 @@ export function BookJobModal({ lead, onClose, onBooked, onSuccess }: BookJobModa
           </div>
 
           {/* Lead Summary */}
-          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <User className="w-4 h-4 text-gray-400" />
-              <span className="font-medium">{lead.customer_name}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Phone className="w-4 h-4 text-gray-400" />
-              <span>{lead.customer_phone}</span>
-            </div>
-            {lead.customer_address && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <span className="truncate">{lead.customer_address}</span>
-              </div>
-            )}
-            {lead.issue_description && (
-              <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                {lead.issue_description}
-              </p>
-            )}
-            {lead.estimated_value && (
-              <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
-                <DollarSign className="w-4 h-4" />
-                <span>Est. ${lead.estimated_value.toLocaleString()}</span>
-              </div>
-            )}
-          </div>
+          <CustomerSummary
+            name={lead.customer_name}
+            phone={lead.customer_phone}
+            address={lead.customer_address}
+            issueDescription={lead.issue_description}
+            estimatedValue={lead.estimated_value}
+          />
 
           {/* Date Picker */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Select Date
-            </label>
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-              {dates.map((date) => {
-                const isSelected = selectedDate && isSameDay(date, selectedDate);
-                return (
-                  <button
-                    key={date.toISOString()}
-                    onClick={() => setSelectedDate(date)}
-                    disabled={booking}
-                    className={cn(
-                      'flex flex-col items-center min-w-[60px] p-2 rounded-lg border-2 transition-colors',
-                      isSelected
-                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    )}
-                  >
-                    <span className="text-xs font-medium">
-                      {formatDateLabel(date)}
-                    </span>
-                    <span className="text-lg font-semibold">
-                      {format(date, 'd')}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {format(date, 'MMM')}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <DatePicker
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            disabled={booking}
+          />
 
           {/* Time Slots */}
           {selectedDate && (
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Select Time
-                {timePreference.timeOfDay && timePreference.timeOfDay !== 'asap' && (
-                  <span className="ml-2 text-xs text-amber-600 font-normal">
-                    ★ Preferred times highlighted
-                  </span>
-                )}
-              </label>
-
-              {loadingSlots ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-                  <span className="ml-2 text-gray-500">Loading available times...</span>
-                </div>
-              ) : sortedSlots.length > 0 ? (
-                <div className="grid grid-cols-4 gap-2">
-                  {sortedSlots.map((slot) => {
-                    const isSelected = selectedSlot?.time === slot.time;
-                    const isPreferred = isSlotPreferred(slot, timePreference);
-                    return (
-                      <button
-                        key={slot.time}
-                        onClick={() => setSelectedSlot(slot)}
-                        disabled={booking || loadingAsap}
-                        className={cn(
-                          'p-2 rounded-lg border-2 text-sm font-medium transition-colors relative',
-                          isSelected
-                            ? 'border-navy-600 bg-navy-600 text-white'
-                            : isPreferred
-                              ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        )}
-                      >
-                        {slot.label}
-                        {isPreferred && !isSelected && (
-                          <span className="absolute -top-1 -right-1 text-amber-500 text-xs">★</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : error ? (
-                <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg">
-                  <AlertTriangle className="w-5 h-5 shrink-0" />
-                  <span className="text-sm">{error}</span>
-                </div>
-              ) : null}
-            </div>
+            <TimeSlotGrid
+              slots={sortedSlots}
+              selectedSlot={selectedSlot}
+              onSelectSlot={setSelectedSlot}
+              loading={loadingSlots}
+              error={slotsError}
+              disabled={booking || loadingAsap}
+              columns={4}
+              timePreference={timePreference}
+              showPreferredHint={Boolean(timePreference.timeOfDay)}
+            />
           )}
 
           {/* Error Display */}
           {error && !loadingSlots && slots.length > 0 && (
             <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
-              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <Clock className="w-5 h-5 shrink-0" />
               <span className="text-sm">{error}</span>
             </div>
           )}

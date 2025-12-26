@@ -10,7 +10,7 @@ import { MiniCalendar } from '@/components/ui/mini-calendar';
 import { VerticalImageStack, StackJob } from '@/components/ui/vertical-image-stack';
 import { TimelineJob } from '@/components/ui/daily-timeline-scheduler';
 import { UpcomingResponse } from '@/app/api/upcoming/route';
-import { Sun, Moon, CloudSun, RefreshCw, Navigation, Play, MapPin, Clock, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Sun, Moon, CloudSun, RefreshCw, Navigation, Play, MapPin, Clock, AlertTriangle, ChevronRight, Info } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -259,8 +259,30 @@ export default function TodayPage() {
     window.open(`https://maps.google.com/maps?daddr=${encodedAddress}`, '_blank');
   };
 
+  // Log deprecation warning
+  if (typeof window !== 'undefined') {
+    console.warn('[Velocity] Deprecated page accessed: /today - Use /action instead');
+  }
+
   return (
     <div className="cl-page-container space-y-5">
+      {/* Deprecation Banner */}
+      <Link
+        href="/action"
+        className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+      >
+        <Info className="w-5 h-5 text-amber-600 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-amber-800">
+            This view has moved to Action
+          </p>
+          <p className="text-xs text-amber-600">
+            Click here to use the new Velocity Triage System
+          </p>
+        </div>
+        <ChevronRight className="w-5 h-5 text-amber-400" />
+      </Link>
+
       {/* Header with Greeting */}
       <div className="flex items-center justify-between">
         <div>

@@ -1,42 +1,49 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Lead, PriorityColor } from '@/types/database';
-import { ActionResponse } from '@/app/api/action/route';
-import { LeadCardV4, ActionEmptyState, OutcomePrompt, ActionTimeline } from '@/components/leads';
-import { BookJobModal } from '@/components/leads/book-job-modal';
-import { AddNoteModal } from '@/components/leads/add-note-modal';
-import { CallbackOutcome } from '@/types/database';
-import { Button } from '@/components/ui/button';
-import { PageTabs } from '@/components/ui/page-tabs';
-import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Clock, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import Link from 'next/link';
+/**
+ * ACTION Page - Velocity Triage System
+ *
+ * Displays leads and jobs sorted by velocity score.
+ * Uses VelocityCardFactory to render specialized cards based on archetype.
+ */
 
-// Priority filter tabs
-const PRIORITY_FILTERS: { value: PriorityColor | 'all'; label: string; color: string }[] = [
-  { value: 'all', label: 'All', color: 'bg-gray-100 text-gray-700' },
-  { value: 'red', label: 'Callback Risk', color: 'bg-red-100 text-red-700' },
-  { value: 'green', label: 'Commercial', color: 'bg-emerald-100 text-emerald-700' },
-  { value: 'blue', label: 'New Leads', color: 'bg-blue-100 text-blue-700' },
-  { value: 'gray', label: 'Spam', color: 'bg-gray-100 text-gray-500' },
+import { useState, useEffect, useCallback } from 'react';
+import { Lead, Job, VelocityArchetype, CallbackOutcome } from '@/types/database';
+import { VelocityResponse, VelocityItemWithType } from '@/app/api/velocity/route';
+import { VelocityCardFactory } from '@/components/velocity';
+import { getEmptyStateForFilter } from '@/components/velocity/empty-states';
+import { BookJobModal } from '@/components/leads/book-job-modal';
+import type { SnoozeDuration } from '@/components/velocity/types';
+import { AddNoteModal } from '@/components/leads/add-note-modal';
+import { OutcomePrompt } from '@/components/leads/outcome-prompt';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, AlertTriangle, DollarSign, PhoneCall, ClipboardList } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { determineArchetype, ARCHETYPE_CONFIG } from '@/lib/velocity';
+
+// Archetype filter options
+const ARCHETYPE_FILTERS: { value: VelocityArchetype | 'all'; label: string; icon: any }[] = [
+  { value: 'all', label: 'All', icon: null },
+  { value: 'HAZARD', label: 'Hazard', icon: AlertTriangle },
+  { value: 'RECOVERY', label: 'Recovery', icon: PhoneCall },
+  { value: 'REVENUE', label: 'Revenue', icon: DollarSign },
+  { value: 'LOGISTICS', label: 'Logistics', icon: ClipboardList },
 ];
 
 export default function ActionPage() {
-  const [data, setData] = useState<ActionResponse | null>(null);
+  const [data, setData] = useState<VelocityResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<PriorityColor | 'all'>('all');
+  const [activeFilter, setActiveFilter] = useState<VelocityArchetype | 'all'>('all');
 
   // AI stats for empty state
   const [todayStats, setTodayStats] = useState({ total_calls: 0, ai_booked: 0 });
 
   // Modal state
-  const [bookModalLead, setBookModalLead] = useState<Lead | null>(null);
-  const [pendingOutcomeLead, setPendingOutcomeLead] = useState<Lead | null>(null);
-  const [addNoteLead, setAddNoteLead] = useState<Lead | null>(null);
+  const [bookModalItem, setBookModalItem] = useState<VelocityItemWithType | null>(null);
+  const [pendingOutcomeItem, setPendingOutcomeItem] = useState<VelocityItemWithType | null>(null);
+  const [addNoteItem, setAddNoteItem] = useState<VelocityItemWithType | null>(null);
 
   const fetchData = useCallback(async (showRefresh = false) => {
     try {
@@ -44,20 +51,20 @@ export default function ActionPage() {
 
       const params = new URLSearchParams();
       if (activeFilter !== 'all') {
-        params.set('priority_color', activeFilter);
+        params.set('archetype', activeFilter);
       }
 
-      // Fetch action data and stats in parallel
-      const [actionResponse, statsResponse] = await Promise.all([
-        fetch(`/api/action?${params.toString()}`),
+      // Fetch velocity data and stats in parallel
+      const [velocityResponse, statsResponse] = await Promise.all([
+        fetch(`/api/velocity?${params.toString()}`),
         fetch('/api/stats/today'),
       ]);
 
-      if (!actionResponse.ok) {
+      if (!velocityResponse.ok) {
         throw new Error('Failed to fetch action items');
       }
 
-      const result: ActionResponse = await actionResponse.json();
+      const result: VelocityResponse = await velocityResponse.json();
       setData(result);
 
       // Load stats for empty state
@@ -66,9 +73,9 @@ export default function ActionPage() {
         setTodayStats(stats);
       }
 
-      // Check for pending outcome (lead with recent call tap)
+      // Check for pending outcome
       if (result.pendingOutcome) {
-        setPendingOutcomeLead(result.pendingOutcome);
+        setPendingOutcomeItem(result.pendingOutcome);
       }
 
       setError(null);
@@ -90,61 +97,101 @@ export default function ActionPage() {
   }, [fetchData]);
 
   // Handle call tap - track it for outcome prompt
-  const handleCall = async (lead: Lead) => {
+  const handleCall = async (phone: string, item: VelocityItemWithType) => {
     try {
-      // Track the call tap in the database
-      await fetch(`/api/leads/${lead.id}/track-call`, {
-        method: 'POST',
-      });
-
-      // Open native dialer
-      window.location.href = `tel:${lead.customer_phone}`;
+      if (item.itemType === 'lead') {
+        await fetch(`/api/leads/${item.id}/track-call`, { method: 'POST' });
+      }
+      window.location.href = `tel:${phone}`;
     } catch (err) {
       console.error('Error tracking call:', err);
-      // Still open dialer even if tracking fails
-      window.location.href = `tel:${lead.customer_phone}`;
+      window.location.href = `tel:${phone}`;
     }
   };
 
   // Handle booking - open book modal
-  const handleBook = (lead: Lead) => {
-    setBookModalLead(lead);
+  const handleBook = (item: VelocityItemWithType) => {
+    setBookModalItem(item);
   };
 
   // Handle archive
-  const handleArchive = async (lead: Lead) => {
+  const handleArchive = async (item: VelocityItemWithType) => {
     try {
-      await fetch(`/api/leads/${lead.id}/archive`, { method: 'POST' });
+      if (item.itemType === 'lead') {
+        await fetch(`/api/leads/${item.id}/archive`, { method: 'POST' });
+      }
       fetchData(true);
     } catch (err) {
-      console.error('Error archiving lead:', err);
+      console.error('Error archiving:', err);
     }
   };
 
-  // Handle add note - open modal
-  const handleAddNote = (lead: Lead) => {
-    setAddNoteLead(lead);
+  // Handle add note
+  const handleAddNote = (item: VelocityItemWithType) => {
+    setAddNoteItem(item);
   };
 
   const handleNoteSuccess = () => {
-    // Optionally show a toast here
-    setAddNoteLead(null);
+    setAddNoteItem(null);
+    fetchData(true);
   };
 
-  // Handle mark spam
-  const handleMarkSpam = async (lead: Lead) => {
+  // Handle snooze
+  const handleSnooze = async (item: VelocityItemWithType, duration: SnoozeDuration) => {
+    if (item.itemType !== 'lead') return;
+
     try {
-      await fetch(`/api/leads/${lead.id}/spam`, { method: 'POST' });
+      // Calculate snooze time
+      const now = new Date();
+      let snoozeUntil: Date;
+
+      switch (duration) {
+        case '1h':
+          snoozeUntil = new Date(now.getTime() + 60 * 60 * 1000);
+          break;
+        case '3h':
+          snoozeUntil = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+          break;
+        case 'tomorrow':
+          snoozeUntil = new Date(now);
+          snoozeUntil.setDate(snoozeUntil.getDate() + 1);
+          snoozeUntil.setHours(9, 0, 0, 0);
+          break;
+      }
+
+      await fetch(`/api/leads/${item.id}/snooze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ remind_at: snoozeUntil.toISOString() }),
+      });
+
       fetchData(true);
     } catch (err) {
-      console.error('Error marking lead as spam:', err);
+      console.error('Error snoozing lead:', err);
+    }
+  };
+
+  // Handle mark lost
+  const handleMarkLost = async (item: VelocityItemWithType) => {
+    if (item.itemType !== 'lead') return;
+
+    try {
+      await fetch(`/api/leads/${item.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'lost' }),
+      });
+
+      fetchData(true);
+    } catch (err) {
+      console.error('Error marking lead as lost:', err);
     }
   };
 
   // Handle booking success
   const handleBookingSuccess = () => {
-    setBookModalLead(null);
-    fetchData(true); // Refresh to remove booked lead
+    setBookModalItem(null);
+    fetchData(true);
   };
 
   // Handle outcome submission
@@ -153,9 +200,9 @@ export default function ActionPage() {
     note?: string,
     snoozeUntil?: string
   ) => {
-    if (!pendingOutcomeLead) return;
+    if (!pendingOutcomeItem || pendingOutcomeItem.itemType !== 'lead') return;
 
-    const response = await fetch(`/api/leads/${pendingOutcomeLead.id}/outcome`, {
+    const response = await fetch(`/api/leads/${pendingOutcomeItem.id}/outcome`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -169,22 +216,19 @@ export default function ActionPage() {
       throw new Error('Failed to submit outcome');
     }
 
-    setPendingOutcomeLead(null);
-    fetchData(true); // Refresh list
+    setPendingOutcomeItem(null);
+    fetchData(true);
   };
 
   // Handle outcome -> book flow
   const handleOutcomeBook = (lead: Lead) => {
-    setPendingOutcomeLead(null);
-    setBookModalLead(lead);
+    setPendingOutcomeItem(null);
+    setBookModalItem({ ...lead, itemType: 'lead' });
   };
 
-  // Filter leads by priority color
-  const filteredLeads = data?.leads || [];
-
-  // Get counts for filter badges
-  const counts = data?.counts || { total: 0, red: 0, green: 0, blue: 0, gray: 0 };
-  const bookedCount = data?.bookedCount || 0;
+  const items = data?.items || [];
+  const counts = data?.counts || { HAZARD: 0, RECOVERY: 0, REVENUE: 0, LOGISTICS: 0 };
+  const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
 
   if (loading) {
     return (
@@ -211,118 +255,121 @@ export default function ActionPage() {
   }
 
   return (
-    <div className="cl-page-container">
-      {/* Header - PRD layout */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-navy-800">Action</h1>
-          <span className="text-lg text-navy-400">({counts.total})</span>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="cl-page-container pb-24">
+      {/* Header with counts */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">Action</h1>
+            <p className="text-sm text-slate-500">
+              {totalCount} item{totalCount !== 1 ? 's' : ''} need attention
+            </p>
+          </div>
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={() => fetchData(true)}
             disabled={refreshing}
-            aria-label="Refresh"
+            className="text-slate-500"
           >
-            <RefreshCw className={cn('w-5 h-5', refreshing && 'animate-spin')} />
+            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
           </Button>
-          <Link href="/history">
-            <Button variant="ghost" size="icon" aria-label="History">
-              <Clock className="w-5 h-5" />
-            </Button>
-          </Link>
         </div>
-      </div>
 
-      {/* In-page tab bar - ACTION/BOOKED */}
-      <PageTabs
-        activeTab="action"
-        actionCount={counts.total}
-        bookedCount={bookedCount}
-      />
-
-      {/* Priority Filter Pills - Always visible per PRD */}
-      <div className="mb-4 overflow-x-auto pb-2 -mx-4 px-4">
-        <div className="w-full max-w-lg mx-auto flex items-center justify-between gap-2">
-          {PRIORITY_FILTERS.map((filter) => {
-            const count = filter.value === 'all'
-              ? counts.total
-              : counts[filter.value as PriorityColor];
-
+        {/* Archetype Filter Pills */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:justify-center">
+          {ARCHETYPE_FILTERS.map((filter) => {
+            const count = filter.value === 'all' ? totalCount : counts[filter.value];
             const isActive = activeFilter === filter.value;
+            const config = filter.value !== 'all' ? ARCHETYPE_CONFIG[filter.value] : null;
 
             return (
-              <Button
+              <button
                 key={filter.value}
-                variant={isActive ? "default" : "outline"}
+                onClick={() => setActiveFilter(filter.value)}
                 className={cn(
-                  "flex-1 h-auto py-2 px-3 flex flex-col gap-1 items-center justify-center rounded-xl border transition-all",
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
                   isActive
-                    ? "border-navy-900 bg-navy-50 text-navy-900 hover:bg-navy-100 shadow-sm"
-                    : "border-gray-200 text-gray-600 hover:bg-slate-50 hover:text-navy-700"
+                    ? filter.value === 'all'
+                      ? 'bg-slate-900 text-white'
+                      : `${config?.bgColor} ${config?.color} border ${config?.borderColor}`
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 )}
-                onClick={() => setActiveFilter(filter.value as PriorityColor | 'all')}
               >
-                <span className={cn(
-                  "flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold transition-colors",
-                  isActive ? "bg-navy-900 text-white" : "bg-gray-200 text-gray-600 group-hover:bg-gray-300"
-                )}>
-                  {count}
-                </span>
-                <span className="text-xs font-medium">{filter.label}</span>
-              </Button>
+                {filter.icon && <filter.icon className="h-3.5 w-3.5" />}
+                {filter.label}
+                {count > 0 && (
+                  <span
+                    className={cn(
+                      'ml-1 px-1.5 py-0.5 rounded-full text-xs',
+                      isActive ? 'bg-white/20 text-current' : 'bg-slate-200 text-slate-600'
+                    )}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
             );
           })}
         </div>
       </div>
 
-
-
-      {/* Lead Cards */}
-      {filteredLeads.length === 0 ? (
-        <ActionEmptyState
-          totalCalls={todayStats.total_calls}
-          aiBooked={todayStats.ai_booked}
-        />
+      {/* Velocity Cards */}
+      {items.length === 0 ? (
+        getEmptyStateForFilter(activeFilter, todayStats)
       ) : (
-        <ActionTimeline
-          leads={filteredLeads}
-          onCall={handleCall}
-          onBook={handleBook}
-          onArchive={handleArchive}
-          onAddNote={handleAddNote}
-          onMarkSpam={handleMarkSpam}
-          hidePriorityBadge={activeFilter !== 'all'}
-        />
+        <div className="space-y-10">
+          {items.map((item) => (
+            <VelocityCardFactory
+              key={item.id}
+              data={item}
+              onCall={(phone) => handleCall(phone, item)}
+              onDispatch={() => handleCall(item.customer_phone, item)}
+              onBook={() => handleBook(item)}
+              onArchive={() => handleArchive(item)}
+              onAddNote={() => handleAddNote(item)}
+              onSnooze={(_, duration) => handleSnooze(item, duration)}
+              onMarkLost={() => handleMarkLost(item)}
+              onPlay={() => {
+                // TODO: Open call player modal
+                console.log('Play call for', item.id);
+              }}
+              onNavigate={(address) => {
+                window.open(
+                  `https://maps.google.com/maps?q=${encodeURIComponent(address)}`,
+                  '_blank'
+                );
+              }}
+            />
+          ))}
+        </div>
       )}
 
       {/* Book Job Modal */}
-      {bookModalLead && (
+      {bookModalItem && bookModalItem.itemType === 'lead' && (
         <BookJobModal
-          lead={bookModalLead}
-          onClose={() => setBookModalLead(null)}
+          lead={bookModalItem as Lead}
+          onClose={() => setBookModalItem(null)}
           onSuccess={handleBookingSuccess}
         />
       )}
 
       {/* Outcome Prompt Modal */}
-      {pendingOutcomeLead && (
+      {pendingOutcomeItem && pendingOutcomeItem.itemType === 'lead' && (
         <OutcomePrompt
-          lead={pendingOutcomeLead}
-          open={!!pendingOutcomeLead}
-          onClose={() => setPendingOutcomeLead(null)}
+          lead={pendingOutcomeItem as Lead}
+          open={!!pendingOutcomeItem}
+          onClose={() => setPendingOutcomeItem(null)}
           onOutcome={handleOutcome}
           onBook={handleOutcomeBook}
         />
       )}
 
       {/* Add Note Modal */}
-      {addNoteLead && (
+      {addNoteItem && addNoteItem.itemType === 'lead' && (
         <AddNoteModal
-          lead={addNoteLead}
-          onClose={() => setAddNoteLead(null)}
+          lead={addNoteItem as Lead}
+          onClose={() => setAddNoteItem(null)}
           onSuccess={handleNoteSuccess}
         />
       )}

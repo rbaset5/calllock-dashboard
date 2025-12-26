@@ -3,23 +3,35 @@
 import { useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Phone, MapPin, Clock, Calendar, DollarSign, FileText, CalendarClock, Edit, XCircle } from 'lucide-react';
+import { ArrowLeft, FileText, ChevronDown, Edit, AlertTriangle, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { StatusBadge, UrgencyBadge, ServiceTypeBadge, RevenueTierBadge, ConfidenceIndicator, getRevenueTierInfo } from '@/components/ui/badge';
-import { DiagnosticContext } from '@/components/ui/diagnostic-context';
+import { Badge, StatusBadge } from '@/components/ui/badge';
+import { extractUrgencySignals } from '@/lib/extract-signals';
+import { DiagnosticContextInline } from '@/components/ui/diagnostic-context';
 import { JobStatusButtons } from '@/components/jobs/job-status-buttons';
-import { MapLink } from '@/components/jobs/map-link';
 import { RescheduleModal } from '@/components/jobs/reschedule-modal';
 import { CancelModal } from '@/components/jobs/cancel-modal';
 import { EditJobModal } from '@/components/jobs/edit-job-modal';
 import { SmsHistory } from '@/components/ui/sms-history';
 import { OperatorNotes } from '@/components/ui/operator-notes';
 import { CallHistoryList } from '@/components/calls/call-history-list';
-import { CustomerContext } from '@/components/customers/customer-context';
-import { formatDateTime, formatScheduleTime, formatCurrency } from '@/lib/format';
-import { formatPhone, phoneHref } from '@/lib/utils';
+import { CustomerIntelligenceCard } from '@/components/customers/customer-intelligence-card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+import { formatDateTime } from '@/lib/format';
 import type { Job } from '@/types/database';
+
+// New Hero-First components
+import { DetailHero } from '@/components/leads/detail-hero';
+import { QuickActions } from '@/components/leads/quick-actions';
+import { AppointmentCard } from '@/components/leads/appointment-card';
+import { SmartSummary } from '@/components/leads/smart-summary';
+import { JobActionFooter, StickyFooterSpacer } from '@/components/leads/sticky-action-footer';
 
 export default function JobDetailPage() {
   const params = useParams();
@@ -32,6 +44,7 @@ export default function JobDetailPage() {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
 
   // Check if job can be edited (only 'new' status)
   const canEdit = job?.status === 'new';
@@ -132,32 +145,24 @@ export default function JobDetailPage() {
     );
   }
 
+  // Extract urgency signals
+  const urgencySignals = extractUrgencySignals(job.ai_summary);
+
+  // Check if we have diagnostic context
+  const hasDiagnostics = job.problem_duration || job.problem_onset ||
+    job.problem_pattern || job.customer_attempted_fixes;
+
   return (
     <div className="p-4 space-y-4">
-      {/* Back Button */}
-      <Link
-        href="/jobs"
-        className="inline-flex items-center text-gray-600 hover:text-gray-900"
-      >
-        <ArrowLeft className="w-5 h-5 mr-1" />
-        Back to Jobs
-      </Link>
-
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{job.customer_name}</h1>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <ServiceTypeBadge type={job.service_type} />
-            <UrgencyBadge urgency={job.urgency} />
-            <StatusBadge status={job.status} />
-            {job.needs_action && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 animate-pulse">
-                Needs Action
-              </span>
-            )}
-          </div>
-        </div>
+      {/* Back Button + Edit */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/booked"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-5 h-5 mr-1" />
+          Back to Booked
+        </Link>
         {canEdit && (
           <Button variant="outline" size="sm" onClick={() => setShowEditModal(true)}>
             <Edit className="w-4 h-4 mr-1" />
@@ -166,199 +171,192 @@ export default function JobDetailPage() {
         )}
       </div>
 
-      {/* Navigation */}
-      <MapLink address={job.customer_address} />
+      {/* ===== HERO SECTION ===== */}
+      <DetailHero
+        customerName={job.customer_name}
+        urgency={job.urgency}
+        revenueTier={job.revenue_tier_label}
+        revenueConfidence={job.revenue_confidence}
+        serviceType={job.service_type}
+        createdAt={job.created_at}
+      />
 
-      {/* Status Buttons */}
+      {/* ===== APPOINTMENT CARD ===== */}
+      <AppointmentCard
+        scheduledAt={job.scheduled_at}
+        timezone={timezone}
+        onReschedule={() => setShowRescheduleModal(true)}
+        canReschedule={!!canReschedule}
+        isAiBooked={job.is_ai_booked}
+      />
+
+      {/* ===== QUICK ACTIONS ===== */}
+      <QuickActions
+        phone={job.customer_phone}
+        address={job.customer_address}
+      />
+
+      {/* ===== STATUS BUTTONS ===== */}
       <JobStatusButtons
         jobId={job.id}
         currentStatus={job.status}
         needsAction={job.needs_action}
       />
 
-      {/* Customer Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Customer</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <a
-            href={phoneHref(job.customer_phone)}
-            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-          >
-            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-              <Phone className="w-5 h-5 text-primary-600" />
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">{formatPhone(job.customer_phone)}</p>
-              <p className="text-sm text-gray-500">Tap to call</p>
-            </div>
-          </a>
-
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-gray-600" />
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">{job.customer_address}</p>
-              <p className="text-sm text-gray-500">Service address</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Schedule & Revenue */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Details</CardTitle>
-          <div className="flex gap-2">
-            {canReschedule && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowRescheduleModal(true)}
-              >
-                <CalendarClock className="w-4 h-4 mr-1" />
-                Reschedule
-              </Button>
-            )}
-            {canCancel && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setShowCancelModal(true)}
-              >
-                <XCircle className="w-4 h-4 mr-1" />
-                Cancel
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {job.scheduled_at && (
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-gray-400" />
-              <div>
-                <p className="font-medium text-gray-900">
-                  {formatScheduleTime(job.scheduled_at, timezone)}
-                </p>
-                <p className="text-sm text-gray-500">Scheduled appointment</p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-gray-400" />
-            <div>
-              <p className="font-medium text-gray-900">
-                {formatDateTime(job.created_at, timezone)}
-              </p>
-              <p className="text-sm text-gray-500">Job created</p>
-            </div>
-          </div>
-
-          {job.revenue && (
-            <div className="flex items-center gap-3">
-              <DollarSign className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="font-medium text-green-600">{formatCurrency(job.revenue)}</p>
-                <p className="text-sm text-gray-500">Revenue</p>
-              </div>
-            </div>
-          )}
-
-          {/* Revenue Tier with Confidence */}
-          {job.revenue_tier_label && (
-            <div className="flex items-center gap-3">
-              <DollarSign className="w-5 h-5 text-gray-400" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <RevenueTierBadge tier={job.revenue_tier_label} />
-                  <span className="font-medium text-gray-900">
-                    {job.revenue_tier_description || getRevenueTierInfo(job.revenue_tier_label).label}
-                  </span>
-                  {job.revenue_confidence && (
-                    <ConfidenceIndicator confidence={job.revenue_confidence} />
-                  )}
-                </div>
-                <p className="text-sm text-gray-500">
-                  Est. {job.revenue_tier_range || getRevenueTierInfo(job.revenue_tier_label).range}
-                </p>
-                {job.revenue_tier_signals && job.revenue_tier_signals.length > 0 && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    Signals: {job.revenue_tier_signals.join(', ')}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* AI Summary */}
-      {job.ai_summary && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              AI Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-700 whitespace-pre-wrap">{job.ai_summary}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Diagnostic Context */}
-      <DiagnosticContext
-        problemDuration={job.problem_duration}
-        problemOnset={job.problem_onset}
-        problemPattern={job.problem_pattern}
-        customerAttemptedFixes={job.customer_attempted_fixes}
+      {/* ===== SMART SUMMARY ===== */}
+      <SmartSummary
+        aiSummary={job.ai_summary}
       />
 
-      {/* Needs Action Note */}
+      {/* ===== NEEDS ACTION ALERT ===== */}
       {job.needs_action_note && (
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-800">Action Note</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-700">{job.needs_action_note}</p>
-          </CardContent>
-        </Card>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-red-800">Action Required</p>
+              <p className="text-sm text-red-700 mt-1">{job.needs_action_note}</p>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* SMS Activity */}
+      {/* ===== CUSTOMER INTELLIGENCE ===== */}
+      <CustomerIntelligenceCard phone={job.customer_phone} />
+
+      {/* ===== DETAILS (Expandable) ===== */}
+      <Card>
+        <Collapsible defaultOpen={Boolean(hasDiagnostics) || urgencySignals.length > 0}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors pb-2">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Info className="w-4 h-4" />
+                  Additional Details
+                </span>
+                <ChevronDown className="w-4 h-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4 pt-0">
+              {/* Status */}
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge status={job.status} />
+                {job.is_ai_booked && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                    AI Booked
+                  </span>
+                )}
+              </div>
+
+              {/* Diagnostic Context */}
+              {hasDiagnostics && (
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <DiagnosticContextInline
+                    problemDuration={job.problem_duration}
+                    problemOnset={job.problem_onset}
+                    problemPattern={job.problem_pattern}
+                    customerAttemptedFixes={job.customer_attempted_fixes}
+                  />
+                </div>
+              )}
+
+              {/* Urgency Signals */}
+              {urgencySignals.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    Urgency Signals
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {urgencySignals.map((signal) => (
+                      <Badge key={signal} variant="warning" className="text-xs">
+                        {signal}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Revenue Signals */}
+              {job.revenue_tier_signals && job.revenue_tier_signals.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Revenue Signals</p>
+                  <p className="text-sm text-gray-600">
+                    {job.revenue_tier_signals.join(', ')}
+                  </p>
+                </div>
+              )}
+
+              {/* Created Date */}
+              <div className="text-sm text-gray-500">
+                Job created {formatDateTime(job.created_at, timezone)}
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
+      {/* ===== SMS ACTIVITY ===== */}
       <SmsHistory jobId={job.id} />
 
-      {/* Customer Context */}
-      <CustomerContext phone={job.customer_phone} />
-
-      {/* Operator Notes */}
+      {/* ===== OPERATOR NOTES ===== */}
       <OperatorNotes
         customerPhone={job.customer_phone}
         customerName={job.customer_name}
         jobId={job.id}
       />
 
-      {/* Call History */}
+      {/* ===== CALL HISTORY ===== */}
       <CallHistoryList phone={job.customer_phone} />
 
-      {/* Call Transcript */}
+      {/* ===== CALL TRANSCRIPT (Collapsed) ===== */}
       {job.call_transcript && (
         <Card>
-          <CardHeader>
-            <CardTitle>Call Transcript</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-700 whitespace-pre-wrap text-sm font-mono bg-gray-50 p-4 rounded-lg">
-              {job.call_transcript}
-            </p>
-          </CardContent>
+          <Collapsible open={transcriptOpen} onOpenChange={setTranscriptOpen}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Call Transcript
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 transition-transform duration-200",
+                      transcriptOpen && "rotate-180"
+                    )}
+                  />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <div className="bg-gray-50 rounded-lg p-3 max-h-64 overflow-y-auto">
+                  <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+                    {job.call_transcript}
+                  </pre>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
       )}
+
+      {/* Spacer for sticky footer */}
+      <StickyFooterSpacer />
+
+      {/* ===== STICKY ACTION FOOTER ===== */}
+      <JobActionFooter
+        phone={job.customer_phone}
+        jobId={job.id}
+        currentStatus={job.status}
+        onReschedule={() => setShowRescheduleModal(true)}
+        onCancel={() => setShowCancelModal(true)}
+        canReschedule={!!canReschedule}
+        canCancel={!!canCancel}
+      />
 
       {/* Reschedule Modal */}
       {showRescheduleModal && job && (

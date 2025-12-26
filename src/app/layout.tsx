@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Plus_Jakarta_Sans, Permanent_Marker, Space_Grotesk } from "next/font/google";
+import { Plus_Jakarta_Sans, Permanent_Marker, Space_Grotesk, DM_Sans, Inter } from "next/font/google";
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
+});
 import { ServiceWorkerRegistration } from "@/components/pwa";
 import { Component as Background } from "@/components/ui/background-components";
 import "./globals.css";
@@ -22,6 +28,12 @@ const permanentMarker = Permanent_Marker({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-permanent-marker",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -54,8 +66,9 @@ export default function RootLayout({
           src="https://unpkg.com/@react-grab/claude-code/dist/client.global.js"
           strategy="afterInteractive"
         />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
-      <body className={`${plusJakartaSans.variable} ${spaceGrotesk.variable} ${permanentMarker.variable} font-sans antialiased`}>
+      <body className={`${plusJakartaSans.variable} ${spaceGrotesk.variable} ${permanentMarker.variable} ${dmSans.variable} ${inter.variable} font-sans antialiased`}>
         <ServiceWorkerRegistration />
         {children}
       </body>

@@ -13,6 +13,8 @@ interface OperatorNotesProps {
   jobId?: string;
   leadId?: string;
   className?: string;
+  /** If true, hides the component when there are no notes (except during initial load) */
+  hideWhenEmpty?: boolean;
 }
 
 /**
@@ -25,6 +27,7 @@ export function OperatorNotes({
   jobId,
   leadId,
   className,
+  hideWhenEmpty = false,
 }: OperatorNotesProps) {
   const [notes, setNotes] = useState<OperatorNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +104,9 @@ export function OperatorNotes({
   }
 
   if (loading) {
+    // Don't show loading state if hideWhenEmpty - wait for data
+    if (hideWhenEmpty) return null;
+
     return (
       <Card className={className}>
         <CardHeader className="pb-2">
@@ -117,6 +123,11 @@ export function OperatorNotes({
         </CardContent>
       </Card>
     );
+  }
+
+  // If hideWhenEmpty is true and there are no notes, don't render
+  if (hideWhenEmpty && notes.length === 0 && !showAddForm) {
+    return null;
   }
 
   return (

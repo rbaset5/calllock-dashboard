@@ -23,8 +23,23 @@ export type BookingReviewStatus = 'pending' | 'confirmed' | 'adjusted' | 'cancel
 // GRAY: Spam/vendor (sales calls, solicitations)
 export type PriorityColor = 'red' | 'green' | 'blue' | 'gray';
 
+// Velocity Archetype System - derived from priority_color, urgency, revenue_tier
+// HAZARD: Safety emergencies (urgency === 'emergency')
+// RECOVERY: Callback risk / retention (priority_color === 'red')
+// REVENUE: High-value opportunities (revenue_tier === 'replacement' | 'major_repair')
+// LOGISTICS: Standard leads (default)
+export type VelocityArchetype = 'HAZARD' | 'REVENUE' | 'RECOVERY' | 'LOGISTICS';
+
 // V4 Callback Outcome (what happened after contractor called back)
 export type CallbackOutcome = 'booked' | 'resolved' | 'try_again' | 'no_answer';
+
+// V5 Work Type Classification (from backend transcript analysis)
+export type WorkType = 'service' | 'maintenance' | 'install' | 'admin';
+
+// HVAC Must-Have Types (Owner-Operator Decision Support)
+export type PropertyType = 'house' | 'condo' | 'apartment' | 'commercial';
+export type SystemStatus = 'completely_down' | 'partially_working' | 'running_but_ineffective';
+export type EquipmentAgeBracket = 'under_10' | '10_to_15' | 'over_15' | 'unknown';
 
 // Action Item types for the Today screen
 // - missed_call: Customer hung up (Lead status: abandoned) - TRUE missed call
@@ -88,6 +103,17 @@ export interface Job {
   // V4 Priority (retained from lead conversion)
   priority_color: PriorityColor | null;
   priority_reason: string | null;
+  assigned_tech_name: string | null;
+  notes: string | null;
+  // V5 Velocity Enhancements
+  sentiment_score: number | null; // 1-5 scale: 1=very negative, 5=very positive
+  work_type: WorkType | null;
+  // HVAC Must-Have Fields (Owner-Operator Decision Support)
+  property_type: PropertyType | null;
+  system_status: SystemStatus | null;
+  equipment_age_bracket: EquipmentAgeBracket | null;
+  is_decision_maker: boolean | null;
+  decision_maker_contact: string | null;
 }
 
 // Equipment on file for a customer
@@ -170,6 +196,15 @@ export interface Lead {
   last_call_tapped_at: string | null;
   // V4 Time Preference (customer's stated preference)
   time_preference: string | null;
+  // V5 Velocity Enhancements
+  sentiment_score: number | null; // 1-5 scale: 1=very negative, 5=very positive
+  work_type: WorkType | null;
+  // HVAC Must-Have Fields (Owner-Operator Decision Support)
+  property_type: PropertyType | null;
+  system_status: SystemStatus | null;
+  equipment_age_bracket: EquipmentAgeBracket | null;
+  is_decision_maker: boolean | null;
+  decision_maker_contact: string | null;
 }
 
 export interface AIBookingReview {
@@ -335,6 +370,32 @@ export interface OperatorNote {
   updated_at: string;
 }
 
+// Operator notification preferences (from migration 0003)
+export interface OperatorNotificationPreferences {
+  id: string;
+  user_id: string;
+  // Notification toggles per event type
+  sms_same_day_booking: boolean;
+  sms_future_booking: boolean;
+  sms_callback_request: boolean;
+  sms_schedule_conflict: boolean;
+  sms_cancellation: boolean;
+  // Quiet hours configuration
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: string;
+  quiet_hours_end: string;
+  // STOP compliance
+  sms_unsubscribed: boolean;
+  sms_unsubscribed_at: string | null;
+  // Urgent bypass (migration 0018)
+  urgent_bypass_quiet_hours: boolean;
+  // Push notifications (migration 0019)
+  push_enabled: boolean;
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
 // Database schema type for Supabase client
 export interface Database {
   public: {
@@ -379,10 +440,9 @@ export interface Database {
       };
       leads: {
         Row: Lead;
-        Insert: Omit<Lead, 'id' | 'created_at' | 'updated_at'> & {
+        Insert: Pick<Lead, 'user_id' | 'customer_name' | 'customer_phone'> &
+        Partial<Omit<Lead, 'id' | 'user_id' | 'customer_name' | 'customer_phone'>> & {
           id?: string;
-          created_at?: string;
-          updated_at?: string;
         };
         Update: Partial<Omit<Lead, 'id' | 'user_id'>>;
       };
@@ -424,6 +484,15 @@ export interface Database {
           callback_status?: CallbackStatus;
         };
         Update: Partial<Omit<EmergencyAlert, 'id' | 'user_id'>>;
+      };
+      operator_notification_preferences: {
+        Row: OperatorNotificationPreferences;
+        Insert: Omit<OperatorNotificationPreferences, 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Omit<OperatorNotificationPreferences, 'id' | 'user_id'>>;
       };
     };
     Views: {

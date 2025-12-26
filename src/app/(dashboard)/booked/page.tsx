@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RevenueTierBadge } from '@/components/ui/revenue-tier-badge';
 import { PageTabs } from '@/components/ui/page-tabs';
+import { QuickScanBar } from '@/components/ui/quick-scan-bar';
 import {
   RefreshCw,
   Calendar,
@@ -15,6 +16,8 @@ import {
   Phone,
   Navigation,
   Sparkles,
+  Info,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
@@ -84,6 +87,16 @@ function JobCard({
         <p className="text-sm text-gray-500 mb-2">
           {extractProblem(job.ai_summary)}
         </p>
+
+        {/* Quick scan bar - HVAC must-have fields */}
+        <QuickScanBar
+          propertyType={job.property_type}
+          systemStatus={job.system_status}
+          equipmentAgeBracket={job.equipment_age_bracket}
+          isDecisionMaker={job.is_decision_maker}
+          decisionMakerContact={job.decision_maker_contact}
+          className="mb-2"
+        />
 
         {/* Booked by badge */}
         <div className="flex justify-end">
@@ -289,8 +302,30 @@ export default function BookedPage() {
 
   const groups = data?.groups || [];
 
+  // Log deprecation warning
+  if (typeof window !== 'undefined') {
+    console.warn('[Velocity] Deprecated page accessed: /booked - Use /inbox instead');
+  }
+
   return (
     <div className="cl-page-container">
+      {/* Deprecation Banner */}
+      <Link
+        href="/inbox?filter=booked"
+        className="flex items-center gap-3 p-3 mb-4 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+      >
+        <Info className="w-5 h-5 text-amber-600 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-amber-800">
+            This view has moved to Inbox
+          </p>
+          <p className="text-xs text-amber-600">
+            Click here to view booked items in the new Inbox
+          </p>
+        </div>
+        <ChevronRight className="w-5 h-5 text-amber-400" />
+      </Link>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

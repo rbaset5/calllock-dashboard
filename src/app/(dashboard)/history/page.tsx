@@ -19,7 +19,10 @@ import {
   User,
   Archive,
   Ban,
+  Info,
+  ChevronRight,
 } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -475,8 +478,34 @@ export default function HistoryPage() {
     }
   };
 
+  // Log deprecation warning
+  if (typeof window !== 'undefined') {
+    console.warn('[Velocity] Deprecated page accessed: /history - Use /inbox instead');
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Deprecation Banner */}
+      <div className="bg-white border-b">
+        <div className="max-w-lg mx-auto px-4 py-3">
+          <Link
+            href="/inbox"
+            className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+          >
+            <Info className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-800">
+                This view has moved to Inbox
+              </p>
+              <p className="text-xs text-amber-600">
+                Click here to use the new unified Inbox
+              </p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-amber-400" />
+          </Link>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4">

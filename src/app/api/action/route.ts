@@ -69,31 +69,33 @@ export async function GET(request: NextRequest) {
     const adminClient = createAdminClient();
     const now = new Date().toISOString();
 
-    // 1. Base query for ALL action leads (for counts)
-    let baseQuery = adminClient
+    // Single query to fetch all leads (optimized from 2 queries to 1)
+    let leadsQuery = adminClient
       .from('leads')
-      .select('priority_color') // Only need color for counts
+      .select('*')
       .eq('user_id', user.id)
-      .not('status', 'in', '("converted","lost")');
+      .not('status', 'in', '("converted","lost")')
+      .order('created_at', { ascending: false });
 
-    // Apply snooze filter to base query if needed
+    // Apply snooze filter if needed
     if (!includeSnoozed) {
-      baseQuery = baseQuery.or(`remind_at.is.null,remind_at.lte.${now}`);
+      leadsQuery = leadsQuery.or(`remind_at.is.null,remind_at.lte.${now}`);
     }
 
-    // Execute base query to get counts
-    const { data: allLeadsForCounts, error: countsError } = await baseQuery;
+    const { data: allLeads, error: leadsError } = await leadsQuery;
 
-    if (countsError) {
-      console.error('Error fetching leads for counts:', countsError);
-      return NextResponse.json({ error: 'Failed to fetch lead counts' }, { status: 500 });
+    if (leadsError) {
+      console.error('Error fetching action leads:', leadsError);
+      return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
     }
 
-    // Calculate counts from the full set
-    const redCount = allLeadsForCounts?.filter((l: any) => l.priority_color === 'red').length || 0;
-    const greenCount = allLeadsForCounts?.filter((l: any) => l.priority_color === 'green').length || 0;
-    const blueCount = allLeadsForCounts?.filter((l: any) => l.priority_color === 'blue').length || 0;
-    const grayCount = allLeadsForCounts?.filter((l: any) => l.priority_color === 'gray').length || 0;
+    const leads = allLeads || [];
+
+    // Calculate counts from the full set (no extra query needed)
+    const redCount = leads.filter(l => l.priority_color === 'red').length;
+    const greenCount = leads.filter(l => l.priority_color === 'green').length;
+    const blueCount = leads.filter(l => l.priority_color === 'blue').length;
+    const grayCount = leads.filter(l => l.priority_color === 'gray').length;
 
     const counts = {
       total: redCount + greenCount + blueCount + grayCount,
@@ -103,33 +105,10 @@ export async function GET(request: NextRequest) {
       gray: grayCount,
     };
 
-    // 2. Filtered query for the actual list
-    let listQuery = adminClient
-      .from('leads')
-      .select('*')
-      .eq('user_id', user.id)
-      .not('status', 'in', '("converted","lost")');
-
-    if (!includeSnoozed) {
-      listQuery = listQuery.or(`remind_at.is.null,remind_at.lte.${now}`);
-    }
-
-    if (priorityColor) {
-      listQuery = listQuery.eq('priority_color', priorityColor);
-    }
-
-    // Order by created_at desc (we'll do custom sort in JS)
-    listQuery = listQuery.order('created_at', { ascending: false });
-
-    const { data: leads, error: leadsError } = await listQuery;
-
-    if (leadsError) {
-      console.error('Error fetching action leads:', leadsError);
-      return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
-    }
-
-    // Leads already sorted by created_at desc from DB query (most recent first)
-    const sortedLeads = leads || [];
+    // Filter by priority color if specified (in-memory, no extra query)
+    const sortedLeads = priorityColor
+      ? leads.filter(l => l.priority_color === priorityColor)
+      : leads;
 
     // Check for pending outcome (lead with recent call tap)
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();

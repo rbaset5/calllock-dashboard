@@ -9,20 +9,14 @@ import {
 } from '@/lib/notification-service';
 import { findOrCreateCustomer } from '@/lib/customers';
 import { formatScheduleTime } from '@/lib/format';
+import { validateWebhookAuth } from '@/lib/middleware/webhook-auth';
+import {
+  jobsWebhookSchema,
+  type JobsWebhookPayload,
+} from '@/lib/schemas/webhook-schemas';
 
 // EndCallReason from server - determines if this should be a Lead vs Job
-type EndCallReason =
-  | 'wrong_number'
-  | 'callback_later'
-  | 'safety_emergency'
-  | 'urgent_escalation'
-  | 'out_of_area'
-  | 'waitlist_added'
-  | 'completed'
-  | 'customer_hangup'
-  | 'sales_lead'
-  | 'cancelled'
-  | 'rescheduled';
+type EndCallReason = NonNullable<JobsWebhookPayload['end_call_reason']>;
 
 // Lead status mapping from EndCallReason
 type LeadStatus =
@@ -35,56 +29,6 @@ type LeadStatus =
   | 'lost'
   | 'abandoned'
   | 'sales_opportunity';
-
-// Request body type
-interface IncomingJob {
-  customer_name: string;
-  customer_phone: string;
-  customer_address: string;
-  service_type: 'hvac' | 'plumbing' | 'electrical' | 'general';
-  urgency: 'low' | 'medium' | 'high' | 'emergency';
-  ai_summary?: string;
-  scheduled_at?: string; // ISO 8601
-  call_transcript?: string;
-  user_email: string; // To find the user
-  // Revenue estimation fields (from CallSeal server)
-  estimated_value?: number;
-  estimated_revenue_low?: number;
-  estimated_revenue_high?: number;
-  estimated_revenue_display?: string;
-  revenue_confidence?: 'low' | 'medium' | 'high';
-  revenue_factors?: string[];
-  potential_replacement?: boolean;
-  // Call outcome for Lead creation (when no booking)
-  end_call_reason?: EndCallReason;
-  issue_description?: string;
-  // Sales lead specific fields
-  equipment_type?: string;
-  equipment_age?: string;
-  sales_lead_notes?: string;
-  // Revenue tier classification (from CallSeal server)
-  revenue_tier?: 'replacement' | 'major_repair' | 'standard_repair' | 'minor' | 'diagnostic';
-  revenue_tier_label?: '$$$$' | '$$$' | '$$' | '$' | '$$?';
-  revenue_tier_signals?: string[];
-  // Extended revenue tier fields
-  revenue_tier_description?: string;
-  revenue_tier_range?: string;
-  // Diagnostic context fields
-  problem_duration?: string;
-  problem_onset?: string;
-  problem_pattern?: string;
-  customer_attempted_fixes?: string;
-  // Call tracking - links to original call record
-  call_id?: string;
-  // V3 Triage Engine fields
-  caller_type?: 'residential' | 'commercial' | 'vendor' | 'recruiting' | 'unknown';
-  primary_intent?: 'new_lead' | 'active_job_issue' | 'booking_request' | 'admin_billing' | 'solicitation';
-  booking_status?: 'confirmed' | 'attempted_failed' | 'not_requested';
-  is_callback_complaint?: boolean;
-  // V3 Status Color and Archive fields
-  status_color?: 'red' | 'green' | 'blue' | 'gray';
-  is_archived?: boolean;
-}
 
 /**
  * Map EndCallReason to LeadStatus
@@ -152,34 +96,109 @@ function mapLeadStatusToPriority(
   }
 }
 
-export async function POST(request: NextRequest) {
-  // Validate webhook secret
-  const webhookSecret = request.headers.get('X-Webhook-Secret');
-  if (webhookSecret !== process.env.WEBHOOK_SECRET) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+/**
+ * Extract equipment age from issue description text.
+ * Matches: "10 years old", "15 year old", "about 20 years", "system is 10 years"
+ */
+function extractEquipmentAge(text: string | undefined | null): string | null {
+  if (!text) return null;
+
+  const patterns = [
+    /(\d{1,2})\s*(?:years?)\s*old/i,
+    /about\s*(\d{1,2})\s*(?:years?)/i,
+    /(?:system|unit|equipment)\s*is\s*(\d{1,2})\s*(?:years?)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const age = parseInt(match[1], 10);
+      if (age >= 0 && age <= 50) {
+        return `${age} years`;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Determine priority color based on property type and other signals.
+ * Commercial properties get GREEN (high value).
+ * This overrides the backend-provided status_color when property_type is set.
+ */
+function determinePriorityColor(
+  propertyType: string | undefined | null,
+  statusColor: string | undefined | null,
+  systemStatus: string | undefined | null
+): 'red' | 'green' | 'blue' | 'gray' {
+  // Commercial properties always get GREEN priority (high value)
+  if (propertyType === 'commercial') {
+    return 'green';
   }
 
-  try {
-    const body: IncomingJob = await request.json();
+  // System completely down could be escalated to high priority
+  // But we'll let existing logic handle urgency escalation
 
-    // Validate required fields
-    if (
-      !body.customer_name ||
-      !body.customer_phone ||
-      !body.customer_address ||
-      !body.service_type ||
-      !body.urgency ||
-      !body.user_email
-    ) {
+  // Default to provided status_color or 'blue'
+  if (statusColor === 'red' || statusColor === 'green' || statusColor === 'blue' || statusColor === 'gray') {
+    return statusColor;
+  }
+
+  return 'blue';
+}
+
+/**
+ * Extract equipment type from issue description text.
+ * Matches: "AC", "furnace", "heat pump", "water heater", etc.
+ */
+function extractEquipmentType(text: string | undefined | null): string | null {
+  if (!text) return null;
+
+  const patterns = [
+    { regex: /\b(central\s*)?a\/?c\b|\bair\s*condition(er|ing)?\b/i, type: 'AC Unit' },
+    { regex: /\bheat(ing)?\s*(pump|system)\b/i, type: 'Heat Pump' },
+    { regex: /\bfurnace\b/i, type: 'Furnace' },
+    { regex: /\bwater\s*heater\b/i, type: 'Water Heater' },
+    { regex: /\bboiler\b/i, type: 'Boiler' },
+    { regex: /\bthermosta?t\b/i, type: 'Thermostat' },
+    { regex: /\bduct(work|s)?\b/i, type: 'Ductwork' },
+    { regex: /\bcompressor\b/i, type: 'Compressor' },
+    { regex: /\bhandler\b|\bair\s*handler\b/i, type: 'Air Handler' },
+    { regex: /\bmini[\s-]?split\b/i, type: 'Mini Split' },
+    { regex: /\bHVAC\b/i, type: 'HVAC System' },
+  ];
+
+  for (const { regex, type } of patterns) {
+    if (regex.test(text)) return type;
+  }
+  return null;
+}
+
+export async function POST(request: NextRequest) {
+  // Validate webhook secret using middleware
+  const authError = validateWebhookAuth(request);
+  if (authError) return authError;
+
+  try {
+    const rawBody = await request.json();
+
+    // Validate payload with Zod schema
+    const parseResult = jobsWebhookSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      console.error('Validation failed:', parseResult.error.issues);
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        {
+          error: 'Validation failed',
+          details: parseResult.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
+        },
         { status: 400 }
       );
     }
 
+    const body = parseResult.data;
     const supabase = createAdminClient();
 
     // Find user by email
@@ -264,6 +283,17 @@ export async function POST(request: NextRequest) {
               revenue_tier: body.revenue_tier || null,
               revenue_tier_label: body.revenue_tier_label || null,
               revenue_tier_signals: body.revenue_tier_signals || null,
+              equipment_type: body.equipment_type || extractEquipmentType(body.issue_description),
+              equipment_age: body.equipment_age || extractEquipmentAge(body.issue_description),
+              // V5 Velocity Enhancements
+              sentiment_score: body.sentiment_score ?? undefined,
+              work_type: body.work_type ?? undefined,
+              // HVAC Must-Have Fields
+              property_type: body.property_type ?? undefined,
+              system_status: body.system_status ?? undefined,
+              equipment_age_bracket: body.equipment_age_bracket ?? undefined,
+              is_decision_maker: body.is_decision_maker ?? undefined,
+              decision_maker_contact: body.decision_maker_contact ?? undefined,
               updated_at: new Date().toISOString(),
             })
             .eq('id', existingLead.id)
@@ -320,8 +350,8 @@ export async function POST(request: NextRequest) {
           customer_attempted_fixes: body.customer_attempted_fixes || null,
           // Sales lead info
           sales_lead_notes: body.sales_lead_notes || null,
-          equipment_type: body.equipment_type || null,
-          equipment_age: body.equipment_age || null,
+          equipment_type: body.equipment_type || extractEquipmentType(body.issue_description),
+          equipment_age: body.equipment_age || extractEquipmentAge(body.issue_description),
           // Call tracking - links lead to original call record
           original_call_id: body.call_id || null,
           // Preserve original end call reason for granular status display
@@ -334,6 +364,18 @@ export async function POST(request: NextRequest) {
           // V3 Status color and archive
           status_color: body.status_color || 'blue',
           is_archived: body.is_archived || false,
+          // V4 Priority color (with commercial property override)
+          priority_color: determinePriorityColor(body.property_type, body.status_color, body.system_status),
+          priority_reason: body.property_type === 'commercial' ? 'Commercial property - high value' : null,
+          // V5 Velocity Enhancements
+          sentiment_score: body.sentiment_score ?? null,
+          work_type: body.work_type ?? null,
+          // HVAC Must-Have Fields
+          property_type: body.property_type ?? null,
+          system_status: body.system_status ?? null,
+          equipment_age_bracket: body.equipment_age_bracket ?? null,
+          is_decision_maker: body.is_decision_maker ?? null,
+          decision_maker_contact: body.decision_maker_contact ?? null,
         })
         .select()
         .single();
@@ -364,6 +406,26 @@ export async function POST(request: NextRequest) {
           { leadId: lead.id } // Pass lead ID for SMS reply tracking
         );
         console.log(`Notification result for abandoned lead ${lead.id}:`, notificationResult);
+      }
+
+      // Send extra notification for commercial properties (high value)
+      // Commercial properties are flagged with priority_color: 'green' and will show in dashboard
+      // The sales_lead notification template works well for commercial property alerts
+      if (user.phone && body.property_type === 'commercial') {
+        const commercialNotification = await sendOperatorNotification(
+          user.id,
+          null,
+          'sales_lead' as NotificationEventType, // Reuse sales_lead event type
+          {
+            customerName: `🏢 ${lead.customer_name} (Commercial)`,
+            customerPhone: lead.customer_phone,
+            address: lead.customer_address,
+          },
+          user.phone,
+          user.timezone,
+          { leadId: lead.id }
+        );
+        console.log(`Commercial notification result for lead ${lead.id}:`, commercialNotification);
       }
 
       return NextResponse.json({
@@ -406,13 +468,14 @@ export async function POST(request: NextRequest) {
       try {
         const { data: existingJob } = await supabase
           .from('jobs')
-          .select('id')
+          .select('id, scheduled_at')
           .eq('user_id', user.id)
           .eq('original_call_id', body.call_id)
           .single();
 
         if (existingJob) {
           // Update existing job instead of creating duplicate
+          // Preserve existing scheduled_at if incoming payload doesn't have one
           const { data: updatedJob, error: updateError } = await supabase
             .from('jobs')
             .update({
@@ -420,11 +483,20 @@ export async function POST(request: NextRequest) {
               customer_phone: body.customer_phone,
               customer_address: body.customer_address,
               ai_summary: body.ai_summary || null,
-              scheduled_at: body.scheduled_at || null,
+              scheduled_at: body.scheduled_at ?? existingJob.scheduled_at,
               call_transcript: body.call_transcript || null,
               revenue_tier: body.revenue_tier || null,
               revenue_tier_label: body.revenue_tier_label || null,
               revenue_tier_signals: body.revenue_tier_signals || null,
+              // V5 Velocity Enhancements
+              sentiment_score: body.sentiment_score ?? undefined,
+              work_type: body.work_type ?? undefined,
+              // HVAC Must-Have Fields
+              property_type: body.property_type ?? undefined,
+              system_status: body.system_status ?? undefined,
+              equipment_age_bracket: body.equipment_age_bracket ?? undefined,
+              is_decision_maker: body.is_decision_maker ?? undefined,
+              decision_maker_contact: body.decision_maker_contact ?? undefined,
               updated_at: new Date().toISOString(),
             })
             .eq('id', existingJob.id)
@@ -490,6 +562,18 @@ export async function POST(request: NextRequest) {
         status_color: body.status_color || null,
         // Call tracking for deduplication (migration 0020)
         original_call_id: body.call_id || null,
+        // V5 Velocity Enhancements
+        sentiment_score: body.sentiment_score ?? null,
+        work_type: body.work_type ?? null,
+        // V4 Priority color (with commercial property override)
+        priority_color: determinePriorityColor(body.property_type, body.status_color, body.system_status),
+        priority_reason: body.property_type === 'commercial' ? 'Commercial property - high value' : null,
+        // HVAC Must-Have Fields
+        property_type: body.property_type ?? null,
+        system_status: body.system_status ?? null,
+        equipment_age_bracket: body.equipment_age_bracket ?? null,
+        is_decision_maker: body.is_decision_maker ?? null,
+        decision_maker_contact: body.decision_maker_contact ?? null,
       })
       .select()
       .single();

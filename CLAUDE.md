@@ -69,6 +69,41 @@ When a customer calls and the business misses the call, it redirects to CallLock
 | BLUE | NEW LEAD | Standard residential, no urgency flags |
 | GRAY | SPAM/VENDOR | Sales call, vendor inquiry, non-customer |
 
+### Velocity Triage System
+
+The Velocity system derives **archetypes** from priority_color, urgency, and revenue signals at runtime. Archetypes determine card UI and psychological framing.
+
+**Hierarchy (STRICT PRECEDENCE):**
+
+```
+HAZARD → RECOVERY → REVENUE → LOGISTICS
+```
+
+| Archetype | Trigger | Card Style | Psychology |
+|-----------|---------|------------|------------|
+| **HAZARD** | urgency = emergency/high | Red, pulsing | "Protect them" - safety first |
+| **RECOVERY** | priority_color = red | Dark/slate | "Save relationship" - 1-star review costs 30 leads |
+| **REVENUE** | replacement tier, $1500+, or green | Amber/gold | "Secure the job" - growth opportunity |
+| **LOGISTICS** | Everything else | Blue/gray | "Keep machine running" - routine follow-up |
+
+**Key Design Decision:** RECOVERY beats REVENUE. A frustrated high-value customer is a reputation emergency first. Saving the relationship unlocks the revenue; hard-selling an angry customer closes both doors.
+
+**Composite Scoring (within each archetype):**
+
+| Archetype | Base Score | Value Boost | Sentiment Boost | Time Ceiling | Escalation | Effect |
+|-----------|------------|-------------|-----------------|--------------|------------|--------|
+| HAZARD | 1000 | +30 (emergency) | - | +50 (5h cap) | - | Safety always top |
+| RECOVERY | 700 | +40 ($1500+), +30 (replacement) | +25 (score 1-2), +10 (score 3) | +60 (12h cap) | - | Value + sentiment front-loaded, time catches up |
+| REVENUE | 400 | +50 (scaled by value) | - | +30 | - | Big deals rise fast |
+| LOGISTICS | 100 | - | - | +50 | +30 (>24h) | Oldest first (SLA), stale items surface |
+
+**V5 Velocity Enhancements:**
+- `sentiment_score` (1-5): Backend transcript analysis. 1=very negative, 5=very positive. Low scores boost RECOVERY priority.
+- `work_type`: Classification of work type (`service` | `maintenance` | `install` | `admin`). Used for future filtering.
+- **24h Escalation**: LOGISTICS items older than 24 hours get +30 boost to prevent queue stagnation.
+
+**Implementation:** `src/lib/velocity.ts` - `determineArchetype()` and `calculateVelocityScore()`
+
 ## SMS Notification Tiers
 
 | Tier | Behavior | Quiet Hours | Example |
@@ -123,6 +158,10 @@ interface Lead {
   revenue_tier?: string;
   revenue_tier_label?: string;
 
+  // V5 Velocity Enhancements
+  sentiment_score?: number; // 1-5 scale from transcript analysis
+  work_type?: 'service' | 'maintenance' | 'install' | 'admin';
+
   // Timing
   created_at: string;
   remind_at?: string;
@@ -150,6 +189,10 @@ interface Job {
   // Revenue
   revenue_tier?: string;
   estimated_value?: number;
+
+  // V5 Velocity Enhancements
+  sentiment_score?: number; // 1-5 scale from transcript analysis
+  work_type?: 'service' | 'maintenance' | 'install' | 'admin';
 }
 ```
 
@@ -249,6 +292,7 @@ src/
     ├── sms-time-parser.ts       # Parse "TUE 2PM", "tomorrow 10am"
     ├── carrier-detection.ts     # Carrier lookup for forwarding
     ├── feature-flags.ts         # V4 rollout flags
+    ├── extract-signals.ts       # Urgency signal extraction from text
     └── retry-queue.ts           # SMS/calendar retry logic
 ```
 
@@ -459,6 +503,7 @@ Key migrations for webhook support:
 - `0015_v3_triage_fields.sql` - Adds caller_type, status_color columns
 - `0016_v4_action_booked_model.sql` - Adds priority_color, callback_outcome
 - `0020_jobs_original_call_id.sql` - Adds original_call_id for webhook deduplication
+- `0021_velocity_enhancements.sql` - Adds sentiment_score, work_type columns for V5 velocity
 
 ## Error Handling
 
@@ -528,9 +573,15 @@ curl -X POST https://calllock-dashboard-2.vercel.app/api/webhook/jobs \
     "urgency": "high",
     "end_call_reason": "callback_later",
     "ai_summary": "Test lead - heater not working",
-    "user_email": "your-email@example.com"
+    "user_email": "your-email@example.com",
+    "sentiment_score": 2,
+    "work_type": "service"
   }'
 ```
+
+**V5 Velocity Fields:**
+- `sentiment_score` (optional, 1-5): Customer sentiment from transcript. 1=very negative, 5=very positive.
+- `work_type` (optional): `service` | `maintenance` | `install` | `admin`
 
 ### Important: Chat Simulations vs Real Calls
 

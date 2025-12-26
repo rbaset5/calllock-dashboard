@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { validateWebhookAuth } from '@/lib/middleware/webhook-auth';
+import { operatorNotesWebhookSchema } from '@/lib/schemas/webhook-schemas';
 
 /**
  * Webhook to sync operator notes from backend
@@ -8,41 +10,31 @@ import { createAdminClient } from '@/lib/supabase/admin';
  * 2. Backend syncs customer status with notes
  */
 
-interface IncomingNote {
-  customer_phone: string;
-  customer_name?: string;
-  note_text: string;
-  created_by?: string;        // Operator email/name
-  expires_at?: string;        // ISO datetime
-  is_active?: boolean;
-  backend_note_id?: string;   // ID from backend for dedup
-  user_email: string;         // To find the user
-  // Optional links
-  job_id?: string;
-  lead_id?: string;
-}
-
 export async function POST(request: NextRequest) {
-  // Validate webhook secret
-  const webhookSecret = request.headers.get('X-Webhook-Secret');
-  if (webhookSecret !== process.env.WEBHOOK_SECRET) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
+  // Validate webhook secret using middleware
+  const authError = validateWebhookAuth(request);
+  if (authError) return authError;
 
   try {
-    const body: IncomingNote = await request.json();
+    const rawBody = await request.json();
 
-    // Validate required fields
-    if (!body.customer_phone || !body.note_text || !body.user_email) {
+    // Validate payload with Zod schema
+    const parseResult = operatorNotesWebhookSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      console.error('Validation failed:', parseResult.error.issues);
       return NextResponse.json(
-        { error: 'Missing required fields: customer_phone, note_text, user_email' },
+        {
+          error: 'Validation failed',
+          details: parseResult.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
+        },
         { status: 400 }
       );
     }
 
+    const body = parseResult.data;
     const supabase = createAdminClient();
 
     // Find user by email

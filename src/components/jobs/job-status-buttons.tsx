@@ -65,8 +65,8 @@ export function JobStatusButtons({ jobId, currentStatus, needsAction }: JobStatu
 
     // Note: Cancel is now handled via CancelModal to ensure Cal.com sync
 
-    const { error } = await (supabase
-      .from('jobs') as any)
+    const { error } = await supabase
+      .from('jobs')
       .update(updates)
       .eq('id', jobId);
 
@@ -85,8 +85,8 @@ export function JobStatusButtons({ jobId, currentStatus, needsAction }: JobStatu
     setLoading('needs_action');
     const supabase = createClient();
 
-    const { error } = await (supabase
-      .from('jobs') as any)
+    const { error } = await supabase
+      .from('jobs')
       .update({ needs_action: !needsAction })
       .eq('id', jobId);
 
