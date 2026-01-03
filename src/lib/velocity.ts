@@ -20,17 +20,21 @@
  */
 
 import type { Lead, Job, VelocityArchetype, RevenueTier, PriorityColor, UrgencyLevel } from '@/types/database';
+import type { TaxonomyTags } from './tag-taxonomy-mapper';
 
-// Type guard to check if item has urgency field
 type ItemWithUrgency = { urgency?: UrgencyLevel | null };
 type ItemWithPriorityColor = { priority_color?: PriorityColor | null };
 type ItemWithRevenueTier = { revenue_tier?: RevenueTier | null };
 type ItemWithCreatedAt = { created_at: string };
 type ItemWithEstimatedValue = { estimated_value?: number | null };
 type ItemWithSentimentScore = { sentiment_score?: number | null };
-type ItemWithTags = { tags?: Record<string, any> | null };
+type ItemWithTags = { tags?: TaxonomyTags | null };
 
 export type VelocityItem = (Lead | Job) & ItemWithCreatedAt & ItemWithTags;
+
+const HAZARD_TAGS = ['GAS_LEAK', 'CO_EVENT', 'ELECTRICAL_FIRE', 'ACTIVE_FLOODING', 'HEALTH_RISK', 'REFRIGERANT_LEAK'];
+const RECOVERY_TAGS = ['CALLBACK_RISK', 'COMPLAINT_PRICE', 'COMPLAINT_SERVICE', 'COMPLAINT_NOFIX', 'ESCALATION_REQ', 'REVIEW_THREAT', 'LEGAL_MENTION', 'REFUND_REQ', 'LOST_CUSTOMER'];
+const REVENUE_TAGS = ['HOT_LEAD', 'R22_RETROFIT', 'REPLACE_OPP', 'COMMERCIAL_LEAD', 'FINANCING_REQ', 'MULTI_PROPERTY'];
 
 /**
  * Determine the velocity archetype for a lead or job.
@@ -52,30 +56,30 @@ export function determineArchetype(item: VelocityItem): VelocityArchetype {
   const priorityColor = (item as ItemWithPriorityColor).priority_color;
   const revenueTier = (item as ItemWithRevenueTier).revenue_tier;
   const estimatedValue = (item as ItemWithEstimatedValue).estimated_value;
+  const tags = (item as ItemWithTags).tags;
 
-  // 1. HAZARD: Safety emergencies take absolute priority
-  if (urgency === 'emergency' || urgency === 'high') {
+  const hasHazardTag = tags?.HAZARD?.some(t => HAZARD_TAGS.includes(t)) ?? false;
+  const hasRecoveryTag = tags?.RECOVERY?.some(t => RECOVERY_TAGS.includes(t)) ?? false;
+  const hasRevenueTag = tags?.REVENUE?.some(t => REVENUE_TAGS.includes(t)) ?? false;
+
+  if (urgency === 'emergency' || urgency === 'high' || hasHazardTag) {
     return 'HAZARD';
   }
 
-  // 2. RECOVERY: Callback risk / frustrated customers (relationship rescue)
-  // This beats REVENUE because a 1-star review can cost 30 leads
-  if (priorityColor === 'red') {
+  if (priorityColor === 'red' || hasRecoveryTag) {
     return 'RECOVERY';
   }
 
-  // 3. REVENUE: High-value opportunities
-  // Triggers: replacement/major_repair tier, estimated value >= $1500, OR green priority (commercial)
   if (
     revenueTier === 'replacement' ||
     revenueTier === 'major_repair' ||
     (estimatedValue && estimatedValue >= 1500) ||
-    priorityColor === 'green'
+    priorityColor === 'green' ||
+    hasRevenueTag
   ) {
     return 'REVENUE';
   }
 
-  // 4. LOGISTICS: Default for everything else
   return 'LOGISTICS';
 }
 
@@ -114,50 +118,47 @@ export function calculateVelocityScore(item: VelocityItem): number {
   const revenueTier = (item as ItemWithRevenueTier).revenue_tier;
   const urgency = (item as ItemWithUrgency).urgency;
   const sentimentScore = (item as ItemWithSentimentScore).sentiment_score;
+  const tags = (item as ItemWithTags).tags;
 
-  // Base score ensures archetype ordering
   let score = ARCHETYPE_BASE_SCORES[archetype];
 
-  // Time component (used differently per archetype)
   const createdAt = new Date(item.created_at);
   const hoursOld = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
 
   switch (archetype) {
     case 'HAZARD':
-      // Time-sensitivity: older hazards bubble up faster
       score += Math.min(hoursOld * 10, 50);
-      // Symptom severity bonus
       if (urgency === 'emergency') score += 30;
+      if (tags?.HAZARD?.includes('GAS_LEAK') || tags?.HAZARD?.includes('CO_EVENT')) score += 40;
+      if (tags?.HAZARD?.includes('ELECTRICAL_FIRE')) score += 35;
+      if (tags?.CONTEXT?.includes('ELDERLY_OCCUPANT') || tags?.CONTEXT?.includes('INFANT_NEWBORN')) score += 20;
       break;
 
     case 'RECOVERY':
-      // Value: front-loaded boost (high-value angry customers top initially)
       if (estimatedValue && estimatedValue >= 1500) score += 40;
       if (revenueTier === 'replacement') score += 30;
-      // Time: higher ceiling so older items eventually overtake value
-      // After ~12 hours, time (+60) overtakes value boost (+40)
       score += Math.min(hoursOld * 5, 60);
-      // Sentiment: low sentiment (1-2) means more urgent recovery
       if (sentimentScore !== null && sentimentScore !== undefined) {
-        if (sentimentScore <= 2) score += 25;      // Very negative/negative
-        else if (sentimentScore === 3) score += 10; // Neutral
-        // Positive (4-5) gets no boost
+        if (sentimentScore <= 2) score += 25;
+        else if (sentimentScore === 3) score += 10;
       }
+      if (tags?.RECOVERY?.includes('REVIEW_THREAT') || tags?.RECOVERY?.includes('LEGAL_MENTION')) score += 35;
+      if (tags?.RECOVERY?.includes('ESCALATION_REQ')) score += 25;
       break;
 
     case 'REVENUE':
-      // Value: proportional boost for estimated value
       if (estimatedValue) score += Math.min(estimatedValue / 100, 50);
       if (revenueTier === 'replacement') score += 30;
-      // Time: moderate decay
       score += Math.min(hoursOld * 3, 30);
+      if (tags?.REVENUE?.includes('HOT_LEAD')) score += 25;
+      if (tags?.REVENUE?.includes('COMMERCIAL_LEAD') || tags?.REVENUE?.includes('MULTI_PROPERTY')) score += 20;
+      if (tags?.REVENUE?.includes('R22_RETROFIT')) score += 15;
       break;
 
     case 'LOGISTICS':
-      // Oldest first (simple SLA) - nothing dies in queue
       score += Math.min(hoursOld * 2, 50);
-      // 24-hour escalation: surface stale routine items
       if (hoursOld > 24) score += 30;
+      if (tags?.LOGISTICS?.includes('GATE_CODE') || tags?.LOGISTICS?.includes('LOCKBOX')) score += 5;
       break;
   }
 

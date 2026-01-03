@@ -127,6 +127,10 @@ export const jobsWebhookSchema = z.object({
   status_color: statusColorSchema.optional(),
   is_archived: z.boolean().optional(),
 
+  // V4 Priority Color (explicit from backend, overrides derived color)
+  priority_color: statusColorSchema.optional(),
+  priority_reason: z.string().optional(),
+
   // V5 Velocity Enhancements
   sentiment_score: sentimentScoreSchema.optional(),
   work_type: workTypeSchema.optional(),
