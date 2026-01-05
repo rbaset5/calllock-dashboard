@@ -207,7 +207,7 @@ async function createBooking(
     start: slotTime,
     attendee: {
       name: customerName,
-      email: `${customerPhone.replace(/\D/g, '')}@phone.calllock.ai`,
+      email: `${customerPhone.replace(/\D/g, '') || 'caller'}@phone.calllock.ai`,
       timeZone: 'America/Chicago',
     },
     metadata: {
@@ -281,18 +281,23 @@ export async function POST(request: NextRequest) {
 
     const {
       customer_name,
-      customer_phone,
+      customer_phone: argPhone,
       service_address = 'TBD',
       preferred_time,
       issue_description,
     } = body.args || {};
 
-    // Validate required fields
-    if (!customer_name || !customer_phone || !preferred_time || !issue_description) {
+    // Use caller ID from Retell if phone is TBD or missing
+    const customer_phone = (argPhone && argPhone !== 'TBD') 
+      ? argPhone 
+      : body.call?.from_number || 'unknown';
+
+    // Validate required fields (phone now comes from caller ID)
+    if (!customer_name || !preferred_time || !issue_description) {
       const response: BookServiceResponse = {
         success: false,
         booked: false,
-        message: 'I need your name, phone number, preferred time, and a brief description of the issue to book.',
+        message: 'I need your name, preferred time, and a brief description of the issue to book.',
       };
       return NextResponse.json(response);
     }
