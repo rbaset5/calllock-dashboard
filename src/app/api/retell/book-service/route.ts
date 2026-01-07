@@ -31,6 +31,7 @@ interface RetellRequest {
     service_address?: string;
     preferred_time: string;  // "Monday 9am", "tomorrow morning", "soonest available"
     issue_description: string;
+    urgency_tier?: 'urgent' | 'routine';  // Optional: "urgent" for same-day, "routine" for flexible
   };
 }
 
@@ -285,6 +286,7 @@ export async function POST(request: NextRequest) {
       service_address = 'TBD',
       preferred_time,
       issue_description,
+      urgency_tier = 'routine',
     } = body.args || {};
 
     // Use caller ID from Retell if phone is TBD or missing
@@ -435,7 +437,7 @@ export async function POST(request: NextRequest) {
 
           console.log('Updated existing job:', existingJob.id);
         } else {
-          // Create new job
+          const mappedUrgency = urgency_tier === 'urgent' ? 'high' : 'medium';
           const { data: job, error: jobError } = await supabase
             .from('jobs')
             .insert({
@@ -444,7 +446,7 @@ export async function POST(request: NextRequest) {
               customer_phone: customer_phone,
               customer_address: service_address,
               service_type: 'hvac',
-              urgency: 'medium',
+              urgency: mappedUrgency,
               scheduled_at: booking.data.start,
               is_ai_booked: true,
               status: 'new',

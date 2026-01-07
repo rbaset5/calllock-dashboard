@@ -79,7 +79,7 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="text-center mb-8 flex flex-col items-center">
-            <Logo size="xl" showImage={false} className="mb-2" />
+            <Logo size="xl" showIcon={true} className="mb-2" />
             <p className="text-gray-600 mt-2">Create your account</p>
           </div>
 

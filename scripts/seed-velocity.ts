@@ -81,14 +81,14 @@ function todayAt(hour: number, minute = 0): Date {
 const HAZARD_DATA = {
   leads: [
     {
-      customer_name: 'Emergency - Gas Leak',
+      customer_name: 'Elena Lopez',
       customer_phone: `${SEED_PHONE_PREFIX}0001`,
       customer_address: '100 Emergency Lane, Austin, TX 78701',
       status: 'callback_requested',
       priority_color: 'red',
       priority_reason: 'Active gas leak - EVACUATE',
       urgency: 'emergency',
-      issue_description: 'Smell of rotten eggs in basement. Turned off gas main.',
+      issue_description: 'Emergency - Gas Leak. Smell of rotten eggs in basement.',
       ai_summary: '[EMERGENCY] Customer smells gas (rotten eggs) coming from basement. Has turned off gas main. Family evacuated to front yard. Needs immediate response.',
       service_type: 'hvac',
       revenue_tier: 'diagnostic',
@@ -99,7 +99,7 @@ const HAZARD_DATA = {
   ],
   jobs: [
     {
-      customer_name: 'Emergency - CO Alarm',
+      customer_name: 'Eric Anderson',
       customer_phone: `${SEED_PHONE_PREFIX}0002`,
       customer_address: '200 Carbon Drive, Austin, TX 78702',
       status: 'new',
@@ -121,14 +121,14 @@ const HAZARD_DATA = {
 const REVENUE_DATA = {
   leads: [
     {
-      customer_name: 'Commercial PM Contract',
+      customer_name: 'Carlos Mendez',
       customer_phone: `${SEED_PHONE_PREFIX}0003`,
       customer_address: '300 Restaurant Row, Austin, TX 78701',
       status: 'sales_opportunity',
       priority_color: 'green',
       priority_reason: 'Commercial PM contract - 3 locations ($15k potential)',
       urgency: 'medium',
-      issue_description: 'Restaurant chain needs HVAC upgrade for 3 locations.',
+      issue_description: 'Commercial PM Contract - Restaurant chain needs HVAC upgrade.',
       ai_summary: '[HIGH VALUE] Restaurant chain owner with 3 Austin locations. Looking for preventive maintenance contract covering all sites. Current provider retiring. Wants quotes for full system upgrades at 2 locations.',
       service_type: 'hvac',
       revenue_tier: 'replacement',
@@ -138,14 +138,14 @@ const REVENUE_DATA = {
       time_preference: 'This week for site visit',
     },
     {
-      customer_name: 'New System Quote',
+      customer_name: 'Nathan Wright',
       customer_phone: `${SEED_PHONE_PREFIX}0004`,
       customer_address: '400 Replacement Road, Austin, TX 78703',
       status: 'callback_requested',
       priority_color: 'blue',
       priority_reason: 'System replacement candidate - 15-year-old Carrier',
       urgency: 'medium',
-      issue_description: '15-year-old Carrier unit dead. Wants replacement quote.',
+      issue_description: 'New System Quote - 15-year-old Carrier unit dead.',
       ai_summary: '[REPLACEMENT] 2008 Carrier system completely failed. Compressor seized. Customer aware of age and expecting replacement. Has already gotten one quote at $12k. Looking for second opinion.',
       service_type: 'hvac',
       revenue_tier: 'replacement',
@@ -156,14 +156,14 @@ const REVENUE_DATA = {
     },
     // NEW: Green priority with NO revenue tier and NO estimate - tests the green gap fix
     {
-      customer_name: 'Property Manager - No Numbers Yet',
+      customer_name: 'Patricia Newman',
       customer_phone: `${SEED_PHONE_PREFIX}0012`,
       customer_address: '1200 Property Lane, Austin, TX 78709',
       status: 'callback_requested',
       priority_color: 'green',
       priority_reason: 'Property manager - high LTV potential',
       urgency: 'low',
-      issue_description: 'Property manager inquiring about service for apartment complex.',
+      issue_description: 'Property Manager - Inquiring about service for apartment complex.',
       ai_summary: '[COMMERCIAL] Property manager for 24-unit apartment complex. Just moved management to this company. Looking for reliable HVAC contractor. No specific issue yet - wants to establish relationship.',
       service_type: 'hvac',
       revenue_tier: null,  // NO tier set
@@ -179,14 +179,14 @@ const REVENUE_DATA = {
 const RECOVERY_DATA = {
   leads: [
     {
-      customer_name: 'Angry Callback - Muddy Carpet',
+      customer_name: 'Amanda Morrison',
       customer_phone: `${SEED_PHONE_PREFIX}0005`,
       customer_address: '500 Upset Avenue, Austin, TX 78704',
       status: 'callback_requested',
       priority_color: 'red',
       priority_reason: 'Technician tracked mud on carpet - demanding manager',
       urgency: 'low', // Low urgency so it stays RECOVERY, not HAZARD
-      issue_description: 'Technician tracked mud on carpet. Wants manager call.',
+      issue_description: 'Angry Callback - Technician tracked mud on carpet.',
       ai_summary: '[CALLBACK RISK] Very upset. Tech Mike came yesterday for tune-up, tracked mud across white carpet. Customer wants owner/manager to call about cleaning bill. Mentioned leaving negative review.',
       service_type: 'hvac',
       revenue_tier: 'minor',
@@ -195,14 +195,14 @@ const RECOVERY_DATA = {
       time_preference: 'Manager call today',
     },
     {
-      customer_name: 'Billing Dispute',
+      customer_name: 'Brian Douglas',
       customer_phone: `${SEED_PHONE_PREFIX}0006`,
       customer_address: '600 Dispute Drive, Austin, TX 78705',
       status: 'abandoned',
       priority_color: 'red',
       priority_reason: 'Upset about diagnostic fee - hung up on AI',
       urgency: 'low', // Low urgency so it stays RECOVERY, not HAZARD
-      issue_description: 'Upset about diagnostic fee. Hung up on AI.',
+      issue_description: 'Billing Dispute - Upset about diagnostic fee.',
       ai_summary: '[CALLBACK RISK] Customer called to dispute $89 diagnostic fee from last week. Says tech was only there 10 minutes. Demanded refund. Hung up when AI tried to explain policy. Previous customer - 2 jobs in past year.',
       service_type: 'hvac',
       revenue_tier: null,
@@ -214,7 +214,7 @@ const RECOVERY_DATA = {
   // Context: Past job for "Angry Callback" customer to populate the Recovery Card context box
   pastJobs: [
     {
-      customer_name: 'Angry Callback - Muddy Carpet',
+      customer_name: 'Amanda Morrison',
       customer_phone: `${SEED_PHONE_PREFIX}0005`,
       customer_address: '500 Upset Avenue, Austin, TX 78704',
       status: 'complete',
@@ -238,7 +238,7 @@ const RECOVERY_DATA = {
 const LOGISTICS_DATA = {
   jobs: [
     {
-      customer_name: 'Scheduling Conflict',
+      customer_name: 'Sandra Collins',
       customer_phone: `${SEED_PHONE_PREFIX}0007`,
       customer_address: '700 Reschedule Road, Austin, TX 78706',
       status: 'new',
@@ -256,14 +256,14 @@ const LOGISTICS_DATA = {
   ],
   leads: [
     {
-      customer_name: 'General Inquiry',
+      customer_name: 'Greg Ingram',
       customer_phone: `${SEED_PHONE_PREFIX}0008`,
       customer_address: '800 Question Lane, Austin, TX 78745',
       status: 'info_only',
       priority_color: 'blue',
       priority_reason: 'Service area question',
       urgency: 'low',
-      issue_description: 'Asking if we service 78745 area code.',
+      issue_description: 'General Inquiry - Asking if we service 78745 area.',
       ai_summary: 'Customer calling to check if we service the 78745 zip code area. No current service need - just moved to area and researching HVAC companies.',
       service_type: 'general',
       revenue_tier: null,
@@ -279,7 +279,7 @@ const INBOX_DATA = {
   jobs: [
     // Booked job (status = confirmed) - should NOT appear in velocity
     {
-      customer_name: 'Booked Job - Confirmed',
+      customer_name: 'Barbara Johnson',
       customer_phone: `${SEED_PHONE_PREFIX}0009`,
       customer_address: '900 Booked Boulevard, Austin, TX 78707',
       status: 'confirmed',
@@ -298,14 +298,14 @@ const INBOX_DATA = {
   leads: [
     // Spam call (gray + lost) - should NOT appear in velocity
     {
-      customer_name: 'Spam Call - Duct Cleaning',
+      customer_name: 'Spam Caller',
       customer_phone: `${SEED_PHONE_PREFIX}0010`,
       customer_address: null,
       status: 'lost',
       priority_color: 'gray',
       priority_reason: 'Spam - duct cleaning sales call',
       urgency: 'low',
-      issue_description: 'Duct cleaning service trying to sell',
+      issue_description: 'Spam - Duct cleaning service trying to sell',
       ai_summary: '[SPAM] Duct cleaning company sales call. Not a customer.',
       service_type: 'general',
       revenue_tier: null,
@@ -315,7 +315,7 @@ const INBOX_DATA = {
     },
     // Resolved issue (callback_outcome = resolved) - should NOT appear in velocity
     {
-      customer_name: 'Resolved Issue',
+      customer_name: 'Rachel Ingram',
       customer_phone: `${SEED_PHONE_PREFIX}0011`,
       customer_address: '1100 Resolved Street, Austin, TX 78708',
       status: 'converted',
@@ -342,22 +342,22 @@ const INBOX_DATA = {
 
 const CUSTOMERS = [
   // HAZARD customers
-  { name: 'Emergency - Gas Leak', phone: `${SEED_PHONE_PREFIX}0001`, address: '100 Emergency Lane, Austin, TX 78701', equipment: [{ type: 'Gas Furnace', brand: 'Lennox', year: 2018 }], lifetime_value: 0, total_jobs: 0 },
-  { name: 'Emergency - CO Alarm', phone: `${SEED_PHONE_PREFIX}0002`, address: '200 Carbon Drive, Austin, TX 78702', equipment: [{ type: 'Gas Furnace', brand: 'Carrier', year: 2015 }], lifetime_value: 0, total_jobs: 0 },
+  { name: 'Elena Lopez', phone: `${SEED_PHONE_PREFIX}0001`, address: '100 Emergency Lane, Austin, TX 78701', equipment: [{ type: 'Gas Furnace', brand: 'Lennox', year: 2018 }], lifetime_value: 0, total_jobs: 0 },
+  { name: 'Eric Anderson', phone: `${SEED_PHONE_PREFIX}0002`, address: '200 Carbon Drive, Austin, TX 78702', equipment: [{ type: 'Gas Furnace', brand: 'Carrier', year: 2015 }], lifetime_value: 0, total_jobs: 0 },
   // REVENUE customers
-  { name: 'Commercial PM Contract', phone: `${SEED_PHONE_PREFIX}0003`, address: '300 Restaurant Row, Austin, TX 78701', equipment: [{ type: 'Commercial RTU', brand: 'Carrier', year: 2016 }], lifetime_value: 0, total_jobs: 0, notes: 'COMMERCIAL - Restaurant chain owner' },
-  { name: 'New System Quote', phone: `${SEED_PHONE_PREFIX}0004`, address: '400 Replacement Road, Austin, TX 78703', equipment: [{ type: 'Central AC', brand: 'Carrier', model: '24ACC6', year: 2008 }], lifetime_value: 450, total_jobs: 3, notes: '15-year-old system' },
-  { name: 'Property Manager - No Numbers Yet', phone: `${SEED_PHONE_PREFIX}0012`, address: '1200 Property Lane, Austin, TX 78709', equipment: [], lifetime_value: 0, total_jobs: 0, notes: 'COMMERCIAL - Property manager, 24-unit complex' },
+  { name: 'Carlos Mendez', phone: `${SEED_PHONE_PREFIX}0003`, address: '300 Restaurant Row, Austin, TX 78701', equipment: [{ type: 'Commercial RTU', brand: 'Carrier', year: 2016 }], lifetime_value: 0, total_jobs: 0, notes: 'COMMERCIAL - Restaurant chain owner' },
+  { name: 'Nathan Wright', phone: `${SEED_PHONE_PREFIX}0004`, address: '400 Replacement Road, Austin, TX 78703', equipment: [{ type: 'Central AC', brand: 'Carrier', model: '24ACC6', year: 2008 }], lifetime_value: 450, total_jobs: 3, notes: '15-year-old system' },
+  { name: 'Patricia Newman', phone: `${SEED_PHONE_PREFIX}0012`, address: '1200 Property Lane, Austin, TX 78709', equipment: [], lifetime_value: 0, total_jobs: 0, notes: 'COMMERCIAL - Property manager, 24-unit complex' },
   // RECOVERY customers
-  { name: 'Angry Callback - Muddy Carpet', phone: `${SEED_PHONE_PREFIX}0005`, address: '500 Upset Avenue, Austin, TX 78704', equipment: [{ type: 'Central AC', brand: 'Trane', year: 2020 }], lifetime_value: 300, total_jobs: 2, notes: 'VIP - Handle with care' },
-  { name: 'Billing Dispute', phone: `${SEED_PHONE_PREFIX}0006`, address: '600 Dispute Drive, Austin, TX 78705', equipment: [{ type: 'Heat Pump', brand: 'Rheem', year: 2019 }], lifetime_value: 178, total_jobs: 2 },
+  { name: 'Amanda Morrison', phone: `${SEED_PHONE_PREFIX}0005`, address: '500 Upset Avenue, Austin, TX 78704', equipment: [{ type: 'Central AC', brand: 'Trane', year: 2020 }], lifetime_value: 300, total_jobs: 2, notes: 'VIP - Handle with care' },
+  { name: 'Brian Douglas', phone: `${SEED_PHONE_PREFIX}0006`, address: '600 Dispute Drive, Austin, TX 78705', equipment: [{ type: 'Heat Pump', brand: 'Rheem', year: 2019 }], lifetime_value: 178, total_jobs: 2 },
   // LOGISTICS customers
-  { name: 'Scheduling Conflict', phone: `${SEED_PHONE_PREFIX}0007`, address: '700 Reschedule Road, Austin, TX 78706', equipment: [{ type: 'Central AC', brand: 'Goodman', year: 2021 }], lifetime_value: 0, total_jobs: 0 },
-  { name: 'General Inquiry', phone: `${SEED_PHONE_PREFIX}0008`, address: '800 Question Lane, Austin, TX 78745', equipment: [], lifetime_value: 0, total_jobs: 0 },
+  { name: 'Sandra Collins', phone: `${SEED_PHONE_PREFIX}0007`, address: '700 Reschedule Road, Austin, TX 78706', equipment: [{ type: 'Central AC', brand: 'Goodman', year: 2021 }], lifetime_value: 0, total_jobs: 0 },
+  { name: 'Greg Ingram', phone: `${SEED_PHONE_PREFIX}0008`, address: '800 Question Lane, Austin, TX 78745', equipment: [], lifetime_value: 0, total_jobs: 0 },
   // INBOX customers
-  { name: 'Booked Job - Confirmed', phone: `${SEED_PHONE_PREFIX}0009`, address: '900 Booked Boulevard, Austin, TX 78707', equipment: [{ type: 'Central AC', brand: 'Lennox', year: 2022 }], lifetime_value: 150, total_jobs: 1 },
-  { name: 'Spam Call - Duct Cleaning', phone: `${SEED_PHONE_PREFIX}0010`, address: null, equipment: [], lifetime_value: 0, total_jobs: 0 },
-  { name: 'Resolved Issue', phone: `${SEED_PHONE_PREFIX}0011`, address: '1100 Resolved Street, Austin, TX 78708', equipment: [{ type: 'Smart Thermostat', brand: 'Nest', year: 2023 }], lifetime_value: 0, total_jobs: 0 },
+  { name: 'Barbara Johnson', phone: `${SEED_PHONE_PREFIX}0009`, address: '900 Booked Boulevard, Austin, TX 78707', equipment: [{ type: 'Central AC', brand: 'Lennox', year: 2022 }], lifetime_value: 150, total_jobs: 1 },
+  { name: 'Spam Caller', phone: `${SEED_PHONE_PREFIX}0010`, address: null, equipment: [], lifetime_value: 0, total_jobs: 0 },
+  { name: 'Rachel Ingram', phone: `${SEED_PHONE_PREFIX}0011`, address: '1100 Resolved Street, Austin, TX 78708', equipment: [{ type: 'Smart Thermostat', brand: 'Nest', year: 2023 }], lifetime_value: 0, total_jobs: 0 },
 ];
 
 // ============================================================================
@@ -563,34 +563,34 @@ async function seedVelocity() {
   console.log('='.repeat(70));
   console.log(`
 📊 Summary:
-   • HAZARD (Emergency):  ${counts.HAZARD} items (Gas Leak, CO Alarm)
-   • REVENUE (High $$$):  ${counts.REVENUE} items (Commercial PM, System Quote, Property Manager)
-   • RECOVERY (Red Flag): ${counts.RECOVERY} items (Angry Callback, Billing Dispute)
-   • LOGISTICS (Admin):   ${counts.LOGISTICS} items (Scheduling, Inquiry)
-   • INBOX (Hidden):      ${counts.INBOX} items (Booked, Spam, Resolved)
+   • HAZARD (Emergency):  ${counts.HAZARD} items (Elena Lopez, Eric Anderson)
+   • REVENUE (High $$$):  ${counts.REVENUE} items (Carlos Mendez, Nathan Wright, Patricia Newman)
+   • RECOVERY (Red Flag): ${counts.RECOVERY} items (Amanda Morrison, Brian Douglas)
+   • LOGISTICS (Admin):   ${counts.LOGISTICS} items (Sandra Collins, Greg Ingram)
+   • INBOX (Hidden):      ${counts.INBOX} items (Barbara Johnson, Spam Caller, Rachel Ingram)
 
 🧪 Test Cases:
    HAZARD:
-   - "Emergency - Gas Leak" → Lead with urgency='emergency'
-   - "Emergency - CO Alarm" → Job with urgency='emergency', needs_action=true
+   - "Elena Lopez" → Lead with urgency='emergency' (Gas Leak)
+   - "Eric Anderson" → Job with urgency='emergency', needs_action=true (CO Alarm)
 
    REVENUE:
-   - "Commercial PM Contract" → Lead with revenue_tier='replacement', est_value=$15,000
-   - "New System Quote" → Lead with revenue_tier='replacement', est_value=$8,500
-   - "Property Manager - No Numbers Yet" → Lead with priority_color='green', NO tier, NO estimate (tests green gap fix)
+   - "Carlos Mendez" → Lead with revenue_tier='replacement', est_value=$15,000 (Commercial PM)
+   - "Nathan Wright" → Lead with revenue_tier='replacement', est_value=$8,500 (System Quote)
+   - "Patricia Newman" → Lead with priority_color='green', NO tier, NO estimate (tests green gap fix)
 
    RECOVERY:
-   - "Angry Callback" → Lead with priority_color='red' + past completed job
-   - "Billing Dispute" → Lead with priority_color='red', status='abandoned'
+   - "Amanda Morrison" → Lead with priority_color='red' + past completed job (Angry Callback)
+   - "Brian Douglas" → Lead with priority_color='red', status='abandoned' (Billing Dispute)
 
    LOGISTICS:
-   - "Scheduling Conflict" → Job with status='new', needs_action=true
-   - "General Inquiry" → Lead with priority_color='blue', status='info_only'
+   - "Sandra Collins" → Job with status='new', needs_action=true (Scheduling Conflict)
+   - "Greg Ingram" → Lead with priority_color='blue', status='info_only' (General Inquiry)
 
    INBOX (verify these do NOT appear on /action):
-   - "Booked Job" → Job with status='confirmed'
-   - "Spam Call" → Lead with priority_color='gray', status='lost'
-   - "Resolved Issue" → Lead with callback_outcome='resolved'
+   - "Barbara Johnson" → Job with status='confirmed' (Booked)
+   - "Spam Caller" → Lead with priority_color='gray', status='lost'
+   - "Rachel Ingram" → Lead with callback_outcome='resolved'
 
 🔗 View your dashboard at: http://localhost:3000/action
 

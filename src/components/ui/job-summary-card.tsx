@@ -106,10 +106,9 @@ export const JobSummaryCard: React.FC<JobSummaryCardProps> = ({
       whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.12)" }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "relative w-full max-w-sm overflow-hidden rounded-r-2xl rounded-l-sm",
-        "border-l-4 border-l-navy-600",
-        "bg-gradient-to-r from-navy-50/50 to-white",
-        "border-y border-r border-border shadow-sm",
+        "relative w-full max-w-sm overflow-hidden rounded-[28px]",
+        "bg-white",
+        "border border-black/10 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5",
         className
       )}
     >

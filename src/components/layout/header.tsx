@@ -1,52 +1,60 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { LogOut, User } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-import { Logo } from '@/components/brand';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
-  businessName?: string;
+  activeTab?: 'now' | 'schedule';
+  urgentCount?: number;
 }
 
-export function Header({ businessName }: HeaderProps) {
-  const router = useRouter();
+const tabs = [
+  { id: 'now', label: 'Now', href: '/now' },
+  { id: 'schedule', label: 'Schedule', href: '/schedule' },
+] as const;
 
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  }
-
+export function Header({ activeTab = 'now', urgentCount = 0 }: HeaderProps) {
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="px-4 py-3 flex items-center justify-center relative">
-        <div className="flex items-center gap-3">
-          <Logo size="lg" />
-          {businessName && (
-            <span className="text-sm text-gray-500 hidden sm:inline">
-              {businessName}
-            </span>
-          )}
+    <header className="sticky top-0 z-50 bg-background-light/95 backdrop-blur-md border-b border-slate-200">
+      <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto w-full">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white">
+            <span className="material-symbols-outlined text-[20px]">lock_open</span>
+          </div>
+          <h1 className="text-xl font-bold tracking-tight">CallLock</h1>
         </div>
 
-        <div className="absolute right-4 flex items-center gap-2">
-          <button
-            onClick={() => router.push('/settings')}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
-            aria-label="Settings"
-          >
-            <User className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleSignOut}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
-            aria-label="Sign out"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
+        <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+          <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+          <span className="text-primary font-bold text-xs uppercase tracking-wide">Online</span>
         </div>
+      </div>
+
+      <div className="flex items-end px-4 max-w-lg mx-auto w-full">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const showBadge = tab.id === 'now' && urgentCount > 0;
+
+          return (
+            <Link
+              key={tab.id}
+              href={tab.href}
+              className={cn(
+                'flex-1 pb-3 pt-2 text-center border-b-[3px] transition-colors',
+                isActive
+                  ? 'border-primary text-slate-900'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              )}
+            >
+              <span className="text-sm font-bold tracking-wide">{tab.label}</span>
+              {showBadge && (
+                <span className="ml-1.5 inline-flex items-center justify-center bg-red-500 text-white text-[10px] font-bold h-5 min-w-5 px-1 rounded-full">
+                  {urgentCount > 9 ? '9+' : urgentCount}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </div>
     </header>
   );

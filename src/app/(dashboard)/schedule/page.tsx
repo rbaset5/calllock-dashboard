@@ -1,213 +1,246 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { DayScheduleResponse } from '@/app/api/schedule/day/[date]/route';
-import { ScheduleCalendar } from '@/components/ui/schedule-calendar';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { RevenueTierBadge } from '@/components/ui/revenue-tier-badge';
-import { PlusIcon, Phone, MapPin, Clock } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { useState, useEffect, useCallback } from 'react';
 import { Job } from '@/types/database';
-import { useRouter } from 'next/navigation';
+import { BookedResponse } from '@/app/api/booked/route';
+import { format, parseISO } from 'date-fns';
+
+interface JobGroup {
+  label: string;
+  date: string;
+  jobs: Job[];
+}
+
+function formatJobTime(dateStr: string): string {
+  try {
+    return format(parseISO(dateStr), 'h:mm a');
+  } catch {
+    return '';
+  }
+}
+
+function getShortAddress(address: string | null): string {
+  if (!address) return 'Address pending';
+  const parts = address.split(',');
+  return parts[0].trim();
+}
+
+function extractProblem(summary: string | null): string {
+  if (!summary) return 'Service call';
+  const firstSentence = summary.split(/[.!?]/)[0].trim();
+  return firstSentence.length > 40 ? firstSentence.slice(0, 40) + '...' : firstSentence;
+}
+
+function ScheduleJobCard({
+  job,
+  onNavigate,
+  onCall,
+}: {
+  job: Job;
+  onNavigate: (address: string) => void;
+  onCall: (phone: string) => void;
+}) {
+  const jobTime = job.scheduled_at ? formatJobTime(job.scheduled_at) : '';
+
+  return (
+    <article className="bg-white rounded-xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <span className="text-lg font-bold text-slate-900">{jobTime}</span>
+            {job.is_ai_booked && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">
+                <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
+                AI
+              </span>
+            )}
+          </div>
+        </div>
+
+        <h3 className="font-bold text-slate-800 mb-1">{job.customer_name}</h3>
+        <p className="text-slate-500 text-sm mb-2">{extractProblem(job.ai_summary)}</p>
+        <p className="text-slate-400 text-sm">{getShortAddress(job.customer_address)}</p>
+
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+          <button
+            onClick={() => onNavigate(job.customer_address)}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">directions</span>
+            Navigate
+          </button>
+          <button
+            onClick={() => onCall(job.customer_phone)}
+            className="flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">call</span>
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+        <span className="material-symbols-outlined text-slate-400 text-4xl">
+          calendar_month
+        </span>
+      </div>
+      <h3 className="text-lg font-bold text-slate-900 mb-2">No Upcoming Jobs</h3>
+      <p className="text-slate-500 text-sm max-w-[240px]">
+        When you book appointments, they&apos;ll appear here.
+      </p>
+    </div>
+  );
+}
 
 export default function SchedulePage() {
-  const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [dayData, setDayData] = useState<DayScheduleResponse | null>(null);
-  const [jobCounts, setJobCounts] = useState<Record<string, number>>({});
+  const [data, setData] = useState<BookedResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timezone, setTimezone] = useState('America/New_York');
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch job counts for the visible month
-  const fetchMonthJobCounts = useCallback(async (monthDate: Date) => {
+  const fetchData = useCallback(async () => {
     try {
-      const start = startOfMonth(monthDate);
-      const end = endOfMonth(monthDate);
+      const response = await fetch('/api/booked');
+      if (!response.ok) throw new Error('Failed to fetch');
 
-      // Fetch jobs for the entire month to get counts
-      const response = await fetch(`/api/schedule?weekOffset=0`);
-      if (!response.ok) return;
-
-      const data = await response.json();
-
-      // Build job counts from days array
-      const counts: Record<string, number> = {};
-      if (data.days) {
-        data.days.forEach((day: { date: string; jobCount: number }) => {
-          if (day.jobCount > 0) {
-            counts[day.date] = day.jobCount;
-          }
-        });
-      }
-      setJobCounts(counts);
-    } catch (error) {
-      console.error('Error fetching month job counts:', error);
-    }
-  }, []);
-
-  // Fetch day data
-  const fetchDayData = useCallback(async (date: Date) => {
-    try {
-      setLoading(true);
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const response = await fetch(`/api/schedule/day/${dateStr}`);
-      if (!response.ok) throw new Error('Failed to fetch day schedule');
-
-      const data: DayScheduleResponse = await response.json();
-      setDayData(data);
-    } catch (error) {
-      console.error('Error fetching day data:', error);
-      setDayData(null);
+      const result: BookedResponse = await response.json();
+      setData(result);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching schedule:', err);
+      setError('Unable to load schedule');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Initial load - get timezone and fetch data
   useEffect(() => {
-    // Get timezone from localStorage
-    const tokenData = localStorage.getItem('supabase.auth.token');
-    if (tokenData) {
-      try {
-        const parsed = JSON.parse(tokenData);
-        const tz = parsed.user?.user_metadata?.timezone || 'America/New_York';
-        setTimezone(tz);
-      } catch (e) {
-        console.error('Error parsing token data:', e);
-      }
-    }
+    fetchData();
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
-    fetchMonthJobCounts(selectedDate);
-    fetchDayData(selectedDate);
-  }, []);
-
-  // When date changes, fetch day data
-  useEffect(() => {
-    fetchDayData(selectedDate);
-  }, [selectedDate, fetchDayData]);
-
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(date);
-    }
+  const handleNavigate = (address: string) => {
+    const encoded = encodeURIComponent(address);
+    window.open(`https://maps.google.com/maps?daddr=${encoded}`, '_blank');
   };
 
-  const handleMonthChange = (month: Date) => {
-    fetchMonthJobCounts(month);
+  const handleCall = (phone: string) => {
+    window.location.href = `tel:${phone}`;
   };
 
-  const handleJobClick = (jobId: string) => {
-    router.push(`/jobs/${jobId}`);
-  };
+  if (loading) {
+    return (
+      <main className="flex flex-col max-w-lg mx-auto w-full px-4 pt-4 gap-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 bg-slate-200 rounded w-24" />
+          <div className="h-32 bg-slate-200 rounded" />
+          <div className="h-32 bg-slate-200 rounded" />
+        </div>
+      </main>
+    );
+  }
 
-  const formatJobTime = (job: Job) => {
-    if (!job.scheduled_at) return 'TBD';
-    const jobDate = toZonedTime(parseISO(job.scheduled_at), timezone);
-    return format(jobDate, 'h:mm a');
-  };
+  if (error) {
+    return (
+      <main className="flex flex-col max-w-lg mx-auto w-full px-4 pt-4 gap-6">
+        <div className="text-center py-12">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={fetchData}
+            className="px-4 py-2 bg-primary text-white rounded-lg font-medium"
+          >
+            Try Again
+          </button>
+        </div>
+      </main>
+    );
+  }
 
-  const formatServiceType = (type: string) => {
-    if (type === 'hvac') return 'HVAC';
-    return type.charAt(0).toUpperCase() + type.slice(1);
-  };
+  const groups = data?.groups || [];
+
+  const todayGroup = groups.find((g) => g.label === 'Today');
+  const tomorrowGroup = groups.find((g) => g.label === 'Tomorrow');
+  const otherGroups = groups.filter((g) => g.label !== 'Today' && g.label !== 'Tomorrow');
+  const thisWeekCount = otherGroups.reduce((sum, g) => sum + g.jobs.length, 0);
 
   return (
-    <div className="cl-page-container space-y-4">
-      <Card className="py-4">
-        <CardContent className="px-4">
-          <ScheduleCalendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDateSelect}
-            onMonthChange={handleMonthChange}
-            jobCounts={jobCounts}
-            className="w-full"
-          />
-        </CardContent>
-
-        <CardFooter className="flex flex-col items-start gap-4 border-t border-navy-200 px-4 !pt-4">
-          {/* Date Header */}
-          <div className="flex w-full items-center justify-between">
-            <div className="text-base font-semibold text-navy-800">
-              {format(selectedDate, 'EEEE, MMMM d')}
-            </div>
-            <Button variant="ghost" size="icon" className="size-8" title="Add Job">
-              <PlusIcon className="w-4 h-4" />
-              <span className="sr-only">Add Job</span>
-            </Button>
-          </div>
-
-          {/* Jobs List */}
-          <div className="flex w-full flex-col gap-2">
-            {loading ? (
-              <div className="animate-pulse space-y-2">
-                <div className="h-16 bg-navy-100 rounded-lg" />
-                <div className="h-16 bg-navy-100 rounded-lg" />
+    <main className="flex flex-col max-w-lg mx-auto w-full px-4 pt-4 gap-6 pb-8">
+      {groups.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <>
+          {todayGroup && todayGroup.jobs.length > 0 && (
+            <section>
+              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-3">
+                Today ({todayGroup.jobs.length})
+              </h2>
+              <div className="space-y-3">
+                {todayGroup.jobs.map((job) => (
+                  <ScheduleJobCard
+                    key={job.id}
+                    job={job}
+                    onNavigate={handleNavigate}
+                    onCall={handleCall}
+                  />
+                ))}
               </div>
-            ) : dayData && dayData.jobs.length > 0 ? (
-              dayData.jobs.map((job) => (
-                <button
-                  key={job.id}
-                  onClick={() => handleJobClick(job.id)}
-                  className="bg-navy-50 hover:bg-navy-100 border border-navy-200 relative rounded-xl p-4 pl-5 text-left transition-colors after:absolute after:inset-y-4 after:left-2 after:w-1 after:rounded-full after:bg-navy-600"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-navy-800 truncate">
-                        {formatServiceType(job.service_type)} - {job.customer_name}
-                      </div>
-                      <div className="flex items-center gap-3 mt-1.5 text-sm text-navy-400">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {formatJobTime(job)}
-                        </span>
-                        {job.customer_address && (
-                          <span className="flex items-center gap-1 truncate">
-                            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span className="truncate">{job.customer_address.split(',')[0]}</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {job.revenue_tier_label ? (
-                      <RevenueTierBadge
-                        tier={job.revenue_tier}
-                        label={job.revenue_tier_label}
-                        signals={job.revenue_tier_signals}
-                        showTooltip
-                      />
-                    ) : job.estimated_value ? (
-                      <div className="text-sm font-bold text-gold-600">
-                        ${job.estimated_value.toLocaleString()}
-                      </div>
-                    ) : null}
-                  </div>
-                </button>
-              ))
-            ) : (
-              <div className="text-center py-8 text-navy-400">
-                <p className="text-sm">No jobs scheduled for this day</p>
-                <Button variant="outline" size="sm" className="mt-3">
-                  <PlusIcon className="w-4 h-4 mr-1.5" />
-                  Add Job
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Day Stats */}
-          {dayData && dayData.jobs.length > 0 && (
-            <div className="flex w-full items-center justify-between pt-3 border-t border-navy-200 text-sm">
-              <span className="text-navy-400">{dayData.jobs.length} job{dayData.jobs.length !== 1 ? 's' : ''}</span>
-              <span className="font-bold text-gold-600">
-                ${dayData.totalEstimatedRevenue.toLocaleString()} estimated
-              </span>
-            </div>
+            </section>
           )}
-        </CardFooter>
-      </Card>
-    </div>
+
+          {tomorrowGroup && tomorrowGroup.jobs.length > 0 && (
+            <section>
+              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-3">
+                Tomorrow ({tomorrowGroup.jobs.length})
+              </h2>
+              <div className="space-y-3">
+                {tomorrowGroup.jobs.map((job) => (
+                  <ScheduleJobCard
+                    key={job.id}
+                    job={job}
+                    onNavigate={handleNavigate}
+                    onCall={handleCall}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {thisWeekCount > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wide">
+                  This Week
+                </h2>
+                <span className="text-sm text-slate-400">{thisWeekCount} more</span>
+              </div>
+              <div className="space-y-4">
+                {otherGroups.map((group) => (
+                  <div key={group.date}>
+                    <p className="text-xs font-semibold text-slate-500 mb-2 pl-1">
+                      {group.label}
+                    </p>
+                    <div className="space-y-3">
+                      {group.jobs.map((job) => (
+                        <ScheduleJobCard
+                          key={job.id}
+                          job={job}
+                          onNavigate={handleNavigate}
+                          onCall={handleCall}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </main>
   );
 }

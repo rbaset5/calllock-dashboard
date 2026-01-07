@@ -158,12 +158,13 @@ export const FloatingCard: React.FC<FloatingCardProps> = ({
                 ref={cardRef}
                 onClick={handleInternalClick}
                 className={cn(
-                    "relative h-auto p-5 rounded-3xl backdrop-blur-3xl cursor-pointer transition-all duration-500 transform-gpu preserve-3d overflow-visible",
-                    "bg-white dark:bg-surface-dark border border-black/10 dark:border-white/20 shadow-soft dark:shadow-white/5",
+                    "relative h-auto p-5 transition-all duration-500 transform-gpu preserve-3d overflow-visible",
+                    "bg-white dark:bg-surface-dark border border-black/10 dark:border-white/20 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.15)]",
                     className
                 )}
                 style={{
                     transform: getTransformStyle(),
+                    borderRadius: 28
                 }}
             >
                 {/* Particles */}
@@ -195,7 +196,7 @@ export const FloatingCard: React.FC<FloatingCardProps> = ({
                 ))}
 
                 {/* Card Content */}
-                <div className="relative z-10 h-full flex flex-col">
+                <div className="relative z-10">
                     {children}
                 </div>
 

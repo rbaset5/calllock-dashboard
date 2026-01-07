@@ -15,6 +15,8 @@ import {
   type CalendarStatus,
   type BusinessHour,
 } from '@/components/settings';
+import { GettingColdSection } from '@/components/settings/getting-cold-section';
+import Link from 'next/link';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -55,6 +57,8 @@ export default function SettingsPage() {
   });
   const [calendarLoading, setCalendarLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
+
+  const [gettingColdThreshold, setGettingColdThreshold] = useState(24);
 
   // Load profile and notification preferences
   useEffect(() => {
@@ -101,6 +105,7 @@ export default function SettingsPage() {
           sms_unsubscribed: prefs.sms_unsubscribed || false,
           urgent_bypass_quiet_hours: prefs.urgent_bypass_quiet_hours ?? true,
         });
+        setGettingColdThreshold(prefs.getting_cold_threshold_hours ?? 24);
       }
 
       setLoading(false);
@@ -254,6 +259,7 @@ export default function SettingsPage() {
         quiet_hours_start: notificationPrefs.quiet_hours_start,
         quiet_hours_end: notificationPrefs.quiet_hours_end,
         urgent_bypass_quiet_hours: notificationPrefs.urgent_bypass_quiet_hours,
+        getting_cold_threshold_hours: gettingColdThreshold,
       })
       .eq('user_id', user.id);
 
@@ -314,6 +320,29 @@ export default function SettingsPage() {
           onUpdateTime={updateBusinessTime}
           onApplyAll={applyToAllDays}
         />
+
+        <GettingColdSection
+          thresholdHours={gettingColdThreshold}
+          onThresholdChange={(hours) => {
+            setGettingColdThreshold(hours);
+            setSuccess(false);
+          }}
+        />
+
+        <Link
+          href="/settings/past-calls"
+          className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-slate-400 text-[20px]">
+              history
+            </span>
+            <span className="font-medium text-slate-700">Past Calls</span>
+          </div>
+          <span className="material-symbols-outlined text-slate-300 text-[20px]">
+            chevron_right
+          </span>
+        </Link>
 
         <AccountSection
           businessName={formData.businessName}

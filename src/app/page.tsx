@@ -6,8 +6,7 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
-    // V5: Redirect to /action (Velocity Triage System)
-    redirect("/action");
+    redirect("/now");
   } else {
     redirect("/login");
   }

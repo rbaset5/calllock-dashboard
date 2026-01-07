@@ -10,9 +10,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-inter)', 'var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-inter)', 'var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
-        body: ['var(--font-inter)', 'sans-serif'],
+        sans: ['var(--font-public-sans)', 'var(--font-inter)', 'var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-public-sans)', 'var(--font-inter)', 'var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-public-sans)', 'var(--font-inter)', 'sans-serif'],
         sharpie: ['var(--font-permanent-marker)', 'cursive'],
       },
       colors: {
@@ -89,8 +89,9 @@ const config: Config = {
           foreground: "hsl(var(--popover-foreground))",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#11bb77",
+          dark: "#0e9f65",
+          foreground: "#ffffff",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -118,11 +119,10 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
-        // Talent Drop design tokens
-        "background-light": "#F3F4F6",
-        "background-dark": "#111827",
-        "surface-light": "#FFFFFF",
-        "surface-dark": "#1F2937",
+        "background-light": "#f6f8f7",
+        "background-dark": "#10221b",
+        "surface-light": "#ffffff",
+        "surface-dark": "#1a2e26",
         "secondary-text-light": "#6B7280",
         "secondary-text-dark": "#9CA3AF",
       },

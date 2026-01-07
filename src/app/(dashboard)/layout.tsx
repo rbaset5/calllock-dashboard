@@ -2,61 +2,47 @@
 
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { Header } from '@/components/layout/header';
-import { MobileNav } from '@/components/layout/mobile-nav';
-import { Sidebar } from '@/components/layout/sidebar';
-import { DemoBanner } from '@/components/ui/demo-banner';
-import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [businessName, setBusinessName] = useState<string | undefined>(undefined);
+  const pathname = usePathname();
+  const [urgentCount, setUrgentCount] = useState(0);
+
+  const getActiveTab = (): 'now' | 'schedule' => {
+    if (pathname?.startsWith('/schedule') || pathname?.startsWith('/booked')) return 'schedule';
+    return 'now';
+  };
 
   useEffect(() => {
-    // Get business name from localStorage token
-    const tokenData = localStorage.getItem('supabase.auth.token');
-    if (tokenData) {
+    const fetchUrgentCount = async () => {
       try {
-        const parsed = JSON.parse(tokenData);
-        // The user metadata should have business_name from signup
-        const name = parsed.user?.user_metadata?.business_name;
-        if (name) {
-          setBusinessName(name);
+        const response = await fetch('/api/velocity');
+        if (response.ok) {
+          const data = await response.json();
+          setUrgentCount(data.counts?.urgent || 0);
         }
-      } catch (e) {
-        console.error('[DashboardLayout] Error getting business name:', e);
+      } catch (error) {
+        console.error('Error fetching urgent count:', error);
       }
-    }
+    };
+
+    fetchUrgentCount();
+    const interval = setInterval(fetchUrgentCount, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
     <AuthGuard>
-      {/* Demo mode banner */}
-      <DemoBanner />
-
-      <div className="min-h-screen">
-        {/* Desktop sidebar */}
-        <Sidebar businessName={businessName} />
-
-        {/* Main content area - offset for sidebar on desktop */}
-        <div className="lg:pl-60">
-          {/* Header - hidden on desktop since sidebar has branding */}
-          <div className="lg:hidden sticky top-0 z-40">
-            <Header businessName={businessName} />
-          </div>
-
-          {/* Main content with max-width on desktop */}
-          <main className="pb-20 lg:pb-8">
-            <div className="max-w-7xl mx-auto">
-              {children}
-            </div>
-          </main>
-
-          {/* Mobile bottom navigation */}
-          <MobileNav />
-        </div>
+      <div className="min-h-screen bg-background-light">
+        <Header activeTab={getActiveTab()} urgentCount={urgentCount} />
+        <main className="pb-8">
+          {children}
+        </main>
       </div>
     </AuthGuard>
   );

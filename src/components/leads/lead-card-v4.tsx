@@ -60,14 +60,14 @@ const tokens = {
     }
   },
   radius: {
-    card: '16px',
+    card: '28px',
     badge: '6px',
     button: '10px',
   },
   shadow: {
-    card: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
-    cardHover: '0 4px 20px rgba(0,0,0,0.08)',
-    yourMove: '0 0 0 1px #FCA5A5, 0 4px 20px rgba(220, 38, 38, 0.12)',
+    card: '0 4px 20px -4px rgba(0,0,0,0.1)',
+    cardHover: '0 8px 30px -4px rgba(0,0,0,0.15)',
+    yourMove: '0 4px 20px rgba(220, 38, 38, 0.12)',
   },
   font: {
     display: 'var(--font-dm-sans), system-ui, sans-serif',

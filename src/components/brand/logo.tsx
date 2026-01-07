@@ -1,61 +1,62 @@
 "use client";
 
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
-  showImage?: boolean;
+  showIcon?: boolean;
   className?: string;
-  imageOnly?: boolean;
+  iconOnly?: boolean;
 }
 
 const sizes = {
-  sm: { text: "text-lg", image: 24, gap: "gap-1.5" },
-  md: { text: "text-xl", image: 32, gap: "gap-2" },
-  lg: { text: "text-2xl", image: 40, gap: "gap-2.5" },
-  xl: { text: "text-3xl", image: 48, gap: "gap-3" },
+  sm: { icon: "h-6 w-6", iconText: "text-[16px]", text: "text-lg" },
+  md: { icon: "h-8 w-8", iconText: "text-[20px]", text: "text-xl" },
+  lg: { icon: "h-10 w-10", iconText: "text-[24px]", text: "text-2xl" },
+  xl: { icon: "h-12 w-12", iconText: "text-[28px]", text: "text-3xl" },
 };
 
 export function Logo({
   size = "md",
-  showImage = true,
+  showIcon = true,
   className,
-  imageOnly = false,
+  iconOnly = false,
 }: LogoProps) {
   const sizeConfig = sizes[size];
 
-  if (imageOnly) {
+  if (iconOnly) {
     return (
-      <Image
-        src="/callseal-logo.jpg"
-        alt="CallSeal Logo"
-        width={sizeConfig.image}
-        height={sizeConfig.image}
-        className={cn("rounded", className)}
-      />
+      <div
+        className={cn(
+          "bg-primary rounded-lg flex items-center justify-center text-white",
+          sizeConfig.icon,
+          className
+        )}
+      >
+        <span className={cn("material-symbols-outlined", sizeConfig.iconText)}>
+          lock_open
+        </span>
+      </div>
     );
   }
 
   return (
-    <div className={cn("flex items-center", sizeConfig.gap, className)}>
-      <span
-        className={cn(
-          "font-display font-semibold text-primary-600 tracking-tight",
-          sizeConfig.text
-        )}
-      >
-        CallSeal
-      </span>
-      {showImage && (
-        <Image
-          src="/callseal-logo.jpg"
-          alt="CallSeal Logo"
-          width={sizeConfig.image}
-          height={sizeConfig.image}
-          className="rounded"
-        />
+    <div className={cn("flex items-center gap-2", className)}>
+      {showIcon && (
+        <div
+          className={cn(
+            "bg-primary rounded-lg flex items-center justify-center text-white",
+            sizeConfig.icon
+          )}
+        >
+          <span className={cn("material-symbols-outlined", sizeConfig.iconText)}>
+            lock_open
+          </span>
+        </div>
       )}
+      <h1 className={cn("font-bold tracking-tight text-slate-900", sizeConfig.text)}>
+        CallLock
+      </h1>
     </div>
   );
 }

@@ -83,6 +83,33 @@
     --chart-3: var(--cl-success-500);
     --chart-4: var(--cl-info-500);
     --chart-5: var(--cl-error-500);
+
+    /* Dashboard Design System (Premium Palette) */
+    --ds-blue-200: oklch(96.29% 0.0195 250.59);
+    --ds-blue-700: oklch(57.61% 0.2508 258.23);
+    --ds-blue-900: oklch(53.18% 0.2399 256.9900584162342);
+    --ds-red-200: oklch(95.41% 0.0299 14.252646656611997);
+    --ds-red-700: oklch(62.56% 0.2524 23.03);
+    --ds-red-900: oklch(54.99% 0.232 25.29);
+    --ds-amber-200: oklch(96.81% 0.0495 90.24227879900472);
+    --ds-amber-700: oklch(81.87% 0.1969 76.46);
+    --ds-amber-900: oklch(52.79% 0.1496 54.65);
+    --ds-green-200: oklch(96.92% 0.037 147.15);
+    --ds-green-700: oklch(64.58% 0.1746 147.27);
+    --ds-green-900: oklch(51.75% 0.1453 147.65);
+    --ds-teal-300: oklch(94.92% 0.0478 182.07);
+    --ds-teal-700: oklch(64.92% 0.1572 181.95);
+    --ds-teal-900: oklch(52.08% 0.1251 182.93);
+    --ds-purple-200: oklch(96.73% 0.0228 309.8);
+    --ds-purple-700: oklch(55.5% 0.3008 306.12);
+    --ds-purple-900: oklch(47.18% 0.2579 304);
+    --ds-pink-300: oklch(93.83% 0.0451 356.29);
+    --ds-pink-700: oklch(63.52% 0.238 1.01);
+    --ds-pink-900: oklch(53.5% 0.2058 2.84);
+    --ds-gray-100: hsla(0, 0%, 95%, 1);
+    --ds-gray-200: hsla(0, 0%, 92%, 1);
+    --ds-gray-700: hsla(0, 0%, 56%, 1);
+    --ds-gray-1000: hsla(0, 0%, 9%, 1);
   }
 
   .dark {
@@ -105,6 +132,39 @@
     --border: var(--cl-navy-700);
     --input: var(--cl-navy-700);
     --ring: var(--cl-gold-500);
+
+    /* Dark Mode Palette */
+    --ds-blue-200: oklch(25.45% 0.0811 255.8);
+    --ds-blue-700: oklch(57.61% 0.2321 258.23);
+    --ds-blue-900: oklch(71.7% 0.1648 250.79360374054167);
+    --ds-red-200: oklch(25.93% 0.0834 19.02);
+    --ds-red-700: oklch(62.56% 0.2234 23.03);
+    --ds-red-900: oklch(69.96% 0.2136 22.03);
+    --ds-amber-200: oklch(24.95% 0.0642 64.78);
+    --ds-amber-700: oklch(81.87% 0.1969 76.46);
+    --ds-amber-900: oklch(77.21% 0.1991 64.28);
+    --ds-green-200: oklch(27.12% 0.0895 150.09);
+    --ds-green-700: oklch(64.58% 0.199 147.27);
+    --ds-green-900: oklch(73.1% 0.2158 148.29);
+    --ds-teal-300: oklch(31.5% 0.0767 180.99);
+    --ds-teal-700: oklch(64.92% 0.1403 181.95);
+    --ds-teal-900: oklch(74.56% 0.1765 182.8);
+    --ds-purple-200: oklch(25.91% 0.0921 314.41);
+    --ds-purple-700: oklch(55.5% 0.2186 306.12);
+    --ds-purple-900: oklch(69.87% 0.2037 309.51);
+    --ds-pink-300: oklch(31.15% 0.1067 355.93);
+    --ds-pink-700: oklch(63.52% 0.2346 1.01);
+    --ds-pink-900: oklch(69.36% 0.2223 3.91);
+    --ds-gray-100: hsla(0, 0%, 10%, 1);
+    --ds-gray-200: hsla(0, 0%, 12%, 1);
+    --ds-gray-700: hsla(0, 0%, 56%, 1);
+    --ds-gray-1000: hsla(0, 0%, 93%, 1);
+  }
+  .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .maplibregl-popup-tip {
+    @apply hidden!;
   }
 }
 
@@ -117,7 +177,7 @@
     @apply text-foreground;
     min-height: 100vh;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: #F7F7F8;
+    background-color: #f6f8f7;
   }
 
   /* Focus visible styles for accessibility */
@@ -130,6 +190,15 @@
 @layer utilities {
   .tap-target {
     @apply min-h-[48px] min-w-[48px];
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   /* Page container - consistent across dashboard */

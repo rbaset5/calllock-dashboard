@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Plus_Jakarta_Sans, Permanent_Marker, Space_Grotesk, DM_Sans, Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, Permanent_Marker, Space_Grotesk, DM_Sans, Inter, Public_Sans } from "next/font/google";
+
+const publicSans = Public_Sans({
+  subsets: ["latin"],
+  variable: "--font-public-sans",
+  display: "swap",
+});
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -38,8 +44,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CallSeal Dashboard",
-  description: "Job inbox for service businesses - never miss a lead",
+  title: "CallLock",
+  description: "Never miss a lead - AI-powered missed call recovery",
   manifest: "/manifest.json",
 };
 
@@ -47,7 +53,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#334155", // Navy-600 for premium feel
+  themeColor: "#11bb77",
 };
 
 export default function RootLayout({
@@ -68,7 +74,7 @@ export default function RootLayout({
         />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
-      <body className={`${plusJakartaSans.variable} ${spaceGrotesk.variable} ${permanentMarker.variable} ${dmSans.variable} ${inter.variable} font-sans antialiased`}>
+      <body className={`${publicSans.variable} ${plusJakartaSans.variable} ${spaceGrotesk.variable} ${permanentMarker.variable} ${dmSans.variable} ${inter.variable} font-sans antialiased`}>
         <ServiceWorkerRegistration />
         {children}
       </body>
